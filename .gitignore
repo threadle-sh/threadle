@@ -148,3 +148,6 @@ web-dist/
 **/.DS_Store
 .AppleDouble
 .LSOverride
+
+# threadle 
+packages/server/README.md
