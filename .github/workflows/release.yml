@@ -1,6 +1,17 @@
 name: Release
 
 # Tags may be X.Y.Z or vX.Y.Z (must match the `threadle` workspace version).
+#
+# Immutable releases are enabled on this repo: publishing a release seals its
+# assets and locks its tag forever. So this workflow builds a DRAFT release,
+# attaches every asset, publishes to npm, and only then flips the draft to
+# published. A draft is still mutable and its tag is still deletable, so any
+# failure before the final step is fully recoverable: delete the draft, delete
+# the tag, fix, re-tag the same version.
+#
+# workflow_dispatch can only resume a run that died before the draft was
+# published. It CANNOT repair an already-published release — nothing can.
+
 on:
   push:
     tags:
@@ -14,8 +25,8 @@ on:
         type: string
 
 permissions:
-  contents: write 
-  id-token: write
+  contents: write # create the release, upload assets
+  id-token: write # npm trusted publishing (OIDC) + provenance
 
 concurrency:
   group: release-${{ github.event.inputs.tag || github.ref_name }}
@@ -25,6 +36,11 @@ jobs:
   release:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+
+    # If you put the publish behind a GitHub environment for manual approval,
+    # uncomment this AND add the same environment name to the npm Trusted
+    # Publisher config — otherwise the OIDC claim won't match and npm 404s.
+    # environment: release
 
     steps:
       - name: Resolve tag
@@ -42,15 +58,19 @@ jobs:
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7 # TODO: pin to a full commit SHA
         with:
           ref: refs/tags/${{ steps.meta.outputs.tag }}
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@v7 # TODO: pin to a full commit SHA
         with:
           node-version: "26"
           cache: npm
           registry-url: https://registry.npmjs.org
+
+      # ---------------------------------------------------------------- guards
+      # Everything that can fail cheaply fails here, before we build anything
+      # or touch the registry.
 
       - name: Refuse to touch an already-published release
         shell: bash
@@ -137,6 +157,23 @@ jobs:
             dist/portable/threadle-*.tar.gz \
             dist/portable/SHA256SUMS
           echo "draft created for $TAG"
+
+      - name: Stage README into the published package
+        shell: bash
+        run: |
+          set -euo pipefail
+          PKG_DIR=packages/server
+          NAME=$(node -p "require('./$PKG_DIR/package.json').name")
+          [[ "$NAME" == "threadle" ]] || {
+            echo "::error::$PKG_DIR is '$NAME', not threadle — update PKG_DIR"
+            exit 1
+          }
+          cp README.md "$PKG_DIR/README.md"
+          npm pack -w threadle --dry-run 2>&1 | grep -qi 'README.md' || {
+            echo "::error::README.md is still missing from the tarball"
+            exit 1
+          }
+          echo "README staged into $PKG_DIR"
 
       - name: Publish to npm (trusted publishing, no token)
         shell: bash
