@@ -60,7 +60,7 @@
   },
   "devDependencies": {
     "@threadle/shared": "*",
-    "@types/node": "^22.10.2",
+    "@types/node": "^26.6.1",
     "tsup": "^8.3.5",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
