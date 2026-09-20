@@ -44,7 +44,7 @@ curl -fsSL https://threadle.sh/install.sh | bash
 threadle                              # UI on http://127.0.0.1:4570
 ```
 
-Portable install (bundled Node 26 + app) into `~/.local/share/threadle` — no npm. Pin a version with `THREADLE_VERSION=1.0.0`. The installer verifies SHA-256 against the release `SHA256SUMS` file.
+Portable install (bundled Node 26 + app) into `~/.local/share/threadle` — no npm. Pin a version with `THREADLE_VERSION=1.0.1`. The installer verifies SHA-256 against the release `SHA256SUMS` file.
 
 **Or** Node.js ≥ 22.12 + npm:
 

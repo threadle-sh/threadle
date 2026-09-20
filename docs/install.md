@@ -9,7 +9,7 @@ threadle
 
 [`scripts/install.sh`](../scripts/install.sh) downloads a platform archive from GitHub Releases, verifies `SHA256SUMS`, extracts to `~/.local/share/threadle`, and symlinks `~/.local/bin/threadle`.
 
-Requires **macOS or Linux** (arm64 / x64). Bundled Node 26 — no system Node or npm needed. Pin with `THREADLE_VERSION=1.0.0`. Other env knobs: `THREADLE_INSTALL_DIR`, `THREADLE_BIN_DIR`, `THREADLE_REPO`, `THREADLE_PLATFORM`.
+Requires **macOS or Linux** (arm64 / x64). Bundled Node 26 — no system Node or npm needed. Pin with `THREADLE_VERSION=1.0.1`. Other env knobs: `THREADLE_INSTALL_DIR`, `THREADLE_BIN_DIR`, `THREADLE_REPO`, `THREADLE_PLATFORM`.
 
 ## Windows / any OS with Node ≥ 22.12
 
