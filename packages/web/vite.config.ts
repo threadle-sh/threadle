@@ -1,17 +1,33 @@
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import vue from "@vitejs/plugin-vue";
 import path from "node:path";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 
 const pkg = JSON.parse(
   readFileSync(path.resolve(import.meta.dirname, "../server/package.json"), "utf8"),
 ) as { version: string };
 
+/**
+ * Content-based build id shared by the client bundle and web-dist/build-id.
+ * Comparing this (not filesystem mtime) avoids false "newer UI" banners after
+ * npm pack/extract, which rewrites mtimes on install.
+ */
+const buildId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+
+function emitBuildId(): Plugin {
+  return {
+    name: "threadle-build-id",
+    closeBundle() {
+      const out = path.resolve(import.meta.dirname, "../server/web-dist/build-id");
+      writeFileSync(out, buildId, "utf8");
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [vue(), emitBuildId()],
   define: {
-    // baked at build time; compared against the server's web-dist mtime
-    __APP_BUILD_TIME__: JSON.stringify(Date.now()),
+    __APP_BUILD_ID__: JSON.stringify(buildId),
     __APP_VERSION__: JSON.stringify(pkg.version),
   },
   resolve: {

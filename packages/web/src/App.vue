@@ -13,10 +13,10 @@ import FileViewerWindows from "@/panels/FileViewerWindows.vue";
 
 /**
  * Build skew guard. The server reports whether its bundle on disk is newer
- * than the running process (serverStale) and when the web bundle was built
- * (webMtime); we compare against our own baked-in build time. This catches
- * the classic split: fresh UI from disk running against a stale API process
- * (or the reverse) — which presents as "features silently not working".
+ * than the running process (serverStale) and the content-based web build id
+ * (webBuildId); we compare against our own baked-in id. mtime is intentionally
+ * unused — npm pack/extract rewrites filesystem times and would false-positive
+ * on every `npx threadle` install.
  */
 const staleServer = ref(false);
 const staleWeb = ref(false);
@@ -37,14 +37,13 @@ onMounted(async () => {
   try {
     const h = (await fetch("/api/health").then((r) => r.json())) as {
       serverStale?: boolean;
-      webMtime?: number;
+      webBuildId?: string;
     };
     staleServer.value = h.serverStale === true;
-    // 30s slack: webMtime is stamped when the build finishes writing,
-    // __APP_BUILD_TIME__ when vite loaded its config seconds earlier
     staleWeb.value =
-      typeof h.webMtime === "number" &&
-      h.webMtime > __APP_BUILD_TIME__ + 30_000;
+      typeof h.webBuildId === "string" &&
+      h.webBuildId.length > 0 &&
+      h.webBuildId !== __APP_BUILD_ID__;
   } catch {
     // health unavailable — server starting up; stay quiet
   }
