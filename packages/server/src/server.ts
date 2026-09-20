@@ -37,8 +37,10 @@ export interface AppOptions {
 
 /**
  * Build skew detection: the running file's mtime is captured at boot; if a
- * later rebuild replaces it on disk, this process is stale. `webMtime` lets
- * the UI detect the inverse (browser tab older than the web bundle on disk).
+ * later rebuild replaces it on disk, this process is stale. `webBuildId` is a
+ * content token written into web-dist at UI build time — comparing that (not
+ * mtime) lets the UI detect a stale browser tab without false positives after
+ * npm pack/extract.
  */
 const serverFile = fileURLToPath(import.meta.url);
 const bootMtime = fs.existsSync(serverFile)
@@ -221,17 +223,20 @@ export function createApp(opts: AppOptions) {
       // bundle vanished — treat as stale
       serverStale = true;
     }
-    let webMtime: number | undefined;
+    let webBuildId: string | undefined;
     try {
-      webMtime = fs.statSync(path.join(webDist, "index.html")).mtimeMs;
+      webBuildId = fs
+        .readFileSync(path.join(webDist, "build-id"), "utf8")
+        .trim();
+      if (!webBuildId) webBuildId = undefined;
     } catch {
-      webMtime = undefined;
+      webBuildId = undefined;
     }
     return c.json({
       ok: true,
       projectDir: opts.projectDir,
       serverStale,
-      webMtime,
+      webBuildId,
       mem: process.memoryUsage().rss,
       uptime: Math.round(process.uptime()),
     });

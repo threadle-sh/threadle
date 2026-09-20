@@ -123,7 +123,7 @@ export interface RemoteHealth {
   ok: boolean;
   projectDir: string;
   serverStale: boolean;
-  webMtime?: number;
+  webBuildId?: string;
   mem: number;
   uptime: number;
 }
