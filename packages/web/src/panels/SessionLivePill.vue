@@ -1,0 +1,31 @@
+<template>
+  <span
+    v-if="status === 'waiting' || status === 'running'"
+    class="session-live-pill"
+    :class="status"
+    :title="title"
+  >
+    {{ label }}
+  </span>
+</template>
+
+<script setup lang="ts">
+import { computed } from "vue";
+import type { SessionStatus } from "@threadle/shared";
+
+const props = defineProps<{ status?: SessionStatus }>();
+
+const label = computed(() => {
+  if (props.status === "waiting") return "needs input";
+  if (props.status === "running") return "running";
+  return "";
+});
+
+const title = computed(() => {
+  if (props.status === "waiting") {
+    return "Session is waiting for you — permission, approval, or other input";
+  }
+  if (props.status === "running") return "Agent is actively working in this session";
+  return "";
+});
+</script>

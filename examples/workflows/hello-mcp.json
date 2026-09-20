@@ -1,0 +1,67 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Example · Hello MCP",
+  "kind": "workflow",
+  "nodes": [
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": { "x": 40, "y": 20 },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "Intermediate: canvas as MCP client. Copy examples/mcp/mcp.json.echo.example → repo-root .mcp.json, then ▶ Run. Prompt text fills the echo tool’s `message` arg via argPort.",
+        "size": { "width": 420, "height": 120 }
+      }
+    },
+    {
+      "id": "n-prompt",
+      "type": "prompt",
+      "position": { "x": 40, "y": 200 },
+      "status": "idle",
+      "data": {
+        "type": "prompt",
+        "label": "message",
+        "text": "Hello from threadle via MCP"
+      }
+    },
+    {
+      "id": "n-mcp",
+      "type": "mcp-tool",
+      "position": { "x": 360, "y": 200 },
+      "status": "idle",
+      "data": {
+        "type": "mcp-tool",
+        "ref": { "server": "echo" },
+        "tool": "echo",
+        "argPort": "message",
+        "snapshot": {
+          "serverLabel": "echo",
+          "toolDescription": "Return the message unchanged (demo for threadle MCP tool nodes)",
+          "params": [
+            {
+              "name": "message",
+              "type": "text",
+              "description": "Text to echo back"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "n-out",
+      "type": "output",
+      "position": { "x": 680, "y": 200 },
+      "status": "idle",
+      "data": {
+        "type": "output",
+        "renderMode": "text"
+      }
+    }
+  ],
+  "edges": [
+    { "id": "e1", "source": "n-prompt", "target": "n-mcp" },
+    { "id": "e2", "source": "n-mcp", "target": "n-out" }
+  ],
+  "viewport": { "x": 0, "y": 0, "zoom": 0.9 }
+}

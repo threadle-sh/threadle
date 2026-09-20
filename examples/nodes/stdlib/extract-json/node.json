@@ -1,0 +1,9 @@
+{
+  "id": "extract-json",
+  "label": "Extract JSON",
+  "glyph": "{…}",
+  "description": "first fenced ```json block, else first top-level {…} or […] from agent text",
+  "entry": "node.ts",
+  "input": "text",
+  "output": "json"
+}

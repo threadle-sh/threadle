@@ -1,0 +1,240 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Example · Guarded parallel",
+  "kind": "workflow",
+  "nodes": [
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": {
+        "x": 40,
+        "y": 0
+      },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "Expert: parallelism=2 fan → two asks → concat merge → content breaker (skip branch on ERROR) → approval splice → output. Graph spend ceiling $1. Open ⌀ Graph lint after edits.",
+        "size": {
+          "width": 400,
+          "height": 120
+        }
+      }
+    },
+    {
+      "id": "n-prompt",
+      "type": "prompt",
+      "position": {
+        "x": 40,
+        "y": 180
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt",
+        "label": "spec",
+        "text": "{{param:task}}"
+      }
+    },
+    {
+      "id": "n-c1",
+      "type": "prompt-convert",
+      "position": {
+        "x": 300,
+        "y": 80
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt-convert",
+        "template": "Propose approach A (optimistic).\n\n{{input}}"
+      }
+    },
+    {
+      "id": "n-c2",
+      "type": "prompt-convert",
+      "position": {
+        "x": 300,
+        "y": 280
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt-convert",
+        "template": "Propose approach B (cautious).\n\n{{input}}"
+      }
+    },
+    {
+      "id": "n-a1",
+      "type": "agent-def",
+      "position": {
+        "x": 580,
+        "y": 60
+      },
+      "status": "idle",
+      "continueOnError": true,
+      "data": {
+        "type": "agent-def",
+        "ref": {
+          "provider": "cursor",
+          "name": "ask",
+          "source": "cursor:builtin"
+        }
+      }
+    },
+    {
+      "id": "n-a2",
+      "type": "agent-def",
+      "position": {
+        "x": 580,
+        "y": 260
+      },
+      "status": "idle",
+      "continueOnError": true,
+      "data": {
+        "type": "agent-def",
+        "ref": {
+          "provider": "cursor",
+          "name": "ask",
+          "source": "cursor:builtin"
+        }
+      }
+    },
+    {
+      "id": "n-knot",
+      "type": "knot",
+      "position": {
+        "x": 880,
+        "y": 160
+      },
+      "status": "idle",
+      "data": {
+        "type": "knot",
+        "strategy": "concat",
+        "label": "combine"
+      }
+    },
+    {
+      "id": "n-retry",
+      "type": "tripwire",
+      "position": {
+        "x": 1140,
+        "y": 80
+      },
+      "status": "idle",
+      "data": {
+        "type": "tripwire",
+        "mode": "retries",
+        "action": "abort",
+        "label": "fuse",
+        "thresholdRetries": 2
+      }
+    },
+    {
+      "id": "n-content",
+      "type": "tripwire",
+      "position": {
+        "x": 1140,
+        "y": 240
+      },
+      "status": "idle",
+      "data": {
+        "type": "tripwire",
+        "mode": "content",
+        "action": "park",
+        "label": "scrub ERROR",
+        "pattern": "ERROR",
+        "tripOnMatch": true
+      }
+    },
+    {
+      "id": "n-gate",
+      "type": "approval",
+      "position": {
+        "x": 1420,
+        "y": 160
+      },
+      "status": "idle",
+      "data": {
+        "type": "approval",
+        "label": "splice final"
+      }
+    },
+    {
+      "id": "n-out",
+      "type": "output",
+      "position": {
+        "x": 1700,
+        "y": 160
+      },
+      "status": "idle",
+      "data": {
+        "type": "output",
+        "renderMode": "markdown"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "n-prompt",
+      "target": "n-c1"
+    },
+    {
+      "id": "e2",
+      "source": "n-prompt",
+      "target": "n-c2"
+    },
+    {
+      "id": "e3",
+      "source": "n-c1",
+      "target": "n-a1",
+      "data": {
+        "role": "instantiate"
+      }
+    },
+    {
+      "id": "e4",
+      "source": "n-c2",
+      "target": "n-a2",
+      "data": {
+        "role": "instantiate"
+      }
+    },
+    {
+      "id": "e5",
+      "source": "n-a1",
+      "target": "n-knot"
+    },
+    {
+      "id": "e6",
+      "source": "n-a2",
+      "target": "n-knot"
+    },
+    {
+      "id": "e7",
+      "source": "n-knot",
+      "target": "n-retry"
+    },
+    {
+      "id": "e8",
+      "source": "n-retry",
+      "target": "n-content"
+    },
+    {
+      "id": "e9",
+      "source": "n-content",
+      "target": "n-gate"
+    },
+    {
+      "id": "e10",
+      "source": "n-gate",
+      "target": "n-out"
+    }
+  ],
+  "viewport": {
+    "x": 20,
+    "y": 0,
+    "zoom": 0.75
+  },
+  "settings": {
+    "ply": 2,
+    "spendTripwireUsd": 1
+  }
+}

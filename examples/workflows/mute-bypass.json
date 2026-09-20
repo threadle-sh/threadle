@@ -1,0 +1,102 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Example · Mute & bypass",
+  "kind": "workflow",
+  "nodes": [
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": {
+        "x": 40,
+        "y": 20
+      },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "Intermediate: right-click a node → mute (skip) or bypass (pass-through). The left prompt is muted; the converter is bypassed so its template never runs.",
+        "size": {
+          "width": 360,
+          "height": 110
+        }
+      }
+    },
+    {
+      "id": "n-muted",
+      "type": "prompt",
+      "position": {
+        "x": 40,
+        "y": 180
+      },
+      "status": "idle",
+      "muted": true,
+      "data": {
+        "type": "prompt",
+        "label": "muted",
+        "text": "YOU SHOULD NOT SEE THIS"
+      }
+    },
+    {
+      "id": "n-live",
+      "type": "prompt",
+      "position": {
+        "x": 40,
+        "y": 320
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt",
+        "label": "live",
+        "text": "only this text should reach output"
+      }
+    },
+    {
+      "id": "n-c",
+      "type": "prompt-convert",
+      "position": {
+        "x": 360,
+        "y": 280
+      },
+      "status": "idle",
+      "bypassed": true,
+      "data": {
+        "type": "prompt-convert",
+        "template": "WRAPPED {{input}}"
+      }
+    },
+    {
+      "id": "n-out",
+      "type": "output",
+      "position": {
+        "x": 660,
+        "y": 280
+      },
+      "status": "idle",
+      "data": {
+        "type": "output",
+        "renderMode": "text"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e0",
+      "source": "n-muted",
+      "target": "n-c"
+    },
+    {
+      "id": "e1",
+      "source": "n-live",
+      "target": "n-c"
+    },
+    {
+      "id": "e2",
+      "source": "n-c",
+      "target": "n-out"
+    }
+  ],
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 0.9
+  }
+}

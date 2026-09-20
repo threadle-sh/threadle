@@ -1,0 +1,81 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Example · Text → Prompt",
+  "kind": "workflow",
+  "nodes": [
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": {
+        "x": 40,
+        "y": 40
+      },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "Beginner: a converter wraps inbound text with a template. {{input}} is the upstream wire.",
+        "size": {
+          "width": 300,
+          "height": 90
+        }
+      }
+    },
+    {
+      "id": "n-prompt",
+      "type": "prompt",
+      "position": {
+        "x": 40,
+        "y": 180
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt",
+        "label": "raw notes",
+        "text": "- cache hits up\n- one flake in auth"
+      }
+    },
+    {
+      "id": "n-c",
+      "type": "prompt-convert",
+      "position": {
+        "x": 340,
+        "y": 180
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt-convert",
+        "template": "Turn these notes into a crisp status update for standup.\n\n{{input}}"
+      }
+    },
+    {
+      "id": "n-out",
+      "type": "output",
+      "position": {
+        "x": 640,
+        "y": 180
+      },
+      "status": "idle",
+      "data": {
+        "type": "output",
+        "renderMode": "markdown"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "n-prompt",
+      "target": "n-c"
+    },
+    {
+      "id": "e2",
+      "source": "n-c",
+      "target": "n-out"
+    }
+  ],
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 0.9
+  }
+}

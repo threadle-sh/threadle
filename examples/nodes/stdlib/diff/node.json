@@ -1,0 +1,22 @@
+{
+  "id": "diff",
+  "label": "Diff",
+  "glyph": "±",
+  "description": "unified diff of named ports a / b — feeds ? Judge",
+  "entry": "node.ts",
+  "inputs": [
+    { "name": "a", "required": true },
+    { "name": "b", "required": true }
+  ],
+  "outputs": [{ "name": "diff" }],
+  "params": [
+    {
+      "name": "context",
+      "type": "int",
+      "label": "context lines",
+      "default": 3,
+      "min": 0,
+      "max": 20
+    }
+  ]
+}

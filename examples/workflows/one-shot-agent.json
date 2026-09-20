@@ -1,0 +1,88 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Example · One-shot agent",
+  "kind": "workflow",
+  "nodes": [
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": {
+        "x": 40,
+        "y": 40
+      },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "Beginner: prompt → Cursor ask → output. Swap the agent node for Claude/opencode from the palette. Needs the agent CLI.",
+        "size": {
+          "width": 300,
+          "height": 90
+        }
+      }
+    },
+    {
+      "id": "n-prompt",
+      "type": "prompt",
+      "position": {
+        "x": 40,
+        "y": 180
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt",
+        "label": "question",
+        "text": "In one short paragraph: what is a node-graph patchbay for agent sessions?"
+      }
+    },
+    {
+      "id": "n-agent",
+      "type": "agent-def",
+      "position": {
+        "x": 360,
+        "y": 160
+      },
+      "status": "idle",
+      "data": {
+        "type": "agent-def",
+        "ref": {
+          "provider": "cursor",
+          "name": "ask",
+          "source": "cursor:builtin"
+        }
+      }
+    },
+    {
+      "id": "n-out",
+      "type": "output",
+      "position": {
+        "x": 680,
+        "y": 180
+      },
+      "status": "idle",
+      "data": {
+        "type": "output",
+        "renderMode": "markdown"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "n-prompt",
+      "target": "n-agent",
+      "data": {
+        "role": "instantiate"
+      }
+    },
+    {
+      "id": "e2",
+      "source": "n-agent",
+      "target": "n-out"
+    }
+  ],
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 0.9
+  }
+}

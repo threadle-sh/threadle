@@ -1,0 +1,21 @@
+{
+  "triggers": [
+    {
+      "id": "nightly-hello",
+      "graphId": "REPLACE_WITH_SAVED_GRAPH_ID",
+      "kind": "cron",
+      "cron": "0 9 * * *",
+      "approveAll": true,
+      "params": {},
+      "projectDir": "/absolute/path/to/project"
+    },
+    {
+      "id": "watch-src",
+      "graphId": "REPLACE_WITH_SAVED_GRAPH_ID",
+      "kind": "watch",
+      "paths": ["src/**"],
+      "approveAll": true,
+      "projectDir": "/absolute/path/to/project"
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+{"method": "session/update", "params": {"sessionId": "c3d4e5f6-7890-4bcd-ef01-222222222222", "update": {"sessionUpdate": "user_message_chunk", "content": {"type": "text", "text": "updates only"}}, "_meta": {"agentTimestampMs": 1698000000000}}}
+{"method": "session/update", "params": {"sessionId": "c3d4e5f6-7890-4bcd-ef01-222222222222", "update": {"sessionUpdate": "agent_thought_chunk", "content": {"type": "text", "text": "thinking via updates"}}, "_meta": {"agentTimestampMs": 1698000000050}}}
+{"method": "session/update", "params": {"sessionId": "c3d4e5f6-7890-4bcd-ef01-222222222222", "update": {"sessionUpdate": "agent_message_chunk", "content": {"type": "text", "text": "reply from updates.jsonl"}}, "_meta": {"agentTimestampMs": 1698000000100}}}
+{"method": "_x.ai/session/update", "params": {"sessionId": "c3d4e5f6-7890-4bcd-ef01-222222222222", "update": {"sessionUpdate": "turn_completed"}, "_meta": {"agentTimestampMs": 1698000000200}}}

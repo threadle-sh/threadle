@@ -1,0 +1,9 @@
+{
+  "id": "extract-urls",
+  "label": "Extract URLs",
+  "glyph": "⛓",
+  "description": "pulls every http(s) URL out of the input, one per line, deduplicated",
+  "entry": "node.ts",
+  "input": "text",
+  "output": "text"
+}

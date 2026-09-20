@@ -1,0 +1,105 @@
+name: Provider watch
+
+# Compare pinned CLI versions (npm + GitHub releases) to live latest.
+# Version drift ≠ a broken parser — it means walk inject.ts / fixtures
+# and then bump `seen` in packages/server/src/providers/freshness/upstream.ts.
+
+on:
+  schedule:
+    - cron: "15 6 * * 1" # Mondays 06:15 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  upstream:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "26"
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Compare pins to latest
+        id: watch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set +e
+          npx tsx packages/server/src/providers/freshness/cli-upstream.ts | tee upstream.txt
+          echo "exit=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+          if grep -qE '^\s*!!' upstream.txt; then
+            echo "drift=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "drift=false" >> "$GITHUB_OUTPUT"
+          fi
+          exit 0
+
+      - name: Open or comment drift issue
+        if: steps.watch.outputs.drift == 'true'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('upstream.txt', 'utf8');
+            const body = [
+              'Pinned agent CLI versions no longer match npm / GitHub latest.',
+              '',
+              '```',
+              report.trim(),
+              '```',
+              '',
+              'This is a **version** signal, not a proof that parsers broke.',
+              'Walk `packages/server/src/providers/*/inject.ts` and the golden fixtures,',
+              'then bump `seen` in `packages/server/src/providers/freshness/upstream.ts`.',
+              '',
+              'See CONTRIBUTING.md (When upstream agent CLIs move).',
+            ].join('\n');
+            try {
+              await github.rest.issues.createLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: 'provider-drift',
+                color: '6e7681',
+                description: 'Upstream agent CLI version or flag moved',
+              });
+            } catch (_) { /* already exists */ }
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'provider-drift',
+              per_page: 5,
+            });
+            if (issues.length) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issues[0].number,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: 'Provider CLI versions moved',
+                body,
+                labels: ['provider-drift'],
+              });
+            }
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: threadle-upstream-watch
+          path: upstream.txt
+          retention-days: 30

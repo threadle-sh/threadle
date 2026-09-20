@@ -1,0 +1,9 @@
+{
+  "id": "sum-numbers",
+  "label": "Sum numbers",
+  "glyph": "＋",
+  "description": "sums every number found in a JSON value (array, object, nested)",
+  "entry": "node.ts",
+  "input": "json",
+  "output": "float"
+}

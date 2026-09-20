@@ -1,0 +1,99 @@
+name: release-smoke
+
+# Post-release smoke test of the *published* artifacts: the curl portable
+# installer (threadle.sh/install.sh -> GitHub Releases) and the npm package
+# (npx threadle). Runs automatically when a Release is published, and on
+# demand via "Run workflow" (optionally pin a version).
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to test, e.g. 0.1.0 (blank = latest)"
+        required: false
+        default: ""
+
+jobs:
+  curl:
+    name: curl install (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Resolve version
+        id: v
+        shell: bash
+        run: |
+          V="${{ github.event.inputs.version }}"
+          [ -z "$V" ] && V="${{ github.event.release.tag_name }}"
+          V="${V#v}"
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "testing version: ${V:-latest}"
+
+      - name: Install via curl
+        shell: bash
+        env:
+          THREADLE_VERSION: ${{ steps.v.outputs.version }}
+        run: curl -fsSL https://threadle.sh/install.sh | bash
+
+      - name: Smoke the CLI
+        shell: bash
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          threadle --help | grep -qi threadle
+          threadle templates | grep -q hello-wire
+          threadle check || true
+
+      - name: Boot server and hit /api/health
+        shell: bash
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          threadle >server.log 2>&1 &
+          pid=$!
+          ok=0
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4570/api/health >/dev/null 2>&1; then ok=1; break; fi
+            sleep 1
+          done
+          kill "$pid" 2>/dev/null || true
+          if [ "$ok" != 1 ]; then echo "server never became healthy"; cat server.log; exit 1; fi
+          echo "healthy"
+
+  npm:
+    name: npx (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "26"
+
+      - name: Resolve package spec
+        id: v
+        shell: bash
+        run: |
+          V="${{ github.event.inputs.version }}"
+          [ -z "$V" ] && V="${{ github.event.release.tag_name }}"
+          V="${V#v}"
+          echo "spec=threadle${V:+@$V}" >> "$GITHUB_OUTPUT"
+          echo "testing spec: threadle${V:+@$V}"
+
+      - name: Smoke via npx (waits for npm to propagate)
+        shell: bash
+        run: |
+          spec="${{ steps.v.outputs.spec }}"
+          ok=0
+          for i in $(seq 1 12); do
+            if npx --yes "$spec" --help | grep -qi threadle; then ok=1; break; fi
+            echo "npm not ready yet, retry $i"; sleep 15
+          done
+          if [ "$ok" != 1 ]; then echo "npx smoke failed for $spec"; exit 1; fi
+          npx --yes "$spec" templates | grep -q hello-wire
+          echo "npx ok"

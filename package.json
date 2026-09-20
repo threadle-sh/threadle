@@ -1,0 +1,29 @@
+{
+  "name": "threadle-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm-run-all --parallel dev:server dev:web",
+    "dev:server": "npm run dev -w threadle",
+    "dev:web": "npm run dev -w @threadle/web",
+    "build": "npm run build -w @threadle/web && npm run build -w threadle",
+    "test": "npm run test -w threadle",
+    "start": "node packages/server/dist/cli.js",
+    "pack:smoke": "bash scripts/smoke-pack.sh",
+    "pack:portable": "bash scripts/pack-portable.sh --tarball",
+    "pack:portable:smoke": "bash scripts/smoke-portable.sh",
+    "release:artifacts": "bash scripts/release-artifacts.sh"
+  },
+  "devDependencies": {
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.7.2"
+  },
+  "overrides": {
+    "esbuild": "0.28.2"
+  },
+  "engines": {
+    "node": ">=22.12"
+  }
+}

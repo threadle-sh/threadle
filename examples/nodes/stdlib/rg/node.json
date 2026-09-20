@@ -1,0 +1,33 @@
+{
+  "id": "rg",
+  "label": "rg",
+  "glyph": "⌕",
+  "description": "ripgrep search of dir (absolute path); matching file paths on stdout",
+  "command": ["node", "./run.js"],
+  "input": "text",
+  "output": "text",
+  "params": [
+    {
+      "name": "pattern",
+      "type": "text",
+      "label": "pattern",
+      "default": ".",
+      "description": "regex; if empty, uses stdin as the pattern"
+    },
+    {
+      "name": "dir",
+      "type": "text",
+      "label": "search dir",
+      "default": "",
+      "description": "absolute path to search (required)"
+    },
+    {
+      "name": "glob",
+      "type": "text",
+      "label": "glob",
+      "default": "",
+      "description": "optional --glob, e.g. '*.ts'"
+    }
+  ],
+  "timeoutMs": 60000
+}

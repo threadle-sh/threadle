@@ -1,0 +1,118 @@
+name: Provider smoke
+
+# Weekly: install public npm CLIs, then `threadle check --providers` so
+# inject-flag probes actually run (GH-hosted images have none of them).
+# Cursor `agent`, Antigravity `agy`, and Grok Build are not on npm — those
+# rows still skip. Flag misses fail this job and open a drift issue.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  inject-flags:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "26"
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Install probe CLIs
+        shell: bash
+        run: |
+          set -euo pipefail
+          PREFIX="$RUNNER_TEMP/threadle-clis"
+          mkdir -p "$PREFIX"
+          npm install --prefix "$PREFIX" --no-save --no-audit --no-fund \
+            @anthropic-ai/claude-code \
+            opencode-ai \
+            @openai/codex \
+            @github/copilot
+          echo "$PREFIX/node_modules/.bin" >> "$GITHUB_PATH"
+
+      - name: threadle check --providers
+        id: check
+        shell: bash
+        run: |
+          set +e
+          node packages/server/dist/cli.js check --providers | tee check-out.txt
+          echo "exit=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+          if grep -qE '^\s*!!\s+flag:' check-out.txt; then
+            echo "flags=fail" >> "$GITHUB_OUTPUT"
+          else
+            echo "flags=ok" >> "$GITHUB_OUTPUT"
+          fi
+          exit 0
+
+      - name: Fail on inject-flag drift
+        if: steps.check.outputs.flags == 'fail'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('check-out.txt', 'utf8');
+            const body = [
+              '`threadle check --providers` lost an inject-critical flag in CLI help.',
+              '',
+              '```',
+              report.trim(),
+              '```',
+              '',
+              'Confirm with the real CLI before changing adapters (help text can lie).',
+              'See `packages/server/src/providers/freshness/inject-flags.ts` and CONTRIBUTING.md.',
+            ].join('\n');
+            try {
+              await github.rest.issues.createLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: 'provider-drift',
+                color: '6e7681',
+                description: 'Upstream agent CLI version or flag moved',
+              });
+            } catch (_) { /* already exists */ }
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'provider-drift',
+              per_page: 5,
+            });
+            if (issues.length) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issues[0].number,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: 'Inject-critical CLI flag missing from --help',
+                body,
+                labels: ['provider-drift'],
+              });
+            }
+            core.setFailed('Inject-critical CLI flag drift — see check-out.txt');
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: threadle-check-providers
+          path: check-out.txt
+          retention-days: 30

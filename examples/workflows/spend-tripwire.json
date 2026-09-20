@@ -1,0 +1,113 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Example \u00b7 Spend ceiling",
+  "kind": "workflow",
+  "nodes": [
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": {
+        "x": 40,
+        "y": 20
+      },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "Intermediate: graph \u2254 spend ceiling ($0.50) is the whole-run ceiling. The \u2021 node on the wire uses the same spend counter \u2014 abort this branch when hit. Needs a real agent run to accumulate spend.",
+        "size": {
+          "width": 360,
+          "height": 120
+        }
+      }
+    },
+    {
+      "id": "n-prompt",
+      "type": "prompt",
+      "position": {
+        "x": 40,
+        "y": 200
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt",
+        "label": "task",
+        "text": "List three safe refactors for this repo in under 80 words."
+      }
+    },
+    {
+      "id": "n-agent",
+      "type": "agent-def",
+      "position": {
+        "x": 340,
+        "y": 180
+      },
+      "status": "idle",
+      "data": {
+        "type": "agent-def",
+        "ref": {
+          "provider": "cursor",
+          "name": "ask",
+          "source": "cursor:builtin"
+        }
+      }
+    },
+    {
+      "id": "n-tw",
+      "type": "tripwire",
+      "position": {
+        "x": 640,
+        "y": 180
+      },
+      "status": "idle",
+      "data": {
+        "type": "tripwire",
+        "mode": "spend",
+        "action": "abort",
+        "label": "branch cap",
+        "thresholdUsd": 0.25
+      }
+    },
+    {
+      "id": "n-out",
+      "type": "output",
+      "position": {
+        "x": 920,
+        "y": 200
+      },
+      "status": "idle",
+      "data": {
+        "type": "output",
+        "renderMode": "markdown"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "n-prompt",
+      "target": "n-agent",
+      "data": {
+        "role": "instantiate"
+      }
+    },
+    {
+      "id": "e2",
+      "source": "n-agent",
+      "target": "n-tw"
+    },
+    {
+      "id": "e3",
+      "source": "n-tw",
+      "target": "n-out"
+    }
+  ],
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 0.9
+  },
+  "settings": {
+    "spendTripwireUsd": 0.5,
+    "ply": 4
+  }
+}

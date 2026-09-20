@@ -1,0 +1,1127 @@
+/* Self-hosted OFL fonts — files in packages/web/public/fonts/ */
+@font-face {
+  font-family: "Instrument Sans";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/instrument-sans-latin-400-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Instrument Sans";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/instrument-sans-latin-500-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Instrument Sans";
+  font-style: italic;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/instrument-sans-latin-500-italic.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Instrument Sans";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/instrument-sans-latin-600-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Instrument Sans";
+  font-style: italic;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/instrument-sans-latin-600-italic.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Instrument Sans";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/instrument-sans-latin-700-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/jetbrains-mono-latin-400-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/jetbrains-mono-latin-500-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/jetbrains-mono-latin-700-normal.woff2") format("woff2");
+}
+
+/* threadle design tokens — dark default; light via html[data-theme="light"] */
+:root,
+html[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* surfaces: black stack with barely-raised layers */
+  --canvas-bg: #121214;
+  --panel-bg: #141416;
+  --panel-bg-raised: #1a1a1d;
+  --node-bg: #161618;
+  --node-bg-hover: #1e1e22;
+  --input-bg: #0e0e10;
+
+  /* lines & borders: hairline, low-contrast */
+  --border: #1d1e22;
+  --border-strong: #2d2e34;
+  --edge: #35373d;
+  --grid-dot: #1c1c1f;
+  /* Canvas grid — soft, barely-there (every 10 / major every 100) */
+  --grid-line: #171719;
+  --grid-line-major: #1b1b1e;
+
+  /* text: white → gray hierarchy — faint must stay readable at micro sizes */
+  --text: #f2f2f3;
+  --text-dim: #a4a5aa;
+  --text-faint: #7a7b82;
+
+  /* accents: white is the accent; color only where it means something */
+  --accent: #fafafa;
+  --accent-fg: #0a0a0b; /* text/icons on accent fills */
+  /* soft washes — keep quiet; lists use raised surfaces instead */
+  --accent-soft: rgba(255, 255, 255, 0.08);
+  --hover-overlay: rgba(255, 255, 255, 0.045);
+
+  /* syntax highlighting (code viewers / transcript fences) */
+  --hljs-keyword: #c4b5fd;
+  --hljs-string: #86efac;
+  --hljs-number: #fcd34d;
+  --hljs-fn: #7dd3fc;
+  --hljs-meta: #94a3b8;
+  /* provider chips — matched weight (soft midtones), hue-spaced;
+     kept clear of status green/red/amber (#4ade80 / #f16a6a / #f0c14d) */
+  --claude: #c4845e;
+  --opencode: #3aaca0;
+  --cursor: #7d92dc;
+  --antigravity: #c9a84a;
+  --codex: #5faf82;
+  --copilot: #d489a8;
+  --grok: #9b87c9;
+  --threadle: #8a91a8;
+  --context: #cfa93c;
+  --lane-session: #5f9fe8;
+
+  /* outbound wire colors by source node type */
+  --wire-prompt: #a78bfa;
+  --wire-delay: #67e8f9;
+  --wire-data: #2dd4bf;
+  --wire-prompt-convert: #e8b93e;
+  --wire-output: #4ade80;
+  --wire-approval: #e8b93e;
+  --wire-live-handoff: #5f9fe8;
+  --wire-wait-idle: #7dd3fc;
+  --wire-iterator: #38bdf8;
+  --wire-knot: #d4d4d8;
+  --wire-tripwire: #fb923c;
+  --wire-judge: #a78bfa;
+  --wire-until: #67e8f9;
+  --wire-skill: #c4b5fd;
+  --wire-rules: #94a3b8;
+  --wire-context: #cfa93c;
+  --wire-session: #5f9fe8;
+  --wire-subagent-run: #7dd3fc;
+  --wire-agent-def: #818cf8;
+  --wire-custom: #f472b6;
+  --wire-mcp: #22d3ee;
+  --wire-group: #55565c;
+
+  /* status */
+  --status-idle: #5b5d64;
+  /* live ≈ running hue; running/waiting add pulse */
+  --status-live: #4ade80;
+  --status-running: #4ade80;
+  --status-waiting: #f0c14d;
+  --status-error: #f16a6a;
+  --status-success: #4ade80;
+
+  --radius: 6px;
+  --radius-sm: 4px;
+  --shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
+  --shadow-strong: 0 8px 30px rgba(0, 0, 0, 0.65);
+
+  --font: "Instrument Sans", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* type scale — the ONLY font sizes in the app; never hardcode px sizes.
+     Floor is 11px: 10px fails on many monitors even at high DPI. */
+  --fs-2xs: 11px; /* micro labels, uppercase tags, chip metadata */
+  --fs-xs: 12px; /* dense mono: kv grids, chips, table cells */
+  --fs-sm: 13px; /* secondary text, buttons, inputs */
+  --fs-md: 14px; /* body, nav items, list rows */
+  --fs-lg: 15px; /* emphasized rows, panel headings */
+  --fs-xl: 16px; /* panel titles, modal titles */
+  --fs-2xl: 18px; /* view headers */
+  --fs-title: 24px; /* page titles */
+
+  /* editor topbar + palette search share this so their bottom borders align */
+  --chrome-bar-h: 56px;
+}
+
+/* light — cool zinc surfaces; same accent semantics as dark */
+html[data-theme="light"] {
+  color-scheme: light;
+
+  --canvas-bg: #f4f4f5;
+  --panel-bg: #ffffff;
+  --panel-bg-raised: #f4f4f5;
+  --node-bg: #fafafa;
+  --node-bg-hover: #f0f0f2;
+  --input-bg: #ffffff;
+
+  --border: #e4e4e7;
+  --border-strong: #d4d4d8;
+  --edge: #a1a1aa;
+  --grid-dot: #d4d4d8;
+  --grid-line: #ececef;
+  --grid-line-major: #e4e4e7;
+
+  --text: #18181b;
+  --text-dim: #3f3f46;
+  --text-faint: #71717a;
+
+  --accent: #18181b;
+  --accent-fg: #fafafa;
+  --accent-soft: rgba(24, 24, 27, 0.08);
+  --hover-overlay: rgba(24, 24, 27, 0.06);
+
+  --hljs-keyword: #6d28d9;
+  --hljs-string: #15803d;
+  --hljs-number: #a16207;
+  --hljs-fn: #0369a1;
+  --hljs-meta: #64748b;
+
+  --shadow: 0 1px 3px rgba(24, 24, 27, 0.08);
+  --shadow-strong: 0 8px 28px rgba(24, 24, 27, 0.12);
+
+  /* status: slightly deeper for contrast on white */
+  --status-idle: #a1a1aa;
+  --status-live: #16a34a;
+  --status-running: #16a34a;
+  --status-waiting: #ca8a04;
+  --status-error: #dc2626;
+  --status-success: #16a34a;
+}
+
+/* OS “more contrast” — lift secondary text further (after theme blocks so it wins) */
+@media (prefers-contrast: more) {
+  :root,
+  html[data-theme="dark"] {
+    --text-dim: #c8c9ce;
+    --text-faint: #9a9b9f;
+  }
+  html[data-theme="light"] {
+    --text-dim: #27272a;
+    --text-faint: #52525b;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* uppercase technical micro-label (section headers, meta rows) */
+.micro-label {
+  font-family: var(--mono);
+  font-size: var(--fs-2xs);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font);
+  font-size: var(--fs-lg);
+  color: var(--text);
+  background: var(--canvas-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--accent-soft);
+}
+
+/* scrollbars */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* shared form controls */
+.threadle-input {
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 7px 10px;
+  font-size: var(--fs-md);
+  font-family: var(--font);
+  outline: none;
+  width: 100%;
+}
+.threadle-input:focus {
+  border-color: var(--accent);
+}
+
+.threadle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--panel-bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 7px 14px;
+  font-size: var(--fs-md);
+  font-weight: 500;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.threadle-btn .btn-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1em;
+  height: 1em;
+  font-family: var(--mono);
+  font-size: 0.92em;
+  font-weight: 500;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.threadle-btn:hover:not(:disabled) {
+  background: var(--node-bg-hover);
+  border-color: var(--border-strong);
+}
+.threadle-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.threadle-btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+.threadle-btn.primary:hover:not(:disabled) {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--canvas-bg);
+}
+.threadle-btn.danger:hover:not(:disabled) {
+  border-color: var(--status-error);
+  color: var(--status-error);
+}
+
+.threadle-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: var(--fs-xs);
+  background: var(--panel-bg-raised);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--status-idle);
+  flex-shrink: 0;
+}
+.status-dot.live {
+  background: var(--status-live);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+.status-dot.running {
+  background: var(--status-running);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+.status-dot.waiting {
+  background: var(--status-waiting);
+  animation: pulse 1.1s ease-in-out infinite;
+}
+.status-dot.error {
+  background: var(--status-error);
+}
+.status-dot.success {
+  background: var(--status-success);
+}
+
+/* Live session process state — detail header only */
+.session-live-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--panel-bg-raised);
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.session-live-pill.waiting {
+  border-color: var(--status-waiting);
+  color: var(--status-waiting);
+  background: color-mix(in srgb, var(--status-waiting) 12%, transparent);
+}
+.session-live-pill.running {
+  border-color: var(--status-running);
+  color: var(--status-running);
+  background: color-mix(in srgb, var(--status-running) 10%, transparent);
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes dashdraw {
+  from {
+    stroke-dashoffset: 12;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* ---- canvas wires: stroke by source node type ---- */
+.vue-flow__edge.src-prompt .vue-flow__edge-path {
+  stroke: var(--wire-prompt);
+}
+.vue-flow__edge.src-delay .vue-flow__edge-path {
+  stroke: var(--wire-delay);
+}
+.vue-flow__edge.src-data .vue-flow__edge-path {
+  stroke: var(--wire-data);
+}
+.vue-flow__edge.src-prompt-convert .vue-flow__edge-path {
+  stroke: var(--wire-prompt-convert);
+}
+.vue-flow__edge.src-output .vue-flow__edge-path {
+  stroke: var(--wire-output);
+}
+.vue-flow__edge.src-approval .vue-flow__edge-path {
+  stroke: var(--wire-approval);
+}
+.vue-flow__edge.src-live-handoff .vue-flow__edge-path {
+  stroke: var(--wire-live-handoff);
+}
+.vue-flow__edge.src-wait-idle .vue-flow__edge-path {
+  stroke: var(--wire-wait-idle);
+}
+.vue-flow__edge.src-iterator .vue-flow__edge-path {
+  stroke: var(--wire-iterator);
+}
+.vue-flow__edge.src-knot .vue-flow__edge-path {
+  stroke: var(--wire-knot);
+}
+.vue-flow__edge.src-tripwire .vue-flow__edge-path {
+  stroke: var(--wire-tripwire);
+}
+.vue-flow__edge.src-judge .vue-flow__edge-path {
+  stroke: var(--wire-judge);
+}
+.vue-flow__edge.src-until .vue-flow__edge-path {
+  stroke: var(--wire-until);
+}
+.vue-flow__edge.src-skill .vue-flow__edge-path {
+  stroke: var(--wire-skill);
+}
+.vue-flow__edge.src-rules .vue-flow__edge-path {
+  stroke: var(--wire-rules);
+}
+.vue-flow__edge.src-context .vue-flow__edge-path {
+  stroke: var(--wire-context);
+}
+.vue-flow__edge.src-session .vue-flow__edge-path {
+  stroke: var(--wire-session);
+}
+.vue-flow__edge.src-subagent-run .vue-flow__edge-path {
+  stroke: var(--wire-subagent-run);
+}
+.vue-flow__edge.src-agent-def .vue-flow__edge-path {
+  stroke: var(--wire-agent-def);
+}
+/* agent outbound: override with the service color */
+.vue-flow__edge.prov-claude-code .vue-flow__edge-path {
+  stroke: var(--claude);
+}
+.vue-flow__edge.prov-opencode .vue-flow__edge-path {
+  stroke: var(--opencode);
+}
+.vue-flow__edge.prov-cursor .vue-flow__edge-path {
+  stroke: var(--cursor);
+}
+.vue-flow__edge.prov-antigravity .vue-flow__edge-path {
+  stroke: var(--antigravity);
+}
+.vue-flow__edge.prov-codex .vue-flow__edge-path {
+  stroke: var(--codex);
+}
+.vue-flow__edge.prov-copilot .vue-flow__edge-path {
+  stroke: var(--copilot);
+}
+.vue-flow__edge.prov-grok .vue-flow__edge-path {
+  stroke: var(--grok);
+}
+/* agent out:err — after provider color so the fuse arm stays red */
+.vue-flow__edge.edge-err .vue-flow__edge-path {
+  stroke: var(--status-error);
+}
+.vue-flow__edge.src-custom .vue-flow__edge-path {
+  stroke: var(--wire-custom);
+}
+.vue-flow__edge.src-mcp-tool .vue-flow__edge-path {
+  stroke: var(--wire-mcp);
+}
+.vue-flow__edge.src-group .vue-flow__edge-path {
+  stroke: var(--wire-group);
+}
+/* marching dashes while the edge's target node is running */
+.vue-flow__edge.edge-active .vue-flow__edge-path {
+  stroke-dasharray: 5 5;
+  animation: dashflow 0.5s linear infinite;
+}
+
+@keyframes dashflow {
+  to {
+    stroke-dashoffset: -10;
+  }
+}
+
+/* handle tints match outbound wire colors */
+.threadle-handle.lane-session {
+  border-color: var(--lane-session) !important;
+}
+.threadle-handle.lane-context {
+  border-color: var(--context) !important;
+}
+.threadle-handle.wire-prompt {
+  border-color: var(--wire-prompt) !important;
+}
+.threadle-handle.wire-delay {
+  border-color: var(--wire-delay) !important;
+}
+.threadle-handle.wire-data {
+  border-color: var(--wire-data) !important;
+}
+.threadle-handle.wire-prompt-convert {
+  border-color: var(--wire-prompt-convert) !important;
+}
+.threadle-handle.wire-output {
+  border-color: var(--wire-output) !important;
+}
+.threadle-handle.wire-approval {
+  border-color: var(--wire-approval) !important;
+}
+.threadle-handle.wire-live-handoff {
+  border-color: var(--wire-live-handoff) !important;
+}
+.threadle-handle.wire-wait-idle {
+  border-color: var(--wire-wait-idle) !important;
+}
+.threadle-handle.wire-iterator {
+  border-color: var(--wire-iterator) !important;
+}
+.threadle-handle.wire-knot {
+  border-color: var(--wire-knot) !important;
+}
+.threadle-handle.wire-tripwire {
+  border-color: var(--wire-tripwire) !important;
+}
+.threadle-handle.wire-judge {
+  border-color: var(--wire-judge) !important;
+}
+.threadle-handle.wire-until {
+  border-color: var(--wire-until) !important;
+}
+.threadle-handle.wire-skill {
+  border-color: var(--wire-skill) !important;
+}
+.threadle-handle.wire-rules {
+  border-color: var(--wire-rules) !important;
+}
+.threadle-handle.wire-custom {
+  border-color: var(--wire-custom) !important;
+}
+.threadle-handle.wire-mcp {
+  border-color: var(--wire-mcp) !important;
+}
+.threadle-handle.wire-session {
+  border-color: var(--wire-session) !important;
+}
+.threadle-handle.wire-agent-def {
+  border-color: var(--wire-agent-def) !important;
+}
+.threadle-handle {
+  cursor: help;
+}
+
+/* ---- filter chips (shared: dashboard views, lineage, …) ---- */
+.chip-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.filter-chip {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+  font-family: var(--mono);
+  height: 30px;
+  padding: 0 12px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.filter-chip:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+.filter-chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 600;
+}
+.filter-chip.active:hover {
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+/* Provider / service filters — tint by that tool’s color */
+.filter-chip[data-provider] {
+  color: color-mix(in srgb, var(--chip-prov) 80%, var(--text-dim));
+  border-color: color-mix(in srgb, var(--chip-prov) 42%, var(--border));
+}
+.filter-chip[data-provider]:hover {
+  color: var(--chip-prov);
+  border-color: color-mix(in srgb, var(--chip-prov) 72%, var(--border));
+}
+.filter-chip[data-provider].active {
+  background: var(--chip-prov);
+  border-color: var(--chip-prov);
+  color: #0a0a0b;
+  font-weight: 600;
+}
+.filter-chip[data-provider].active:hover {
+  background: var(--chip-prov);
+  border-color: var(--chip-prov);
+  color: #0a0a0b;
+}
+.filter-chip[data-provider="claude-code"] { --chip-prov: var(--claude); }
+.filter-chip[data-provider="opencode"] { --chip-prov: var(--opencode); }
+.filter-chip[data-provider="cursor"] { --chip-prov: var(--cursor); }
+.filter-chip[data-provider="antigravity"] { --chip-prov: var(--antigravity); }
+.filter-chip[data-provider="codex"] { --chip-prov: var(--codex); }
+.filter-chip[data-provider="copilot"] { --chip-prov: var(--copilot); }
+.filter-chip[data-provider="grok"] { --chip-prov: var(--grok); }
+.filter-chip[data-provider="threadle"] { --chip-prov: var(--threadle); }
+.filter-chip:disabled {
+  opacity: 0.4;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* Shared multi-toggle filter bar (blueprint SHOW, map layers) */
+.type-filterbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.type-filter-label {
+  cursor: default;
+  user-select: none;
+}
+.type-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-faint);
+  font-family: var(--mono);
+  font-size: var(--fs-2xs);
+  height: 26px;
+  padding: 0 11px;
+  cursor: pointer;
+  transition: color 0.1s, border-color 0.1s, background 0.1s;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.type-chip em {
+  font-style: normal;
+  font-size: var(--fs-2xs);
+  opacity: 0.7;
+}
+.type-chip:hover:not(:disabled) {
+  color: var(--text-dim);
+  border-color: var(--border-strong);
+}
+.type-chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 600;
+}
+.type-chip.active:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+.type-chip:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Right-click multi-filter menu (blueprint SHOW, map layers, …) */
+.filter-chip-menu {
+  position: fixed;
+  z-index: 60;
+  min-width: 180px;
+  background: var(--panel-bg);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-strong);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.filter-chip-menu-title {
+  font-size: var(--fs-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+  padding: 5px 9px 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 3px;
+}
+.filter-chip-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 9px;
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  color: var(--text);
+  cursor: pointer;
+}
+.filter-chip-menu-item:hover:not(:disabled) {
+  background: var(--accent-soft);
+}
+.filter-chip-menu-item:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.filter-chip-menu-sep {
+  height: 1px;
+  background: var(--border);
+  margin: 3px 4px;
+}
+
+/* ---- mute / bypass / validation states (node class set by the editor) ---- */
+.vue-flow__node.node-muted {
+  opacity: 0.35;
+  filter: grayscale(0.9);
+}
+.vue-flow__node.node-bypassed {
+  opacity: 0.75;
+}
+.vue-flow__node.node-bypassed > * {
+  outline: 1.5px dashed var(--context);
+  outline-offset: 2px;
+  border-radius: var(--radius);
+}
+.vue-flow__node.node-invalid > * {
+  outline: 1.5px solid var(--status-error);
+  outline-offset: 2px;
+  border-radius: var(--radius);
+  animation: invalid-pulse 0.9s ease-in-out 3;
+}
+@keyframes invalid-pulse {
+  50% { outline-color: transparent; }
+}
+
+/* ---- run status: active / failed — same outline language as bypass/invalid ---- */
+.vue-flow__node.node-run-running > * {
+  outline: 1.5px solid rgba(74, 222, 128, 0.55);
+  outline-offset: 2px;
+  border-radius: var(--radius);
+  animation: node-exec-pulse 2.2s ease-in-out infinite;
+  z-index: 5;
+}
+
+@keyframes node-exec-pulse {
+  50% {
+    outline-color: rgba(74, 222, 128, 0.22);
+  }
+}
+
+.vue-flow__node.node-run-error > * {
+  outline: 1.5px solid rgba(241, 106, 106, 0.85);
+  outline-offset: 2px;
+  border-radius: var(--radius);
+  z-index: 5;
+}
+
+/* Inner card run-* paint (queued / done / error). No extra ring on running —
+   the shell outline above is the sole active indicator. */
+.vue-flow__node .run-queued {
+  border-style: dashed;
+  border-color: var(--status-waiting);
+}
+.vue-flow__node .run-running {
+  /* status comes from .node-run-running shell — keep card chrome quiet */
+  border-color: var(--border-strong);
+}
+.vue-flow__node .run-success {
+  border-color: var(--border-strong);
+}
+.vue-flow__node .run-error {
+  border-color: var(--status-error);
+}
+
+/* Our node type names ("output" etc.) collide with Vue Flow's built-in node
+   types, whose default theme paints a white card and a hot-pink selected
+   border on `.vue-flow__node-output`. Neutralize the wrapper — all visuals
+   live inside our custom node components. */
+.vue-flow__node-output,
+.vue-flow__node-input,
+.vue-flow__node-default {
+  --vf-node-color: transparent;
+  --vf-box-shadow: none;
+  --vf-handle: var(--border-strong);
+  padding: 0;
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
+  width: auto;
+  color: inherit;
+  font-size: inherit;
+  text-align: initial;
+  box-shadow: none;
+  overflow: visible;
+}
+.vue-flow__node-output.selected,
+.vue-flow__node-output:focus,
+.vue-flow__node-output:focus-visible,
+.vue-flow__node-output.selected:hover,
+.vue-flow__node-input.selected,
+.vue-flow__node-input:focus,
+.vue-flow__node-input:focus-visible,
+.vue-flow__node-input.selected:hover,
+.vue-flow__node-default.selected,
+.vue-flow__node-default:focus,
+.vue-flow__node-default:focus-visible,
+.vue-flow__node-default.selected:hover {
+  border: none;
+  box-shadow: none;
+  outline: none;
+}
+
+/* attachment wires: parent session → its subagent runs */
+.vue-flow__edge.edge-child .vue-flow__edge-path {
+  stroke: var(--border-strong);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 4;
+}
+
+/* small action button (open/download/convert) — raised so it reads as clickable,
+   unlike the flat informational chips */
+.vsc-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--panel-bg-raised);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  height: 24px;
+  padding: 0 10px;
+  text-decoration: none;
+  flex-shrink: 0;
+  box-shadow: var(--shadow);
+  transition: color 0.1s, border-color 0.1s, background 0.1s;
+}
+.vsc-btn:hover {
+  color: var(--text);
+  background: var(--node-bg-hover);
+  border-color: var(--text-faint);
+}
+.vsc-btn:active {
+  transform: translateY(0.5px);
+}
+
+
+/* native selects, themed: dark, hairline, custom chevron */
+select.threadle-input,
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--fs-sm);
+  padding: 4px 26px 4px 10px;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%2355565c'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
+  outline: none;
+  cursor: pointer;
+}
+html[data-theme="light"] select {
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23a1a1aa'/%3E%3C/svg%3E");
+}
+select:focus {
+  border-color: var(--accent);
+}
+select option {
+  background: var(--panel-bg-raised);
+  color: var(--text);
+}
+
+/* diff churn indicators */
+.diffstat {
+  display: inline-flex;
+  gap: 5px;
+  font-family: var(--mono);
+  font-size: var(--fs-2xs);
+  flex-shrink: 0;
+}
+.diffstat .add {
+  color: var(--status-running);
+}
+.diffstat .del {
+  color: var(--status-error);
+}
+
+/* path cell: LTR chip + RTL-ellipsized path, never nested */
+.pathcell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  text-align: left !important;
+}
+.pathcell .file-path {
+  flex: 1;
+  min-width: 0;
+}
+
+/* canvas chrome (zoom controls, minimap) — shared by editor and blueprint */
+.vue-flow__controls {
+  display: flex;
+  flex-direction: column;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  margin: 14px;
+}
+.vue-flow__controls-button {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  background: var(--panel-bg);
+  border: none;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  padding: 0;
+}
+.vue-flow__controls-button:last-child {
+  border-bottom: none;
+}
+.vue-flow__controls-button svg {
+  fill: var(--text-dim);
+  width: 12px;
+  height: 12px;
+  max-width: 12px;
+  max-height: 12px;
+}
+.vue-flow__controls-button:hover {
+  background: var(--panel-bg-raised);
+}
+.vue-flow__controls-button:hover svg {
+  fill: var(--text);
+}
+.vue-flow__minimap {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin: 14px;
+  cursor: grab;
+  transform: scale(0.52);
+  transform-origin: bottom right;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+  opacity: 0.82;
+  z-index: 4;
+}
+.vue-flow__minimap:hover {
+  transform: scale(1);
+  opacity: 1;
+  box-shadow: var(--shadow-strong);
+  z-index: 6;
+}
+.vue-flow__minimap:active {
+  cursor: grabbing;
+}
+
+/* drag grip on the left edge of right-docked panels */
+.resize-grip {
+  position: absolute;
+  left: -3px;
+  top: 0;
+  bottom: 0;
+  width: 7px;
+  cursor: col-resize;
+  z-index: 5;
+}
+.resize-grip:hover,
+.resize-grip:active {
+  background: linear-gradient(
+    to right,
+    transparent 2px,
+    var(--border-strong) 3px,
+    var(--border-strong) 4px,
+    transparent 5px
+  );
+}
+
+/* table column resize handles (v-col-resize) */
+.col-resizer {
+  position: absolute;
+  top: 0;
+  right: -6px;
+  width: 10px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 2;
+}
+.col-resizer::after {
+  content: "";
+  position: absolute;
+  top: 20%;
+  bottom: 20%;
+  left: 4px;
+  width: 1px;
+  background: transparent;
+  transition: background 0.1s;
+}
+.stat-cols:hover .col-resizer::after,
+.wf-cols:hover .col-resizer::after,
+.col-resizer:hover::after {
+  background: var(--border-strong);
+}
+body.col-resizing {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+body.col-resizing * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+
+/* unified row / card hover + selection (lists with a detail aside)
+   hover = translucent wash; active = raised surface — no left stripe */
+.stat-row:hover:not(.picked),
+.inst-row:hover:not(.picked),
+.run-row:hover:not(.picked),
+.sess-row:hover:not(.picked),
+.lib-row:hover:not(.picked),
+.search-hit:hover:not(.picked) {
+  background: var(--hover-overlay);
+}
+.stat-row.picked,
+.inst-row.picked,
+.run-row.picked,
+.sess-row.picked,
+.lib-row.picked {
+  background: var(--panel-bg-raised);
+  box-shadow: none;
+}
+.search-hit.picked,
+.agent-card.picked,
+.skill-card.picked {
+  background: var(--panel-bg-raised);
+  border-color: var(--border-strong);
+}

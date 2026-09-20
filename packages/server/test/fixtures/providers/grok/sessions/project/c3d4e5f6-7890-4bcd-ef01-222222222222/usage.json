@@ -1,0 +1,9 @@
+{
+  "sessionId": "c3d4e5f6-7890-4bcd-ef01-222222222222",
+  "session": {
+    "inputTokens": 50,
+    "outputTokens": 10,
+    "costUsdTicks": 500000,
+    "primaryModelId": "grok-4.6-build"
+  }
+}

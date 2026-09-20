@@ -1,0 +1,13 @@
+{
+  "id": "head-tail",
+  "label": "Head · tail",
+  "glyph": "⑂",
+  "description": "splits input lines into the first N (head) and the rest (tail)",
+  "entry": "node.ts",
+  "inputs": [{ "name": "text" }],
+  "outputs": [{ "name": "head" }, { "name": "tail" }],
+  "params": [
+    { "name": "n", "type": "int", "label": "head lines", "default": 1, "min": 1 },
+    { "name": "keep-blank", "type": "bool", "label": "keep blanks", "default": false }
+  ]
+}

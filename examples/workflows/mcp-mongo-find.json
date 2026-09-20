@@ -1,0 +1,83 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Example · MCP Mongo find",
+  "kind": "workflow",
+  "nodes": [
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": { "x": 40, "y": 20 },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "Optional: needs local MongoDB + mongodb-mcp-server. Copy examples/mcp/servers.json.mongodb.example → ~/.config/threadle/mcp/servers.json (set MDB_MCP_CONNECTION_STRING). Data JSON fills `filter` via argPort; database/collection stay in the inspector. Use ⌀ on the MCP node to probe.\n\nNote: mongodb-mcp-server wraps documents in <untrusted-user-data-…> injection-guard tags — that is expected. Run-log lines are truncated to ~500 chars.",
+        "size": { "width": 480, "height": 140 }
+      }
+    },
+    {
+      "id": "n-data",
+      "type": "data",
+      "position": { "x": 40, "y": 220 },
+      "status": "idle",
+      "data": {
+        "type": "data",
+        "label": "filter",
+        "valueType": "json",
+        "value": "{}"
+      }
+    },
+    {
+      "id": "n-mcp",
+      "type": "mcp-tool",
+      "position": { "x": 340, "y": 220 },
+      "status": "idle",
+      "data": {
+        "type": "mcp-tool",
+        "label": "find userprofiles",
+        "ref": { "server": "mongodb" },
+        "tool": "find",
+        "argPort": "filter",
+        "params": {
+          "database": "test",
+          "collection": "userprofiles"
+        },
+        "snapshot": {
+          "serverLabel": "mongodb",
+          "toolDescription": "Run a find query against a MongoDB collection (optional demo)",
+          "params": [
+            {
+              "name": "database",
+              "type": "text",
+              "description": "Database name"
+            },
+            {
+              "name": "collection",
+              "type": "text",
+              "description": "Collection name"
+            },
+            {
+              "name": "filter",
+              "type": "json",
+              "description": "MongoDB filter document (from inbound wire)"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "n-out",
+      "type": "output",
+      "position": { "x": 660, "y": 220 },
+      "status": "idle",
+      "data": {
+        "type": "output",
+        "renderMode": "text"
+      }
+    }
+  ],
+  "edges": [
+    { "id": "e1", "source": "n-data", "target": "n-mcp" },
+    { "id": "e2", "source": "n-mcp", "target": "n-out" }
+  ],
+  "viewport": { "x": 0, "y": 0, "zoom": 0.9 }
+}

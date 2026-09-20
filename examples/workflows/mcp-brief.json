@@ -1,0 +1,51 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Example · MCP brief",
+  "kind": "workflow",
+  "nodes": [
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": { "x": 40, "y": 40 },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "Designed for threadle mcp: save this graph, connect the host to `threadle mcp`, then call tool wf_<id> with param `topic`. No agent — free to run. See docs/mcp.md and examples/mcp/.",
+        "size": { "width": 340, "height": 110 }
+      }
+    },
+    {
+      "id": "n-prompt",
+      "type": "prompt",
+      "position": { "x": 40, "y": 200 },
+      "status": "idle",
+      "data": {
+        "type": "prompt",
+        "label": "brief",
+        "text": "## Brief\n\nTopic: **{{param:topic}}**\n\n- One sentence summary of the topic.\n- One concrete next step.\n- One risk to watch."
+      }
+    },
+    {
+      "id": "n-out",
+      "type": "output",
+      "position": { "x": 420, "y": 200 },
+      "status": "idle",
+      "data": {
+        "type": "output",
+        "renderMode": "markdown"
+      }
+    }
+  ],
+  "edges": [
+    { "id": "e1", "source": "n-prompt", "target": "n-out" }
+  ],
+  "viewport": { "x": 0, "y": 0, "zoom": 0.9 },
+  "params": [
+    {
+      "name": "topic",
+      "type": "text",
+      "default": "local-first MCP workflow tools",
+      "description": "Subject for the brief (exposed as the MCP tool argument)"
+    }
+  ]
+}

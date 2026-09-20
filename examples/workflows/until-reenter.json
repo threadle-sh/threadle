@@ -1,0 +1,115 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Example · Until re-entry",
+  "kind": "workflow",
+  "nodes": [
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": {
+        "x": 40,
+        "y": 20
+      },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "Intermediate: ↻ Until re-enters the convert up to max times (default 3), then emits on exhausted. Reenter edges are ignored by topo — not a free cycle. Pair with a spend ceiling on agent graphs.",
+        "size": {
+          "width": 400,
+          "height": 110
+        }
+      }
+    },
+    {
+      "id": "n-prompt",
+      "type": "prompt",
+      "position": {
+        "x": 40,
+        "y": 200
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt",
+        "label": "seed",
+        "text": "n"
+      }
+    },
+    {
+      "id": "n-work",
+      "type": "prompt-convert",
+      "position": {
+        "x": 300,
+        "y": 200
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt-convert",
+        "label": "append tick",
+        "template": "{{input}}."
+      }
+    },
+    {
+      "id": "n-until",
+      "type": "until",
+      "position": {
+        "x": 560,
+        "y": 180
+      },
+      "status": "idle",
+      "data": {
+        "type": "until",
+        "label": "retry body",
+        "maxIterations": 3
+      }
+    },
+    {
+      "id": "n-out",
+      "type": "output",
+      "position": {
+        "x": 820,
+        "y": 200
+      },
+      "status": "idle",
+      "data": {
+        "type": "output",
+        "label": "exhausted",
+        "renderMode": "text"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "n-prompt",
+      "target": "n-work"
+    },
+    {
+      "id": "e2",
+      "source": "n-work",
+      "target": "n-until"
+    },
+    {
+      "id": "e3",
+      "source": "n-until",
+      "target": "n-work",
+      "sourceHandle": "out:reenter",
+      "data": {
+        "role": "reenter"
+      }
+    },
+    {
+      "id": "e4",
+      "source": "n-until",
+      "target": "n-out",
+      "sourceHandle": "out:exhausted"
+    }
+  ],
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 0.9
+  },
+  "settings": {
+    "spendTripwireUsd": 1
+  }
+}

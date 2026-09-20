@@ -1,0 +1,72 @@
+{
+  "name": "threadle",
+  "version": "1.0.0",
+  "description": "Local-first node-graph patchbay for Claude Code, opencode, Cursor Agent, Antigravity, Codex, Copilot, and Grok Build sessions.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Fabian Bienk (https://github.com/zFarbp)",
+  "homepage": "https://github.com/threadle-sh/threadle#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/threadle-sh/threadle.git",
+    "directory": "packages/server"
+  },
+  "bugs": {
+    "url": "https://github.com/threadle-sh/threadle/issues"
+  },
+  "keywords": [
+    "threadle",
+    "claude-code",
+    "opencode",
+    "cursor",
+    "codex",
+    "copilot",
+    "grok",
+    "agent",
+    "workflow",
+    "patchbay"
+  ],
+  "bin": {
+    "threadle": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "web-dist",
+    "data"
+  ],
+  "scripts": {
+    "dev": "tsx watch src/cli.ts --no-open",
+    "build": "tsup",
+    "test": "vitest run",
+    "check:upstream": "tsx src/providers/freshness/cli-upstream.ts",
+    "update:pricing": "node ../../scripts/update-models-pricing.mjs",
+    "prepublishOnly": "npm run build --prefix ../web && npm run build",
+    "pack:smoke": "npm run prepublishOnly && npm pack --dry-run"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.13.7",
+    "@modelcontextprotocol/client": "^2.0.0",
+    "@modelcontextprotocol/server": "^2.0.0",
+    "chokidar": "^5.0.0",
+    "execa": "^9.5.2",
+    "gray-matter": "^4.0.3",
+    "hono": "^4.13.8",
+    "open": "^10.1.0",
+    "smol-toml": "^1.8.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@threadle/shared": "*",
+    "@types/node": "^22.10.2",
+    "tsup": "^8.3.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^4.1.11"
+  },
+  "engines": {
+    "node": ">=22.12"
+  }
+}

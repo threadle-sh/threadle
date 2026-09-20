@@ -1,0 +1,81 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Example \u00b7 Approval gate",
+  "kind": "workflow",
+  "nodes": [
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": {
+        "x": 40,
+        "y": 40
+      },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "Beginner: the approval node pauses the run. Edit the text in the dock (splice), then approve \u2014 or reject to stop.",
+        "size": {
+          "width": 300,
+          "height": 90
+        }
+      }
+    },
+    {
+      "id": "n-prompt",
+      "type": "prompt",
+      "position": {
+        "x": 40,
+        "y": 180
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt",
+        "label": "draft",
+        "text": "Ship notes:\n- fix the flaky test\n- bump the changelog"
+      }
+    },
+    {
+      "id": "n-gate",
+      "type": "approval",
+      "position": {
+        "x": 340,
+        "y": 180
+      },
+      "status": "idle",
+      "data": {
+        "type": "approval",
+        "label": "splice & approve"
+      }
+    },
+    {
+      "id": "n-out",
+      "type": "output",
+      "position": {
+        "x": 640,
+        "y": 180
+      },
+      "status": "idle",
+      "data": {
+        "type": "output",
+        "renderMode": "markdown"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "n-prompt",
+      "target": "n-gate"
+    },
+    {
+      "id": "e2",
+      "source": "n-gate",
+      "target": "n-out"
+    }
+  ],
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 0.9
+  }
+}

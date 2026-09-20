@@ -1,0 +1,4 @@
+{"role":"user","message":{"content":[{"type":"text","text":"<user_query>\nhello cursor fixture\n</user_query>"}]}}
+{"role":"assistant","message":{"content":[{"type":"text","text":"Working."},{"type":"tool_use","name":"Read","input":{"path":"/tmp/threadle-cursor-fixture/src/a.ts"}}]}}
+{"type":"turn_ended","status":"success"}
+{"type":"unknown_future_control","payload":true}

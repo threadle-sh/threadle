@@ -1,0 +1,81 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Example · Detached delay",
+  "kind": "workflow",
+  "nodes": [
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": {
+        "x": 40,
+        "y": 20
+      },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "Intermediate: no agents — a ◷ Delay waits ~60s. Run with ▶ or ≫ (or `threadle run detached-delay --detach`). While it runs, check the terminal:\n\n  threadle jobs\n  threadle attach <jobId>\n\nClose the browser; reopen the workflow later — the output still appears.",
+        "size": {
+          "width": 420,
+          "height": 140
+        }
+      }
+    },
+    {
+      "id": "n-prompt",
+      "type": "prompt",
+      "position": {
+        "x": 40,
+        "y": 220
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt",
+        "label": "kickoff",
+        "text": "Detached delay demo — started. Check threadle jobs / logs in another terminal."
+      }
+    },
+    {
+      "id": "n-delay",
+      "type": "delay",
+      "position": {
+        "x": 360,
+        "y": 220
+      },
+      "status": "idle",
+      "data": {
+        "type": "delay",
+        "ms": 60000
+      }
+    },
+    {
+      "id": "n-out",
+      "type": "output",
+      "position": {
+        "x": 620,
+        "y": 220
+      },
+      "status": "idle",
+      "data": {
+        "type": "output",
+        "renderMode": "text"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "n-prompt",
+      "target": "n-delay"
+    },
+    {
+      "id": "e2",
+      "source": "n-delay",
+      "target": "n-out"
+    }
+  ],
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 0.9
+  }
+}

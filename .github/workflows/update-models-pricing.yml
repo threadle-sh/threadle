@@ -1,0 +1,46 @@
+name: Update models pricing
+
+# Fetch models.dev list prices, validate shape/costs, open a PR with the
+# refreshed packages/server/data/models-pricing.json snapshot. Runtime never
+# phones home — see packages/server/src/routes/pricing.ts.
+
+on:
+  schedule:
+    - cron: "20 7 * * 1" # Mondays 07:20 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "26"
+
+      - name: Fetch + validate models.dev snapshot
+        run: node scripts/update-models-pricing.mjs
+
+      - name: Open PR if changed
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "chore: refresh bundled models.dev prices"
+          title: "chore: refresh bundled models.dev prices"
+          body: |
+            Automated refresh of `packages/server/data/models-pricing.json` from [models.dev](https://models.dev).
+
+            - Fetched in CI (not at user runtime)
+            - Validated: shape, required `anthropic.models`, finite non-negative costs, size cap
+            - Review the diff, then merge
+
+            Runtime load order remains: opencode cache → bundled snapshot → legacy local cache.
+          branch: chore/models-pricing
+          delete-branch: true
+          add-paths: |
+            packages/server/data/models-pricing.json

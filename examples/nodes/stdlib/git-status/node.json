@@ -1,0 +1,19 @@
+{
+  "id": "git-status",
+  "label": "git status",
+  "glyph": "⌥",
+  "description": "git status --short in dir (absolute path; needs git on PATH)",
+  "command": ["node", "./run.js"],
+  "input": "text",
+  "output": "text",
+  "params": [
+    {
+      "name": "dir",
+      "type": "text",
+      "label": "repo dir",
+      "default": "",
+      "description": "absolute path to a git working tree (required)"
+    }
+  ],
+  "timeoutMs": 30000
+}

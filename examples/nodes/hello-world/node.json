@@ -1,0 +1,9 @@
+{
+  "id": "hello-world",
+  "label": "Hello world",
+  "glyph": "○",
+  "description": "greets the input — or says Hello, world! when empty",
+  "entry": "node.ts",
+  "input": "text",
+  "output": "text"
+}

@@ -1,0 +1,26 @@
+{
+  "id": "test-run",
+  "label": "Test run",
+  "glyph": "▶",
+  "description": "run argv in dir; stdout+stderr with ok/err prefix from exit code",
+  "command": ["node", "./run.js"],
+  "input": "text",
+  "output": "text",
+  "params": [
+    {
+      "name": "argv",
+      "type": "text",
+      "label": "argv",
+      "default": "npm test",
+      "description": "space-separated argv (no shell); e.g. npm test or cargo test"
+    },
+    {
+      "name": "dir",
+      "type": "text",
+      "label": "cwd",
+      "default": "",
+      "description": "absolute working directory (required)"
+    }
+  ],
+  "timeoutMs": 300000
+}

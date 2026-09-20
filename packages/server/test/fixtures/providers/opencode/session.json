@@ -1,0 +1,35 @@
+{
+  "sessionId": "ses_fixture_opencode_001",
+  "directory": "/tmp/threadle-opencode-fixture",
+  "title": "Fixture opencode",
+  "messages": [
+    {
+      "id": "msg_user_1",
+      "data": { "role": "user", "time": { "created": 1726400000000 } },
+      "parts": [
+        { "type": "text", "text": "hello opencode fixture" },
+        { "type": "unknown_future_part", "text": "skip me" }
+      ]
+    },
+    {
+      "id": "msg_asst_1",
+      "data": { "role": "assistant", "time": { "created": 1726400001000 }, "cost": 0.01 },
+      "parts": [
+        { "type": "reasoning", "text": "thinking…" },
+        { "type": "text", "text": "hi from opencode" },
+        {
+          "type": "tool",
+          "tool": "read",
+          "callID": "call_1",
+          "state": { "status": "completed", "input": { "path": "a.ts" }, "output": "ok" }
+        },
+        { "type": "step-start" },
+        {
+          "type": "step-finish",
+          "tokens": { "input": 10, "output": 5, "cache": { "read": 0, "write": 0 } },
+          "cost": 0.01
+        }
+      ]
+    }
+  ]
+}

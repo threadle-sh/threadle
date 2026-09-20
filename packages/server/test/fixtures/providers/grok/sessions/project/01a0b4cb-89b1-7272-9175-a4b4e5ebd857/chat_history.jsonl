@@ -1,0 +1,12 @@
+{"type": "system", "content": "You are Grok 4.6 (fixture). Skip this in transcript."}
+{"type": "user", "content": [{"type": "text", "text": "<user_info>\nOS Version: macos\nWorkspace Path: /tmp/grok-fx\n</user_info>"}]}
+{"type": "user", "content": [{"type": "text", "text": "<user_query>\nhello grok\n</user_query>"}], "prompt_index": 0}
+{"type": "reasoning", "id": "rs_fixture_1", "summary": [{"type": "summary_text", "text": "Simple greeting."}], "status": "completed"}
+{"type": "assistant", "content": "Hello from fixture.", "model_id": "grok-4.6-build", "model_fingerprint": "fp_fixture"}
+{"type": "user", "content": [{"type": "text", "text": "<user_query>\nplan a small greeting change in src/main.ts\n</user_query>"}], "prompt_index": 1}
+{"type": "reasoning", "id": "rs_fixture_2", "summary": [{"type": "summary_text", "text": "Need to read files then write a plan."}], "status": "completed"}
+{"type": "backend_tool_call", "kind": {"tool_type": "web_search", "action": {"type": "search", "query": "fixture"}}, "id": "ws_fixture_1", "status": "completed"}
+{"type": "tool_result", "tool_call_id": "call-fixture-read-1", "content": "1→# README\nfixture project\n"}
+{"type": "assistant", "content": "I drafted a plan. Review plan.md when ready.", "model_id": "grok-4.6-build"}
+{"type": "unknown_future_record", "payload": {"ignore": true}}
+{not-json-will-be:skipped}

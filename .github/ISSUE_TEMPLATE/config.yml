@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Documentation
+    url: https://docs.threadle.sh
+    about: Install, CLI, MCP, custom nodes, and the full tour.
+  - name: Security report
+    url: https://github.com/threadle-sh/threadle/security/policy
+    about: Please report vulnerabilities privately (or email info@threadle.sh), not as a public issue.
+  - name: Contact
+    url: mailto:info@threadle.sh
+    about: General questions, sponsorship, or press.

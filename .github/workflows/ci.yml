@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-and-pack:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "26"
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Audit production deps
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Typecheck shared
+        run: npx tsc -p packages/shared --noEmit
+
+      - name: Typecheck web
+        run: npm run typecheck -w @threadle/web
+
+      - name: Build (web → web-dist + server bundle)
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
+      - name: Pack smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm pack -w threadle
+          TGZ=$(ls threadle-*.tgz | head -1)
+          test -n "$TGZ"
+          SMOKE=$(mktemp -d)
+          cd "$SMOKE"
+          npm install "$GITHUB_WORKSPACE/$TGZ"
+          npx threadle --help | grep -q "threadle"
+          npx threadle templates | grep -q "hello-wire"
+          npx threadle check || true
+          # check may soft-fail without provider storage; critical bits still print
+          npx threadle --help >/dev/null
+          echo "pack smoke ok: $TGZ"
+
+      - name: Portable install smoke
+        shell: bash
+        run: bash scripts/smoke-portable.sh

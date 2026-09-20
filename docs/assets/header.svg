@@ -1,0 +1,68 @@
+<svg viewBox="0 0 880 320" width="880" xmlns="http://www.w3.org/2000/svg" role="img"
+     aria-label="threadle — your AI coding sessions, as wireable nodes">
+  <style>
+    .wp { stroke: #2d2e34; stroke-width: 2; stroke-linecap: round; opacity: 0; animation: fin 0.7s ease forwards; }
+    .sg { stroke-width: 2.4; stroke-linecap: round; animation: draw 0.55s ease forwards; }
+    .t1 { font: 700 30px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #f2f2f3; }
+    .t2 { font: italic 700 30px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #8f9095; }
+    .bd { font: 600 11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #55565c; letter-spacing: 2px; }
+    @keyframes fin  { to { opacity: 1; } }
+    @keyframes draw { to { stroke-dashoffset: 0; } }
+    @media (prefers-reduced-motion: reduce) {
+      .wp { animation: none; opacity: 1; }
+      .sg { animation: none; stroke-dasharray: none !important; stroke-dashoffset: 0 !important; }
+    }
+  </style>
+  <rect width="880" height="320" rx="12" fill="#050506" stroke="#1d1e22"/>
+  <line class="wp" style="animation-delay:0ms" x1="60.0" y1="34" x2="60.0" y2="200"/>
+  <line class="wp" style="animation-delay:40ms" x1="102.2" y1="34" x2="102.2" y2="200"/>
+  <line class="wp" style="animation-delay:80ms" x1="144.4" y1="34" x2="144.4" y2="200"/>
+  <line class="wp" style="animation-delay:120ms" x1="186.7" y1="34" x2="186.7" y2="200"/>
+  <line class="wp" style="animation-delay:160ms" x1="228.9" y1="34" x2="228.9" y2="200"/>
+  <line class="wp" style="animation-delay:200ms" x1="271.1" y1="34" x2="271.1" y2="200"/>
+  <line class="wp" style="animation-delay:240ms" x1="313.3" y1="34" x2="313.3" y2="200"/>
+  <line class="wp" style="animation-delay:280ms" x1="355.6" y1="34" x2="355.6" y2="200"/>
+  <line class="wp" style="animation-delay:320ms" x1="397.8" y1="34" x2="397.8" y2="200"/>
+  <line class="wp" style="animation-delay:360ms" x1="440.0" y1="34" x2="440.0" y2="200"/>
+  <line class="wp" style="animation-delay:400ms" x1="482.2" y1="34" x2="482.2" y2="200"/>
+  <line class="wp" style="animation-delay:440ms" x1="524.4" y1="34" x2="524.4" y2="200"/>
+  <line class="wp" style="animation-delay:480ms" x1="566.7" y1="34" x2="566.7" y2="200"/>
+  <line class="wp" style="animation-delay:520ms" x1="608.9" y1="34" x2="608.9" y2="200"/>
+  <line class="wp" style="animation-delay:560ms" x1="651.1" y1="34" x2="651.1" y2="200"/>
+  <line class="wp" style="animation-delay:600ms" x1="693.3" y1="34" x2="693.3" y2="200"/>
+  <line class="wp" style="animation-delay:640ms" x1="735.6" y1="34" x2="735.6" y2="200"/>
+  <line class="wp" style="animation-delay:680ms" x1="777.8" y1="34" x2="777.8" y2="200"/>
+  <line class="wp" style="animation-delay:720ms" x1="820.0" y1="34" x2="820.0" y2="200"/>
+  <line class="sg" stroke="#c4845e" style="stroke-dasharray:87;stroke-dashoffset:87;animation-delay:900ms" x1="46.0" y1="62" x2="133.0" y2="62"/>
+  <line class="sg" stroke="#c4845e" style="stroke-dasharray:150;stroke-dashoffset:150;animation-delay:985ms" x1="148.0" y1="62" x2="298.0" y2="62"/>
+  <line class="sg" stroke="#c4845e" style="stroke-dasharray:150;stroke-dashoffset:150;animation-delay:1070ms" x1="314.0" y1="62" x2="464.0" y2="62"/>
+  <line class="sg" stroke="#c4845e" style="stroke-dasharray:150;stroke-dashoffset:150;animation-delay:1155ms" x1="479.0" y1="62" x2="629.0" y2="62"/>
+  <line class="sg" stroke="#c4845e" style="stroke-dasharray:189;stroke-dashoffset:189;animation-delay:1240ms" x1="645.0" y1="62" x2="834.0" y2="62"/>
+  <line class="sg" stroke="#3aaca0" style="stroke-dasharray:8;stroke-dashoffset:8;animation-delay:1600ms" x1="46.0" y1="92" x2="54.0" y2="92"/>
+  <line class="sg" stroke="#3aaca0" style="stroke-dasharray:149;stroke-dashoffset:149;animation-delay:1685ms" x1="70.0" y1="92" x2="219.0" y2="92"/>
+  <line class="sg" stroke="#3aaca0" style="stroke-dasharray:150;stroke-dashoffset:150;animation-delay:1770ms" x1="235.0" y1="92" x2="385.0" y2="92"/>
+  <line class="sg" stroke="#3aaca0" style="stroke-dasharray:149;stroke-dashoffset:149;animation-delay:1855ms" x1="401.0" y1="92" x2="550.0" y2="92"/>
+  <line class="sg" stroke="#3aaca0" style="stroke-dasharray:150;stroke-dashoffset:150;animation-delay:1940ms" x1="566.0" y1="92" x2="716.0" y2="92"/>
+  <line class="sg" stroke="#3aaca0" style="stroke-dasharray:102;stroke-dashoffset:102;animation-delay:2025ms" x1="732.0" y1="92" x2="834.0" y2="92"/>
+  <line class="sg" stroke="#7d92dc" style="stroke-dasharray:87;stroke-dashoffset:87;animation-delay:2300ms" x1="46.0" y1="122" x2="133.0" y2="122"/>
+  <line class="sg" stroke="#7d92dc" style="stroke-dasharray:119;stroke-dashoffset:119;animation-delay:2385ms" x1="148.0" y1="122" x2="267.0" y2="122"/>
+  <line class="sg" stroke="#7d92dc" style="stroke-dasharray:150;stroke-dashoffset:150;animation-delay:2470ms" x1="282.0" y1="122" x2="432.0" y2="122"/>
+  <line class="sg" stroke="#7d92dc" style="stroke-dasharray:150;stroke-dashoffset:150;animation-delay:2555ms" x1="448.0" y1="122" x2="598.0" y2="122"/>
+  <line class="sg" stroke="#7d92dc" style="stroke-dasharray:150;stroke-dashoffset:150;animation-delay:2640ms" x1="613.0" y1="122" x2="763.0" y2="122"/>
+  <line class="sg" stroke="#7d92dc" style="stroke-dasharray:55;stroke-dashoffset:55;animation-delay:2725ms" x1="779.0" y1="122" x2="834.0" y2="122"/>
+  <line class="sg" stroke="#c9a84a" style="stroke-dasharray:63;stroke-dashoffset:63;animation-delay:3000ms" x1="46.0" y1="152" x2="109.0" y2="152"/>
+  <line class="sg" stroke="#c9a84a" style="stroke-dasharray:150;stroke-dashoffset:150;animation-delay:3085ms" x1="125.0" y1="152" x2="275.0" y2="152"/>
+  <line class="sg" stroke="#c9a84a" style="stroke-dasharray:150;stroke-dashoffset:150;animation-delay:3170ms" x1="290.0" y1="152" x2="440.0" y2="152"/>
+  <line class="sg" stroke="#c9a84a" style="stroke-dasharray:150;stroke-dashoffset:150;animation-delay:3255ms" x1="456.0" y1="152" x2="606.0" y2="152"/>
+  <line class="sg" stroke="#c9a84a" style="stroke-dasharray:150;stroke-dashoffset:150;animation-delay:3340ms" x1="621.0" y1="152" x2="771.0" y2="152"/>
+  <line class="sg" stroke="#c9a84a" style="stroke-dasharray:47;stroke-dashoffset:47;animation-delay:3425ms" x1="787.0" y1="152" x2="834.0" y2="152"/>
+  <line class="sg" stroke="#5faf82" style="stroke-dasharray:49;stroke-dashoffset:49;animation-delay:3700ms" x1="46.0" y1="182" x2="95.0" y2="182"/>
+  <line class="sg" stroke="#5faf82" style="stroke-dasharray:150;stroke-dashoffset:150;animation-delay:3785ms" x1="111.0" y1="182" x2="261.0" y2="182"/>
+  <line class="sg" stroke="#5faf82" style="stroke-dasharray:150;stroke-dashoffset:150;animation-delay:3870ms" x1="277.0" y1="182" x2="427.0" y2="182"/>
+  <line class="sg" stroke="#5faf82" style="stroke-dasharray:150;stroke-dashoffset:150;animation-delay:3955ms" x1="443.0" y1="182" x2="593.0" y2="182"/>
+  <line class="sg" stroke="#5faf82" style="stroke-dasharray:150;stroke-dashoffset:150;animation-delay:4040ms" x1="609.0" y1="182" x2="759.0" y2="182"/>
+  <line class="sg" stroke="#5faf82" style="stroke-dasharray:59;stroke-dashoffset:59;animation-delay:4125ms" x1="775.0" y1="182" x2="834.0" y2="182"/>
+  <text class="bd" x="440" y="236" text-anchor="middle">OPEN SOURCE · LOCAL-FIRST · READS YOUR AGENTS' STORAGE, NEVER WRITES IT</text>
+  <text class="t1" x="440" y="274" text-anchor="middle">your AI coding sessions,</text>
+  <text class="t2" x="440" y="306" text-anchor="middle">as wireable nodes.</text>
+</svg>

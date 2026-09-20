@@ -1,0 +1,138 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Example · Judge branch",
+  "kind": "workflow",
+  "nodes": [
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": {
+        "x": 40,
+        "y": 20
+      },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "Intermediate: ? Judge evaluates ordered regex/contains matchers; first hit wins. Only the winning out-port carries text — change the prompt to FAIL or shrug to see fail / unsure.",
+        "size": {
+          "width": 380,
+          "height": 120
+        }
+      }
+    },
+    {
+      "id": "n-prompt",
+      "type": "prompt",
+      "position": {
+        "x": 40,
+        "y": 200
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt",
+        "label": "test report",
+        "text": "suite PASS — all green"
+      }
+    },
+    {
+      "id": "n-judge",
+      "type": "judge",
+      "position": {
+        "x": 340,
+        "y": 180
+      },
+      "status": "idle",
+      "data": {
+        "type": "judge",
+        "label": "route verdict",
+        "unmatched": "unsure",
+        "matchers": [
+          {
+            "id": "m-pass",
+            "port": "pass",
+            "kind": "regex",
+            "pattern": "\\b(pass|ok|success|yes)\\b"
+          },
+          {
+            "id": "m-fail",
+            "port": "fail",
+            "kind": "regex",
+            "pattern": "\\b(fail|error|no)\\b"
+          }
+        ]
+      }
+    },
+    {
+      "id": "n-pass",
+      "type": "output",
+      "position": {
+        "x": 640,
+        "y": 80
+      },
+      "status": "idle",
+      "data": {
+        "type": "output",
+        "label": "pass → review",
+        "renderMode": "text"
+      }
+    },
+    {
+      "id": "n-fail",
+      "type": "output",
+      "position": {
+        "x": 640,
+        "y": 200
+      },
+      "status": "idle",
+      "data": {
+        "type": "output",
+        "label": "fail → fix",
+        "renderMode": "text"
+      }
+    },
+    {
+      "id": "n-unsure",
+      "type": "output",
+      "position": {
+        "x": 640,
+        "y": 320
+      },
+      "status": "idle",
+      "data": {
+        "type": "output",
+        "label": "unsure",
+        "renderMode": "text"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "n-prompt",
+      "target": "n-judge"
+    },
+    {
+      "id": "e2",
+      "source": "n-judge",
+      "target": "n-pass",
+      "sourceHandle": "out:pass"
+    },
+    {
+      "id": "e3",
+      "source": "n-judge",
+      "target": "n-fail",
+      "sourceHandle": "out:fail"
+    },
+    {
+      "id": "e4",
+      "source": "n-judge",
+      "target": "n-unsure",
+      "sourceHandle": "out:unsure"
+    }
+  ],
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 0.9
+  }
+}

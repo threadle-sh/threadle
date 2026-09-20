@@ -1,0 +1,84 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Example \u00b7 Min-chars breaker",
+  "kind": "workflow",
+  "nodes": [
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": {
+        "x": 40,
+        "y": 30
+      },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "Intermediate: \u2021 content breaker with min chars \u2014 short drafts park for splice. Lengthen the prompt past 40 chars to pass cleanly.",
+        "size": {
+          "width": 340,
+          "height": 100
+        }
+      }
+    },
+    {
+      "id": "n-prompt",
+      "type": "prompt",
+      "position": {
+        "x": 40,
+        "y": 180
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt",
+        "label": "draft",
+        "text": "too short"
+      }
+    },
+    {
+      "id": "n-tw",
+      "type": "tripwire",
+      "position": {
+        "x": 340,
+        "y": 160
+      },
+      "status": "idle",
+      "data": {
+        "type": "tripwire",
+        "mode": "content",
+        "action": "park",
+        "label": "\u226540 chars",
+        "minChars": 40
+      }
+    },
+    {
+      "id": "n-out",
+      "type": "output",
+      "position": {
+        "x": 640,
+        "y": 180
+      },
+      "status": "idle",
+      "data": {
+        "type": "output",
+        "renderMode": "text"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "n-prompt",
+      "target": "n-tw"
+    },
+    {
+      "id": "e2",
+      "source": "n-tw",
+      "target": "n-out"
+    }
+  ],
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 0.9
+  }
+}

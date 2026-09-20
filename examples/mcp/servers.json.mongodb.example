@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "mongodb": {
+      "command": "npx",
+      "args": ["-y", "mongodb-mcp-server", "--readOnly"],
+      "env": {
+        "MDB_MCP_CONNECTION_STRING": "mongodb://127.0.0.1:27017"
+      }
+    }
+  }
+}

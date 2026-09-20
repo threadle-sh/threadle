@@ -1,0 +1,25 @@
+{
+  "id": "jq",
+  "label": "jq",
+  "glyph": "⎇",
+  "description": "JSON path / transform via jq on PATH (filter param; needs jq installed)",
+  "command": ["node", "./run.js"],
+  "input": "text",
+  "output": "text",
+  "params": [
+    {
+      "name": "filter",
+      "type": "text",
+      "label": "filter",
+      "default": ".",
+      "description": "jq program, e.g. .items[] | .name"
+    },
+    {
+      "name": "raw",
+      "type": "bool",
+      "label": "raw (-r)",
+      "default": false
+    }
+  ],
+  "timeoutMs": 30000
+}

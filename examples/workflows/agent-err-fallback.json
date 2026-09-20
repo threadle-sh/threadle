@@ -1,0 +1,129 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Example · Agent err fallback",
+  "kind": "workflow",
+  "nodes": [
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": {
+        "x": 40,
+        "y": 20
+      },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "Advanced: agent happy-path out vs out:err. After retries are exhausted, failure text goes to the err arm (fallback convert → output). Unwired err still aborts (or continueOnError starves). Pick a model on the agent. To demo err: use a bad model id or stop the CLI mid-run.",
+        "size": {
+          "width": 420,
+          "height": 130
+        }
+      }
+    },
+    {
+      "id": "n-prompt",
+      "type": "prompt",
+      "position": {
+        "x": 40,
+        "y": 220
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt",
+        "label": "task",
+        "text": "Reply with exactly: ok"
+      }
+    },
+    {
+      "id": "n-agent",
+      "type": "agent-def",
+      "position": {
+        "x": 340,
+        "y": 200
+      },
+      "status": "idle",
+      "retry": 1,
+      "data": {
+        "type": "agent-def",
+        "ref": {
+          "provider": "cursor",
+          "name": "ask",
+          "source": "cursor:builtin"
+        }
+      }
+    },
+    {
+      "id": "n-happy",
+      "type": "output",
+      "position": {
+        "x": 640,
+        "y": 120
+      },
+      "status": "idle",
+      "data": {
+        "type": "output",
+        "label": "happy path",
+        "renderMode": "markdown"
+      }
+    },
+    {
+      "id": "n-fallback",
+      "type": "prompt-convert",
+      "position": {
+        "x": 640,
+        "y": 280
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt-convert",
+        "label": "wrap err",
+        "template": "fallback after agent failure:\n\n{{input}}"
+      }
+    },
+    {
+      "id": "n-err",
+      "type": "output",
+      "position": {
+        "x": 920,
+        "y": 280
+      },
+      "status": "idle",
+      "data": {
+        "type": "output",
+        "label": "err arm",
+        "renderMode": "text"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "n-prompt",
+      "target": "n-agent",
+      "data": {
+        "role": "instantiate"
+      }
+    },
+    {
+      "id": "e2",
+      "source": "n-agent",
+      "target": "n-happy"
+    },
+    {
+      "id": "e3",
+      "source": "n-agent",
+      "target": "n-fallback",
+      "sourceHandle": "out:err"
+    },
+    {
+      "id": "e4",
+      "source": "n-fallback",
+      "target": "n-err"
+    }
+  ],
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 0.9
+  }
+}

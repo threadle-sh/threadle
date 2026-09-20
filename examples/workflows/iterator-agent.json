@@ -1,0 +1,107 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Example · Iterator → agent",
+  "kind": "workflow",
+  "nodes": [
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": {
+        "x": 40,
+        "y": 20
+      },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "Advanced: ∀ lines feed a Cursor ask once per item. Needs agent CLI; in tests agents are mocked.",
+        "size": {
+          "width": 320,
+          "height": 90
+        }
+      }
+    },
+    {
+      "id": "n-prompt",
+      "type": "prompt",
+      "position": {
+        "x": 40,
+        "y": 160
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt",
+        "label": "questions",
+        "text": "What is parallelism?\nWhat is a merge?\nWhat is a circuit breaker?"
+      }
+    },
+    {
+      "id": "n-it",
+      "type": "iterator",
+      "position": {
+        "x": 320,
+        "y": 160
+      },
+      "status": "idle",
+      "data": {
+        "type": "iterator",
+        "splitMode": "lines",
+        "maxItems": 3
+      }
+    },
+    {
+      "id": "n-agent",
+      "type": "agent-def",
+      "position": {
+        "x": 560,
+        "y": 140
+      },
+      "status": "idle",
+      "data": {
+        "type": "agent-def",
+        "ref": {
+          "provider": "cursor",
+          "name": "ask",
+          "source": "cursor:builtin"
+        }
+      }
+    },
+    {
+      "id": "n-out",
+      "type": "output",
+      "position": {
+        "x": 860,
+        "y": 160
+      },
+      "status": "idle",
+      "data": {
+        "type": "output",
+        "renderMode": "markdown"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "n-prompt",
+      "target": "n-it"
+    },
+    {
+      "id": "e2",
+      "source": "n-it",
+      "target": "n-agent",
+      "data": {
+        "role": "instantiate"
+      }
+    },
+    {
+      "id": "e3",
+      "source": "n-agent",
+      "target": "n-out"
+    }
+  ],
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 0.9
+  }
+}

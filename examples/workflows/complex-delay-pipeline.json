@@ -1,0 +1,586 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Example · Complex delay pipeline",
+  "kind": "workflow",
+  "params": [
+    {
+      "name": "topic",
+      "type": "text",
+      "default": "ship the subgraph demo",
+      "description": "What the pipeline pretends to process"
+    },
+    {
+      "name": "runId",
+      "type": "text",
+      "default": "run-local",
+      "description": "Stamp written into normalize / assemble"
+    }
+  ],
+  "settings": {
+    "ply": 2
+  },
+  "viewport": {
+    "x": 0,
+    "y": 40,
+    "zoom": 0.45
+  },
+  "nodes": [
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": {
+        "x": 40,
+        "y": 40
+      },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "COMPLEX DELAY PIPELINE — no agents.\n\nFive subgraphs: Intake → Normalize → Fast∥Deep → Assemble.\nIn the app: right-click → ⊡ cleanup arrangement if frames look stacked.\n\n~20s wall clock with parallelism=2. Pass --approve-all for the final gate.",
+        "size": {
+          "width": 480,
+          "height": 160
+        }
+      }
+    },
+    {
+      "id": "n-kick",
+      "type": "prompt",
+      "position": {
+        "x": 80,
+        "y": 320
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt",
+        "label": "kickoff",
+        "text": "Pipeline topic: {{param:topic}}"
+      }
+    },
+    {
+      "id": "f-intake",
+      "type": "group",
+      "position": {
+        "x": 320,
+        "y": 228
+      },
+      "status": "idle",
+      "data": {
+        "type": "group",
+        "label": "Intake",
+        "color": "blue",
+        "size": {
+          "width": 1140,
+          "height": 182
+        },
+        "graphId": "sg:intake"
+      }
+    },
+    {
+      "id": "f-intake:in-tag",
+      "type": "prompt-convert",
+      "position": {
+        "x": 360,
+        "y": 280
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt-convert",
+        "template": "## Intake\n\nTopic received:\n\n{{input}}\n\n_status: queued for normalize_"
+      },
+      "subOf": "f-intake",
+      "originId": "in-tag"
+    },
+    {
+      "id": "f-intake:in-d1",
+      "type": "delay",
+      "position": {
+        "x": 640,
+        "y": 280
+      },
+      "status": "idle",
+      "data": {
+        "type": "delay",
+        "ms": 2000,
+        "label": "settle 2s"
+      },
+      "subOf": "f-intake",
+      "originId": "in-d1"
+    },
+    {
+      "id": "f-intake:in-mark",
+      "type": "prompt-convert",
+      "position": {
+        "x": 920,
+        "y": 280
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt-convert",
+        "template": "{{input}}\n\n[intake ✓]"
+      },
+      "subOf": "f-intake",
+      "originId": "in-mark"
+    },
+    {
+      "id": "f-intake:in-d2",
+      "type": "delay",
+      "position": {
+        "x": 1200,
+        "y": 280
+      },
+      "status": "idle",
+      "data": {
+        "type": "delay",
+        "ms": 1500,
+        "label": "hand-off 1.5s"
+      },
+      "subOf": "f-intake",
+      "originId": "in-d2"
+    },
+    {
+      "id": "f-normalize",
+      "type": "group",
+      "position": {
+        "x": 1600,
+        "y": 228
+      },
+      "status": "idle",
+      "data": {
+        "type": "group",
+        "label": "Normalize",
+        "color": "blue",
+        "size": {
+          "width": 860,
+          "height": 182
+        },
+        "graphId": "sg:normalize"
+      }
+    },
+    {
+      "id": "f-normalize:nm-shape",
+      "type": "prompt-convert",
+      "position": {
+        "x": 1640,
+        "y": 280
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt-convert",
+        "template": "NORMALIZE\n---------\n{{input}}\n---------\nchecksum: {{param:runId}}\nready: true"
+      },
+      "subOf": "f-normalize",
+      "originId": "nm-shape"
+    },
+    {
+      "id": "f-normalize:nm-d1",
+      "type": "delay",
+      "position": {
+        "x": 1920,
+        "y": 280
+      },
+      "status": "idle",
+      "data": {
+        "type": "delay",
+        "ms": 2000,
+        "label": "normalize 2s"
+      },
+      "subOf": "f-normalize",
+      "originId": "nm-d1"
+    },
+    {
+      "id": "f-normalize:nm-stamp",
+      "type": "prompt-convert",
+      "position": {
+        "x": 2200,
+        "y": 280
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt-convert",
+        "template": "{{input}}\n\n[normalize ✓]"
+      },
+      "subOf": "f-normalize",
+      "originId": "nm-stamp"
+    },
+    {
+      "id": "f-fast",
+      "type": "group",
+      "position": {
+        "x": 2880,
+        "y": 68
+      },
+      "status": "idle",
+      "data": {
+        "type": "group",
+        "label": "Fast lane",
+        "color": "blue",
+        "size": {
+          "width": 580,
+          "height": 182
+        },
+        "graphId": "sg:fast"
+      }
+    },
+    {
+      "id": "f-fast:fa-tag",
+      "type": "prompt-convert",
+      "position": {
+        "x": 2920,
+        "y": 120
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt-convert",
+        "template": "### Fast lane\n\n{{input}}\n\n_latency: low_"
+      },
+      "subOf": "f-fast",
+      "originId": "fa-tag"
+    },
+    {
+      "id": "f-fast:fa-d1",
+      "type": "delay",
+      "position": {
+        "x": 3200,
+        "y": 120
+      },
+      "status": "idle",
+      "data": {
+        "type": "delay",
+        "ms": 3000,
+        "label": "fast 3s"
+      },
+      "subOf": "f-fast",
+      "originId": "fa-d1"
+    },
+    {
+      "id": "f-deep",
+      "type": "group",
+      "position": {
+        "x": 2880,
+        "y": 348
+      },
+      "status": "idle",
+      "data": {
+        "type": "group",
+        "label": "Deep lane",
+        "color": "blue",
+        "size": {
+          "width": 1140,
+          "height": 182
+        },
+        "graphId": "sg:deep"
+      }
+    },
+    {
+      "id": "f-deep:dp-tag",
+      "type": "prompt-convert",
+      "position": {
+        "x": 2920,
+        "y": 400
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt-convert",
+        "template": "### Deep lane\n\n{{input}}\n\n_latency: high · digging…_"
+      },
+      "subOf": "f-deep",
+      "originId": "dp-tag"
+    },
+    {
+      "id": "f-deep:dp-d1",
+      "type": "delay",
+      "position": {
+        "x": 3200,
+        "y": 400
+      },
+      "status": "idle",
+      "data": {
+        "type": "delay",
+        "ms": 4000,
+        "label": "deep 4s"
+      },
+      "subOf": "f-deep",
+      "originId": "dp-d1"
+    },
+    {
+      "id": "f-deep:dp-more",
+      "type": "prompt-convert",
+      "position": {
+        "x": 3480,
+        "y": 400
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt-convert",
+        "template": "{{input}}\n\nfindings: simulated deep scan complete"
+      },
+      "subOf": "f-deep",
+      "originId": "dp-more"
+    },
+    {
+      "id": "f-deep:dp-d2",
+      "type": "delay",
+      "position": {
+        "x": 3760,
+        "y": 400
+      },
+      "status": "idle",
+      "data": {
+        "type": "delay",
+        "ms": 2500,
+        "label": "wrap 2.5s"
+      },
+      "subOf": "f-deep",
+      "originId": "dp-d2"
+    },
+    {
+      "id": "n-knot",
+      "type": "knot",
+      "position": {
+        "x": 4200,
+        "y": 320
+      },
+      "status": "idle",
+      "data": {
+        "type": "knot",
+        "strategy": "concat",
+        "label": "join lanes"
+      }
+    },
+    {
+      "id": "f-assemble",
+      "type": "group",
+      "position": {
+        "x": 4360,
+        "y": 228
+      },
+      "status": "idle",
+      "data": {
+        "type": "group",
+        "label": "Assemble",
+        "color": "blue",
+        "size": {
+          "width": 1140,
+          "height": 182
+        },
+        "graphId": "sg:assemble"
+      }
+    },
+    {
+      "id": "f-assemble:as-pack",
+      "type": "prompt-convert",
+      "position": {
+        "x": 4400,
+        "y": 280
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt-convert",
+        "template": "# Pipeline result\n\n{{input}}\n\n---\nassembled at {{param:runId}} · topic={{param:topic}}"
+      },
+      "subOf": "f-assemble",
+      "originId": "as-pack"
+    },
+    {
+      "id": "f-assemble:as-d1",
+      "type": "delay",
+      "position": {
+        "x": 4680,
+        "y": 280
+      },
+      "status": "idle",
+      "data": {
+        "type": "delay",
+        "ms": 2000,
+        "label": "assemble 2s"
+      },
+      "subOf": "f-assemble",
+      "originId": "as-d1"
+    },
+    {
+      "id": "f-assemble:as-seal",
+      "type": "prompt-convert",
+      "position": {
+        "x": 4960,
+        "y": 280
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt-convert",
+        "template": "{{input}}\n\n**seal:** ok"
+      },
+      "subOf": "f-assemble",
+      "originId": "as-seal"
+    },
+    {
+      "id": "f-assemble:as-d2",
+      "type": "delay",
+      "position": {
+        "x": 5240,
+        "y": 280
+      },
+      "status": "idle",
+      "data": {
+        "type": "delay",
+        "ms": 1000,
+        "label": "seal 1s"
+      },
+      "subOf": "f-assemble",
+      "originId": "as-d2"
+    },
+    {
+      "id": "n-tw",
+      "type": "tripwire",
+      "position": {
+        "x": 5680,
+        "y": 320
+      },
+      "status": "idle",
+      "data": {
+        "type": "tripwire",
+        "mode": "content",
+        "action": "park",
+        "label": "thin packet?",
+        "minChars": 40
+      }
+    },
+    {
+      "id": "n-gate",
+      "type": "approval",
+      "position": {
+        "x": 5960,
+        "y": 320
+      },
+      "status": "idle",
+      "data": {
+        "type": "approval",
+        "label": "accept packet?"
+      }
+    },
+    {
+      "id": "n-out",
+      "type": "output",
+      "position": {
+        "x": 6240,
+        "y": 320
+      },
+      "status": "idle",
+      "data": {
+        "type": "output",
+        "renderMode": "markdown"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-kick",
+      "source": "n-kick",
+      "target": "f-intake"
+    },
+    {
+      "id": "e-in-nm",
+      "source": "f-intake",
+      "target": "f-normalize"
+    },
+    {
+      "id": "e-nm-fa",
+      "source": "f-normalize",
+      "target": "f-fast"
+    },
+    {
+      "id": "e-nm-dp",
+      "source": "f-normalize",
+      "target": "f-deep"
+    },
+    {
+      "id": "e-fa-k",
+      "source": "f-fast",
+      "target": "n-knot"
+    },
+    {
+      "id": "e-dp-k",
+      "source": "f-deep",
+      "target": "n-knot"
+    },
+    {
+      "id": "e-k-as",
+      "source": "n-knot",
+      "target": "f-assemble"
+    },
+    {
+      "id": "e-as-tw",
+      "source": "f-assemble",
+      "target": "n-tw"
+    },
+    {
+      "id": "e-tw-g",
+      "source": "n-tw",
+      "target": "n-gate"
+    },
+    {
+      "id": "e-g-out",
+      "source": "n-gate",
+      "target": "n-out"
+    },
+    {
+      "id": "f-intake-e0",
+      "source": "f-intake:in-tag",
+      "target": "f-intake:in-d1"
+    },
+    {
+      "id": "f-intake-e1",
+      "source": "f-intake:in-d1",
+      "target": "f-intake:in-mark"
+    },
+    {
+      "id": "f-intake-e2",
+      "source": "f-intake:in-mark",
+      "target": "f-intake:in-d2"
+    },
+    {
+      "id": "f-normalize-e0",
+      "source": "f-normalize:nm-shape",
+      "target": "f-normalize:nm-d1"
+    },
+    {
+      "id": "f-normalize-e1",
+      "source": "f-normalize:nm-d1",
+      "target": "f-normalize:nm-stamp"
+    },
+    {
+      "id": "f-fast-e0",
+      "source": "f-fast:fa-tag",
+      "target": "f-fast:fa-d1"
+    },
+    {
+      "id": "f-deep-e0",
+      "source": "f-deep:dp-tag",
+      "target": "f-deep:dp-d1"
+    },
+    {
+      "id": "f-deep-e1",
+      "source": "f-deep:dp-d1",
+      "target": "f-deep:dp-more"
+    },
+    {
+      "id": "f-deep-e2",
+      "source": "f-deep:dp-more",
+      "target": "f-deep:dp-d2"
+    },
+    {
+      "id": "f-assemble-e0",
+      "source": "f-assemble:as-pack",
+      "target": "f-assemble:as-d1"
+    },
+    {
+      "id": "f-assemble-e1",
+      "source": "f-assemble:as-d1",
+      "target": "f-assemble:as-seal"
+    },
+    {
+      "id": "f-assemble-e2",
+      "source": "f-assemble:as-seal",
+      "target": "f-assemble:as-d2"
+    }
+  ]
+}

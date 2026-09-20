@@ -1,0 +1,9 @@
+{
+  "id": "shout",
+  "label": "Shout",
+  "glyph": "!",
+  "description": "uppercases the input and adds enthusiasm",
+  "entry": "node.ts",
+  "input": "text",
+  "output": "text"
+}

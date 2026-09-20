@@ -1,0 +1,9 @@
+{
+  "id": "char-stats",
+  "label": "Text stats",
+  "glyph": "∑",
+  "description": "chars, words and lines of the input, as JSON",
+  "entry": "node.ts",
+  "input": "text",
+  "output": "json"
+}

@@ -1,0 +1,56 @@
+{
+  "$schema": "threadle/recipes@1",
+  "description": "Job-doing workflows — clone, fill the contract, run. Teaching graphs live in ../workflows/.",
+  "recipes": [
+    {
+      "id": "diff-review-panel",
+      "file": "diff-review-panel.json",
+      "outcome": "Three-lens diff review merged into one verdict",
+      "needs": { "model": true, "dir": true, "session": false },
+      "agents": 3,
+      "params": ["scope"]
+    },
+    {
+      "id": "second-opinion",
+      "file": "second-opinion.json",
+      "outcome": "Cross-provider review of a finished session with no sunk cost",
+      "needs": { "model": true, "dir": true, "session": true },
+      "agents": 1,
+      "params": ["concern"],
+      "note": "Default agent is Claude — swap if the session under review was already Claude."
+    },
+    {
+      "id": "handover-brief",
+      "file": "handover-brief.json",
+      "outcome": "Actionable brief from a long session (distill only — no agent node)",
+      "needs": { "model": false, "dir": false, "session": true },
+      "agents": 0,
+      "params": ["audience"]
+    },
+    {
+      "id": "test-triage",
+      "file": "test-triage.json",
+      "outcome": "Failing tests → root causes in one accumulating session",
+      "needs": { "model": true, "dir": true, "session": false },
+      "agents": "1 × N failures",
+      "params": ["failures"]
+    },
+    {
+      "id": "repo-brief",
+      "file": "repo-brief.json",
+      "outcome": "One onboarding page for an unfamiliar repository",
+      "needs": { "model": true, "dir": true, "session": false },
+      "agents": 3,
+      "params": ["focus"]
+    },
+    {
+      "id": "best-of-n",
+      "file": "best-of-n.json",
+      "outcome": "Same task × 3 providers → synthesize picks the best answer",
+      "needs": { "model": true, "dir": true, "session": false },
+      "agents": 3,
+      "params": ["task"],
+      "note": "Graph shape for Best-of-N; compare dock comes later."
+    }
+  ]
+}

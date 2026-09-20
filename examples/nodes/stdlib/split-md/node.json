@@ -1,0 +1,9 @@
+{
+  "id": "split-md",
+  "label": "Split markdown",
+  "glyph": "##",
+  "description": "chunk on ## headings → JSON array (wire into ∀ iterator · json)",
+  "entry": "node.ts",
+  "input": "text",
+  "output": "json"
+}

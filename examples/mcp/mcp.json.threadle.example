@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "threadle": {
+      "command": "threadle",
+      "args": ["mcp"]
+    }
+  }
+}

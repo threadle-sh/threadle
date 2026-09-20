@@ -1,0 +1,9 @@
+{
+  "id": "fibonacci",
+  "label": "Fibonacci",
+  "glyph": "φ",
+  "description": "first N Fibonacci numbers — wire an int-typed prompt in",
+  "entry": "node.ts",
+  "input": "int",
+  "output": "text"
+}

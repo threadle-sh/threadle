@@ -1,0 +1,85 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Example \u00b7 Content breaker",
+  "kind": "workflow",
+  "nodes": [
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": {
+        "x": 40,
+        "y": 20
+      },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "Intermediate: \u2021 Circuit breaker (content) trips when the text matches /ERROR/i, then parks for splice. Edit the prompt to remove ERROR and it passes through.",
+        "size": {
+          "width": 340,
+          "height": 110
+        }
+      }
+    },
+    {
+      "id": "n-prompt",
+      "type": "prompt",
+      "position": {
+        "x": 40,
+        "y": 180
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt",
+        "label": "agent draft",
+        "text": "Build summary:\nAll green.\nERROR: leftover TODO in auth.ts"
+      }
+    },
+    {
+      "id": "n-tw",
+      "type": "tripwire",
+      "position": {
+        "x": 360,
+        "y": 160
+      },
+      "status": "idle",
+      "data": {
+        "type": "tripwire",
+        "mode": "content",
+        "action": "park",
+        "label": "no ERROR",
+        "pattern": "ERROR",
+        "tripOnMatch": true
+      }
+    },
+    {
+      "id": "n-out",
+      "type": "output",
+      "position": {
+        "x": 660,
+        "y": 180
+      },
+      "status": "idle",
+      "data": {
+        "type": "output",
+        "renderMode": "text"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "n-prompt",
+      "target": "n-tw"
+    },
+    {
+      "id": "e2",
+      "source": "n-tw",
+      "target": "n-out"
+    }
+  ],
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 0.9
+  }
+}

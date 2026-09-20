@@ -1,0 +1,86 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Recipe · Handover brief",
+  "kind": "workflow",
+  "params": [
+    {
+      "name": "audience",
+      "type": "text",
+      "default": "a teammate picking this up tomorrow morning with no context",
+      "description": "Who the brief is written for"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": { "x": 40, "y": 0 },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "OUTCOME: an actionable brief in your context library.\n\nYOU SUPPLY:\n• SLOT — wire the finished session into ❝\n\nNo agent node. Distilling *is* the model call (cheapest recipe here). Result is content-addressed — re-inject into any tool or another workflow later.\n\nGuards: thin-brief circuit breaker (400 chars), approval/splice, $1 ceiling.",
+        "size": { "width": 480, "height": 200 }
+      }
+    },
+    {
+      "id": "n-ctx",
+      "type": "context",
+      "position": { "x": 40, "y": 250 },
+      "status": "idle",
+      "data": {
+        "type": "context",
+        "kind": "distilled-summary",
+        "label": "wire your session here",
+        "config": {
+          "kind": "distilled-summary",
+          "extraInstructions": "Capture: the goal, the decisions made and their reasons, what changed on disk, what was tried and abandoned, and every loose thread. Preserve specifics — file paths, command names, error strings. Omit conversational filler."
+        }
+      }
+    },
+    {
+      "id": "n-shape",
+      "type": "prompt-convert",
+      "position": { "x": 440, "y": 250 },
+      "status": "idle",
+      "data": {
+        "type": "prompt-convert",
+        "template": "# Handover\n\n_Written for {{param:audience}}._\n\n{{input}}\n\n---\n\n## Before you touch anything\n\nRe-read the loose threads above first — they are where this stopped, not where it failed."
+      }
+    },
+    {
+      "id": "n-tw",
+      "type": "tripwire",
+      "position": { "x": 820, "y": 250 },
+      "status": "idle",
+      "data": {
+        "type": "tripwire",
+        "mode": "content",
+        "action": "park",
+        "label": "thin brief?",
+        "minChars": 400
+      }
+    },
+    {
+      "id": "n-gate",
+      "type": "approval",
+      "position": { "x": 1080, "y": 250 },
+      "status": "idle",
+      "data": { "type": "approval", "label": "edit before saving" }
+    },
+    {
+      "id": "n-out",
+      "type": "output",
+      "position": { "x": 1340, "y": 250 },
+      "status": "idle",
+      "data": { "type": "output", "renderMode": "markdown" }
+    }
+  ],
+  "edges": [
+    { "id": "e1", "source": "n-ctx", "target": "n-shape" },
+    { "id": "e2", "source": "n-shape", "target": "n-tw" },
+    { "id": "e3", "source": "n-tw", "target": "n-gate" },
+    { "id": "e4", "source": "n-gate", "target": "n-out" }
+  ],
+  "viewport": { "x": 0, "y": 0, "zoom": 0.85 },
+  "settings": { "spendTripwireUsd": 1 }
+}

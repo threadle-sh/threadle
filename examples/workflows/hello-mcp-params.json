@@ -1,0 +1,58 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Example · Hello MCP params",
+  "kind": "workflow",
+  "nodes": [
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": { "x": 40, "y": 20 },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "Intermediate: same echo server as Hello MCP, but `message` is set in the inspector — no argPort, no inbound wire. Contrast with hello-mcp (prompt → argPort).",
+        "size": { "width": 440, "height": 110 }
+      }
+    },
+    {
+      "id": "n-mcp",
+      "type": "mcp-tool",
+      "position": { "x": 40, "y": 200 },
+      "status": "idle",
+      "data": {
+        "type": "mcp-tool",
+        "label": "echo (inspector)",
+        "ref": { "server": "echo" },
+        "tool": "echo",
+        "params": {
+          "message": "Hello from inspector params — no wire"
+        },
+        "snapshot": {
+          "serverLabel": "echo",
+          "toolDescription": "Return the message unchanged (demo for threadle MCP tool nodes)",
+          "params": [
+            {
+              "name": "message",
+              "type": "text",
+              "description": "Text to echo back"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "n-out",
+      "type": "output",
+      "position": { "x": 360, "y": 200 },
+      "status": "idle",
+      "data": {
+        "type": "output",
+        "renderMode": "text"
+      }
+    }
+  ],
+  "edges": [
+    { "id": "e1", "source": "n-mcp", "target": "n-out" }
+  ],
+  "viewport": { "x": 0, "y": 0, "zoom": 0.9 }
+}

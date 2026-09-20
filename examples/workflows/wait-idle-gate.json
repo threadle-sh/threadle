@@ -1,0 +1,108 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Example · Wait for idle",
+  "kind": "workflow",
+  "nodes": [
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": {
+        "x": 40,
+        "y": 20
+      },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "Intermediate: ◌ Wait for idle parks until the inbound session is not generating (running/waiting). Replace the session node with one from your Sessions list, then run. On timeout: park / skip / abort.",
+        "size": {
+          "width": 400,
+          "height": 110
+        }
+      }
+    },
+    {
+      "id": "n-sess",
+      "type": "session",
+      "position": {
+        "x": 40,
+        "y": 200
+      },
+      "status": "idle",
+      "data": {
+        "type": "session",
+        "ref": {
+          "provider": "cursor",
+          "sessionId": "replace-with-live-session"
+        },
+        "snapshot": {
+          "title": "your session"
+        },
+        "label": "pick a session"
+      }
+    },
+    {
+      "id": "n-prompt",
+      "type": "prompt",
+      "position": {
+        "x": 40,
+        "y": 340
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt",
+        "label": "payload",
+        "text": "Safe to inject — session was idle."
+      }
+    },
+    {
+      "id": "n-wait",
+      "type": "wait-idle",
+      "position": {
+        "x": 360,
+        "y": 260
+      },
+      "status": "idle",
+      "data": {
+        "type": "wait-idle",
+        "timeoutMs": 15000,
+        "onTimeout": "park",
+        "label": "until idle"
+      }
+    },
+    {
+      "id": "n-out",
+      "type": "output",
+      "position": {
+        "x": 640,
+        "y": 260
+      },
+      "status": "idle",
+      "data": {
+        "type": "output",
+        "renderMode": "text"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "n-sess",
+      "target": "n-wait"
+    },
+    {
+      "id": "e2",
+      "source": "n-prompt",
+      "target": "n-wait"
+    },
+    {
+      "id": "e3",
+      "source": "n-wait",
+      "target": "n-out"
+    }
+  ],
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 0.9
+  }
+}

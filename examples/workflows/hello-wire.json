@@ -1,0 +1,63 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Example · Hello wire",
+  "kind": "workflow",
+  "nodes": [
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": {
+        "x": 40,
+        "y": 40
+      },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "Beginner: a prompt feeds an output. Press ▶ Run — no agent required. Drag a new wire from the right handle to extend the chain.",
+        "size": {
+          "width": 280,
+          "height": 100
+        }
+      }
+    },
+    {
+      "id": "n-prompt",
+      "type": "prompt",
+      "position": {
+        "x": 40,
+        "y": 180
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt",
+        "label": "say hello",
+        "text": "Hello from threadle — edit this prompt, then run."
+      }
+    },
+    {
+      "id": "n-out",
+      "type": "output",
+      "position": {
+        "x": 360,
+        "y": 180
+      },
+      "status": "idle",
+      "data": {
+        "type": "output",
+        "renderMode": "text"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "n-prompt",
+      "target": "n-out"
+    }
+  ],
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 0.9
+  }
+}

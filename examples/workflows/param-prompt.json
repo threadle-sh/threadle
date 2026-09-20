@@ -1,0 +1,71 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Example · Workflow params",
+  "kind": "workflow",
+  "nodes": [
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": {
+        "x": 40,
+        "y": 40
+      },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "Beginner: open ≔ params, set `topic`, then ▶ Run. {{param:topic}} expands before the prompt executes.",
+        "size": {
+          "width": 320,
+          "height": 100
+        }
+      }
+    },
+    {
+      "id": "n-prompt",
+      "type": "prompt",
+      "position": {
+        "x": 40,
+        "y": 200
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt",
+        "label": "brief",
+        "text": "Write two bullet points about: {{param:topic}}"
+      }
+    },
+    {
+      "id": "n-out",
+      "type": "output",
+      "position": {
+        "x": 400,
+        "y": 200
+      },
+      "status": "idle",
+      "data": {
+        "type": "output",
+        "renderMode": "markdown"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "n-prompt",
+      "target": "n-out"
+    }
+  ],
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 0.9
+  },
+  "params": [
+    {
+      "name": "topic",
+      "type": "text",
+      "default": "local-first agent patchbays",
+      "description": "What the prompt should talk about"
+    }
+  ]
+}

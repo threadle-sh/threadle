@@ -1,0 +1,141 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Example · Cross-tool distill",
+  "kind": "workflow",
+  "nodes": [
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": {
+        "x": 40,
+        "y": 10
+      },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "Advanced starter: Cursor ask drafts → ✦ convert frames a handoff brief → Claude continues on another provider. Swap agents from the palette. Costs tokens; needs both CLIs.\n\nFor a real finished session, use recipe `handover-brief` or `second-opinion` instead.",
+        "size": {
+          "width": 480,
+          "height": 120
+        }
+      }
+    },
+    {
+      "id": "n-prompt",
+      "type": "prompt",
+      "position": {
+        "x": 40,
+        "y": 180
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt",
+        "label": "topic",
+        "text": "In 5–8 sentences, outline how {{param:topic}} should work in a local-first agent patchbay. Prefer concrete steps over marketing."
+      }
+    },
+    {
+      "id": "n-cursor",
+      "type": "agent-def",
+      "position": {
+        "x": 360,
+        "y": 160
+      },
+      "status": "idle",
+      "data": {
+        "type": "agent-def",
+        "label": "draft (Cursor)",
+        "ref": {
+          "provider": "cursor",
+          "name": "ask",
+          "source": "cursor:builtin"
+        }
+      }
+    },
+    {
+      "id": "n-frame",
+      "type": "prompt-convert",
+      "position": {
+        "x": 680,
+        "y": 160
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt-convert",
+        "template": "You are picking up mid-flight from another tool. Here is their draft — distill it into a brief you can act on, then answer the open question at the end.\n\n--- DRAFT FROM CURSOR ---\n\n{{input}}\n\n--- OPEN QUESTION ---\n\nWhat is the single highest-leverage next step for {{param:topic}}?"
+      }
+    },
+    {
+      "id": "n-claude",
+      "type": "agent-def",
+      "position": {
+        "x": 1000,
+        "y": 160
+      },
+      "status": "idle",
+      "data": {
+        "type": "agent-def",
+        "label": "continue (Claude)",
+        "ref": {
+          "provider": "claude-code",
+          "name": "general-purpose",
+          "source": "claude:builtin"
+        }
+      }
+    },
+    {
+      "id": "n-out",
+      "type": "output",
+      "position": {
+        "x": 1320,
+        "y": 180
+      },
+      "status": "idle",
+      "data": {
+        "type": "output",
+        "renderMode": "markdown"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "n-prompt",
+      "target": "n-cursor",
+      "data": {
+        "role": "instantiate"
+      }
+    },
+    {
+      "id": "e2",
+      "source": "n-cursor",
+      "target": "n-frame"
+    },
+    {
+      "id": "e3",
+      "source": "n-frame",
+      "target": "n-claude",
+      "data": {
+        "role": "instantiate"
+      }
+    },
+    {
+      "id": "e4",
+      "source": "n-claude",
+      "target": "n-out"
+    }
+  ],
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 0.9
+  },
+  "params": [
+    {
+      "name": "topic",
+      "type": "text",
+      "default": "cross-tool context handoff",
+      "description": "What the draft + handoff should cover"
+    }
+  ]
+}

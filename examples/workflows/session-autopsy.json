@@ -1,0 +1,154 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Example · Session autopsy",
+  "kind": "workflow",
+  "nodes": [
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": {
+        "x": 40,
+        "y": 0
+      },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "Advanced starter: autopsy a messy run — what was attempted, what broke, what to do next.\n\nDemo uses a sample narrative in the prompt. For a real session: wire ❯ Session → ❝ Context (distill) → agent — ≫ / CLI extract mid-run, or drop a Library payload.\n\n▶ can pause at ✓; ≫ / CLI need --approve-all.",
+        "size": {
+          "width": 520,
+          "height": 150
+        }
+      }
+    },
+    {
+      "id": "n-prompt",
+      "type": "prompt",
+      "position": {
+        "x": 40,
+        "y": 200
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt",
+        "label": "session narrative (sample)",
+        "text": "Session tried to fix flaky auth tests. Agent rewrote the mock twice, then chased a red herring in CORS middleware. Never re-ran the failing suite after the second mock change. Left two TODOs in auth.test.ts and an unused helper. Spend felt high for the outcome. User interrupted once with \"stay on the test\"."
+      }
+    },
+    {
+      "id": "n-frame",
+      "type": "prompt-convert",
+      "position": {
+        "x": 420,
+        "y": 200
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt-convert",
+        "template": "Perform a session autopsy focused on {{param:focus}}.\n\nStructure:\n1. What was the stated goal?\n2. What actually happened (facts only)?\n3. Where did it go sideways?\n4. Ranked next actions (smallest first).\n5. What to avoid repeating.\n\nBe blunt; no pep talk.\n\n--- SESSION NOTES ---\n\n{{input}}"
+      }
+    },
+    {
+      "id": "n-agent",
+      "type": "agent-def",
+      "position": {
+        "x": 800,
+        "y": 180
+      },
+      "status": "idle",
+      "data": {
+        "type": "agent-def",
+        "label": "autopsy",
+        "ref": {
+          "provider": "cursor",
+          "name": "ask",
+          "source": "cursor:builtin"
+        }
+      }
+    },
+    {
+      "id": "n-tw",
+      "type": "tripwire",
+      "position": {
+        "x": 1080,
+        "y": 180
+      },
+      "status": "idle",
+      "data": {
+        "type": "tripwire",
+        "mode": "content",
+        "action": "park",
+        "label": "thin autopsy?",
+        "minChars": 160
+      }
+    },
+    {
+      "id": "n-gate",
+      "type": "approval",
+      "position": {
+        "x": 1340,
+        "y": 180
+      },
+      "status": "idle",
+      "data": {
+        "type": "approval",
+        "label": "keep autopsy?"
+      }
+    },
+    {
+      "id": "n-out",
+      "type": "output",
+      "position": {
+        "x": 1600,
+        "y": 200
+      },
+      "status": "idle",
+      "data": {
+        "type": "output",
+        "renderMode": "markdown"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "n-prompt",
+      "target": "n-frame"
+    },
+    {
+      "id": "e2",
+      "source": "n-frame",
+      "target": "n-agent",
+      "data": {
+        "role": "instantiate"
+      }
+    },
+    {
+      "id": "e3",
+      "source": "n-agent",
+      "target": "n-tw"
+    },
+    {
+      "id": "e4",
+      "source": "n-tw",
+      "target": "n-gate"
+    },
+    {
+      "id": "e5",
+      "source": "n-gate",
+      "target": "n-out"
+    }
+  ],
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 0.9
+  },
+  "params": [
+    {
+      "name": "focus",
+      "type": "text",
+      "default": "wasted motion, unverified claims, and the smallest unblock",
+      "description": "What the autopsy should emphasize"
+    }
+  ]
+}

@@ -1,0 +1,98 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Recipe · Second opinion",
+  "kind": "workflow",
+  "params": [
+    {
+      "name": "concern",
+      "type": "text",
+      "default": "correctness, missed edge cases, and anything the first engineer talked themselves into",
+      "description": "What the second opinion should focus on"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": { "x": 40, "y": 0 },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "OUTCOME: a critical review from a tool that did not do the work.\n\nYOU SUPPLY:\n• SLOT — drag the finished session onto ❝ and wire it in\n• --dir → the repository (the reviewer verifies claims on disk)\n• a model on the agent\n\nDefault agent is Claude (general-purpose). If the session under review was already Claude, swap this node to Cursor or opencode — the point is a different provider with no sunk cost.\n\nGuards: content breaker, $1 ceiling, approval.",
+        "size": { "width": 500, "height": 230 }
+      }
+    },
+    {
+      "id": "n-ctx",
+      "type": "context",
+      "position": { "x": 40, "y": 280 },
+      "status": "idle",
+      "data": {
+        "type": "context",
+        "kind": "distilled-summary",
+        "label": "wire your session here",
+        "config": {
+          "kind": "distilled-summary",
+          "extraInstructions": "Summarize what was attempted, what was decided and why, what was actually changed, and anything left unresolved. Keep the reasoning, drop the chatter."
+        }
+      }
+    },
+    {
+      "id": "n-frame",
+      "type": "prompt-convert",
+      "position": { "x": 420, "y": 280 },
+      "status": "idle",
+      "data": {
+        "type": "prompt-convert",
+        "template": "Another engineer did the work summarized below. You were not involved and have no stake in it.\n\nReview it critically for {{param:concern}}.\n\nRules:\n- Verify claims against the actual repository rather than trusting the summary.\n- Say plainly if the approach is sound; do not manufacture objections.\n- Rank what you find by what would actually bite in production.\n\n--- SUMMARY OF THEIR WORK ---\n\n{{input}}"
+      }
+    },
+    {
+      "id": "n-agent",
+      "type": "agent-def",
+      "position": { "x": 800, "y": 280 },
+      "status": "idle",
+      "data": {
+        "type": "agent-def",
+        "label": "second opinion",
+        "ref": { "provider": "claude-code", "name": "general-purpose", "source": "claude:builtin" }
+      }
+    },
+    {
+      "id": "n-tw",
+      "type": "tripwire",
+      "position": { "x": 1080, "y": 280 },
+      "status": "idle",
+      "data": {
+        "type": "tripwire",
+        "mode": "content",
+        "action": "park",
+        "label": "thin opinion?",
+        "minChars": 180
+      }
+    },
+    {
+      "id": "n-gate",
+      "type": "approval",
+      "position": { "x": 1340, "y": 280 },
+      "status": "idle",
+      "data": { "type": "approval", "label": "keep this opinion?" }
+    },
+    {
+      "id": "n-out",
+      "type": "output",
+      "position": { "x": 1600, "y": 280 },
+      "status": "idle",
+      "data": { "type": "output", "renderMode": "markdown" }
+    }
+  ],
+  "edges": [
+    { "id": "e1", "source": "n-ctx", "target": "n-frame" },
+    { "id": "e2", "source": "n-frame", "target": "n-agent", "data": { "role": "instantiate" } },
+    { "id": "e3", "source": "n-agent", "target": "n-tw" },
+    { "id": "e4", "source": "n-tw", "target": "n-gate" },
+    { "id": "e5", "source": "n-gate", "target": "n-out" }
+  ],
+  "viewport": { "x": 0, "y": 0, "zoom": 0.8 },
+  "settings": { "spendTripwireUsd": 1 }
+}

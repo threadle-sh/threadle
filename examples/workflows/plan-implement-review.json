@@ -1,0 +1,223 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Starter workflow",
+  "kind": "workflow",
+  "params": [
+    {
+      "name": "task",
+      "type": "text",
+      "default": "Add a failing unit test for the bug you just found, then fix it.",
+      "description": "What should the agents plan, build, and review?"
+    }
+  ],
+  "viewport": {
+    "x": 40,
+    "y": 20,
+    "zoom": 0.85
+  },
+  "nodes": [
+    {
+      "id": "n-task",
+      "type": "prompt",
+      "position": {
+        "x": 40,
+        "y": 180
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt",
+        "label": "task",
+        "text": "{{param:task}}"
+      }
+    },
+    {
+      "id": "n-plan",
+      "type": "agent-def",
+      "position": {
+        "x": 320,
+        "y": 160
+      },
+      "status": "idle",
+      "data": {
+        "type": "agent-def",
+        "ref": {
+          "provider": "cursor",
+          "name": "plan",
+          "source": "cursor:builtin"
+        }
+      }
+    },
+    {
+      "id": "n-impl-prompt",
+      "type": "prompt-convert",
+      "position": {
+        "x": 600,
+        "y": 160
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt-convert",
+        "template": "Implement the following plan. Prefer a small, reviewable diff.\n\n{{input}}"
+      }
+    },
+    {
+      "id": "n-impl",
+      "type": "agent-def",
+      "position": {
+        "x": 880,
+        "y": 160
+      },
+      "status": "idle",
+      "data": {
+        "type": "agent-def",
+        "ref": {
+          "provider": "cursor",
+          "name": "agent",
+          "source": "cursor:builtin"
+        }
+      }
+    },
+    {
+      "id": "n-review-prompt",
+      "type": "prompt-convert",
+      "position": {
+        "x": 1160,
+        "y": 80
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt-convert",
+        "template": "Review the implementation below. Check correctness, edge cases, tests, and risk. Be concrete — cite files and suggest fixes only when needed.\n\n{{input}}"
+      }
+    },
+    {
+      "id": "n-review-skill",
+      "type": "skill",
+      "position": {
+        "x": 1160,
+        "y": 280
+      },
+      "status": "idle",
+      "muted": true,
+      "data": {
+        "type": "skill",
+        "path": "",
+        "name": "review-diff",
+        "origin": "custom",
+        "source": "threadle custom",
+        "description": "Optional — unmute when you have a review-diff skill installed"
+      }
+    },
+    {
+      "id": "n-gate",
+      "type": "approval",
+      "position": {
+        "x": 1440,
+        "y": 180
+      },
+      "status": "idle",
+      "data": {
+        "type": "approval",
+        "label": "ship review?"
+      }
+    },
+    {
+      "id": "n-review",
+      "type": "agent-def",
+      "position": {
+        "x": 1720,
+        "y": 160
+      },
+      "status": "idle",
+      "data": {
+        "type": "agent-def",
+        "ref": {
+          "provider": "cursor",
+          "name": "ask",
+          "source": "cursor:builtin"
+        }
+      }
+    },
+    {
+      "id": "n-out",
+      "type": "output",
+      "position": {
+        "x": 2000,
+        "y": 160
+      },
+      "status": "idle",
+      "data": {
+        "type": "output",
+        "renderMode": "markdown"
+      }
+    },
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": {
+        "x": 40,
+        "y": 40
+      },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "Starter workflow: Cursor plan (read-only) → implement → review. Set {{param:task}}, run with --approve-all for CLI, or confirm the gate in the UI. Unmute the review-diff skill node when that skill is installed.",
+        "size": {
+          "width": 280,
+          "height": 110
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "n-task",
+      "target": "n-plan",
+      "data": {
+        "role": "instantiate"
+      }
+    },
+    {
+      "id": "e2",
+      "source": "n-plan",
+      "target": "n-impl-prompt"
+    },
+    {
+      "id": "e3",
+      "source": "n-impl-prompt",
+      "target": "n-impl",
+      "data": {
+        "role": "instantiate"
+      }
+    },
+    {
+      "id": "e4",
+      "source": "n-impl",
+      "target": "n-review-prompt"
+    },
+    {
+      "id": "e5",
+      "source": "n-review-prompt",
+      "target": "n-gate"
+    },
+    {
+      "id": "e6",
+      "source": "n-review-skill",
+      "target": "n-gate"
+    },
+    {
+      "id": "e7",
+      "source": "n-gate",
+      "target": "n-review",
+      "data": {
+        "role": "instantiate"
+      }
+    },
+    {
+      "id": "e8",
+      "source": "n-review",
+      "target": "n-out"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "id": "token-estimate",
+  "label": "Token estimate",
+  "glyph": "#",
+  "description": "rough token count (chars÷4); wire into a ‡ tokens breaker",
+  "entry": "node.ts",
+  "input": "text",
+  "output": "text",
+  "params": [
+    {
+      "name": "divisor",
+      "type": "float",
+      "label": "chars per token",
+      "default": 4,
+      "min": 1,
+      "max": 16
+    }
+  ]
+}

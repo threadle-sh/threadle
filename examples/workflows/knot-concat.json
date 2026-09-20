@@ -1,0 +1,101 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Example \u00b7 Merge concat",
+  "kind": "workflow",
+  "nodes": [
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": {
+        "x": 40,
+        "y": 20
+      },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "Intermediate: two independent prompts fan into a \u22c8 Knot (concat). No agent \u2014 run to see the merge. Try switching join to first / majority.",
+        "size": {
+          "width": 320,
+          "height": 100
+        }
+      }
+    },
+    {
+      "id": "n-a",
+      "type": "prompt",
+      "position": {
+        "x": 40,
+        "y": 160
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt",
+        "label": "branch A",
+        "text": "Alpha findings:\n- cache hit rate up\n- no new errors"
+      }
+    },
+    {
+      "id": "n-b",
+      "type": "prompt",
+      "position": {
+        "x": 40,
+        "y": 320
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt",
+        "label": "branch B",
+        "text": "Beta findings:\n- latency p95 \u221212%\n- one flake left"
+      }
+    },
+    {
+      "id": "n-knot",
+      "type": "knot",
+      "position": {
+        "x": 360,
+        "y": 220
+      },
+      "status": "idle",
+      "data": {
+        "type": "knot",
+        "strategy": "concat",
+        "label": "merge"
+      }
+    },
+    {
+      "id": "n-out",
+      "type": "output",
+      "position": {
+        "x": 640,
+        "y": 220
+      },
+      "status": "idle",
+      "data": {
+        "type": "output",
+        "renderMode": "markdown"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "n-a",
+      "target": "n-knot"
+    },
+    {
+      "id": "e2",
+      "source": "n-b",
+      "target": "n-knot"
+    },
+    {
+      "id": "e3",
+      "source": "n-knot",
+      "target": "n-out"
+    }
+  ],
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 0.9
+  }
+}

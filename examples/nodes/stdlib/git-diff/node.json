@@ -1,0 +1,32 @@
+{
+  "id": "git-diff",
+  "label": "git diff",
+  "glyph": "±",
+  "description": "git diff in dir (absolute path; optional pathspec param)",
+  "command": ["node", "./run.js"],
+  "input": "text",
+  "output": "text",
+  "params": [
+    {
+      "name": "dir",
+      "type": "text",
+      "label": "repo dir",
+      "default": "",
+      "description": "absolute path to a git working tree (required)"
+    },
+    {
+      "name": "pathspec",
+      "type": "text",
+      "label": "pathspec",
+      "default": "",
+      "description": "optional path limit, e.g. packages/server"
+    },
+    {
+      "name": "staged",
+      "type": "bool",
+      "label": "staged (--cached)",
+      "default": false
+    }
+  ],
+  "timeoutMs": 60000
+}

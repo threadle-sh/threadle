@@ -1,0 +1,81 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Example · Iterator lines",
+  "kind": "workflow",
+  "nodes": [
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": {
+        "x": 40,
+        "y": 30
+      },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "Intermediate: ∀ Iterator splits inbound text into items. Wire an agent after it to run once per item; here we only show the split feeding an output.",
+        "size": {
+          "width": 340,
+          "height": 110
+        }
+      }
+    },
+    {
+      "id": "n-prompt",
+      "type": "prompt",
+      "position": {
+        "x": 40,
+        "y": 200
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt",
+        "label": "checklist",
+        "text": "ship changelog\nfix flaky test\nbump deps"
+      }
+    },
+    {
+      "id": "n-it",
+      "type": "iterator",
+      "position": {
+        "x": 360,
+        "y": 200
+      },
+      "status": "idle",
+      "data": {
+        "type": "iterator",
+        "splitMode": "lines"
+      }
+    },
+    {
+      "id": "n-out",
+      "type": "output",
+      "position": {
+        "x": 640,
+        "y": 200
+      },
+      "status": "idle",
+      "data": {
+        "type": "output",
+        "renderMode": "text"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "n-prompt",
+      "target": "n-it"
+    },
+    {
+      "id": "e2",
+      "source": "n-it",
+      "target": "n-out"
+    }
+  ],
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 0.9
+  }
+}

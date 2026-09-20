@@ -1,0 +1,154 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Recipe · Diff review panel",
+  "kind": "workflow",
+  "params": [
+    {
+      "name": "scope",
+      "type": "text",
+      "default": "the staged changes (git diff --staged)",
+      "description": "What to review. The agents run git themselves in --dir."
+    }
+  ],
+  "nodes": [
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": { "x": 40, "y": 0 },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "OUTCOME: one merged diff verdict (correctness · security · performance).\n\nYOU SUPPLY:\n• --dir → the repository\n• a model on each of the three agent nodes\n\nOptional: point each agent at a different provider for a real multi-vendor panel.\n\nGuards: synthesize merge, content breaker (<200 chars parks), $2 spend ceiling, approval before accept.",
+        "size": { "width": 480, "height": 200 }
+      }
+    },
+    {
+      "id": "n-prompt",
+      "type": "prompt",
+      "position": { "x": 40, "y": 250 },
+      "status": "idle",
+      "data": {
+        "type": "prompt",
+        "label": "what to review",
+        "text": "Review {{param:scope}} in this repository.\n\nRead the diff yourself with git. Only comment on what the diff actually changes."
+      }
+    },
+    {
+      "id": "n-lens-correct",
+      "type": "prompt-convert",
+      "position": { "x": 380, "y": 60 },
+      "status": "idle",
+      "data": {
+        "type": "prompt-convert",
+        "template": "You are reviewing for CORRECTNESS only.\n\nFind logic errors, broken edge cases, wrong error handling, and anything that silently changes behavior. Quote the file and line. If you find nothing, say so in one line — do not invent problems.\n\n{{input}}"
+      }
+    },
+    {
+      "id": "n-lens-security",
+      "type": "prompt-convert",
+      "position": { "x": 380, "y": 250 },
+      "status": "idle",
+      "data": {
+        "type": "prompt-convert",
+        "template": "You are reviewing for SECURITY only.\n\nLook for injection, unvalidated input crossing a trust boundary, secrets or tokens in code or logs, widened permissions, unsafe shell or filesystem access. Quote the file and line. If you find nothing, say so in one line — do not invent problems.\n\n{{input}}"
+      }
+    },
+    {
+      "id": "n-lens-perf",
+      "type": "prompt-convert",
+      "position": { "x": 380, "y": 440 },
+      "status": "idle",
+      "data": {
+        "type": "prompt-convert",
+        "template": "You are reviewing for PERFORMANCE and RESOURCE USE only.\n\nLook for accidental O(n²), work inside loops that belongs outside, unbounded memory or output, missing limits on concurrency or retries. Quote the file and line. If you find nothing, say so in one line — do not invent problems.\n\n{{input}}"
+      }
+    },
+    {
+      "id": "n-agent-correct",
+      "type": "agent-def",
+      "position": { "x": 760, "y": 60 },
+      "status": "idle",
+      "data": {
+        "type": "agent-def",
+        "label": "correctness",
+        "ref": { "provider": "cursor", "name": "ask", "source": "cursor:builtin" }
+      }
+    },
+    {
+      "id": "n-agent-security",
+      "type": "agent-def",
+      "position": { "x": 760, "y": 250 },
+      "status": "idle",
+      "data": {
+        "type": "agent-def",
+        "label": "security",
+        "ref": { "provider": "cursor", "name": "ask", "source": "cursor:builtin" }
+      }
+    },
+    {
+      "id": "n-agent-perf",
+      "type": "agent-def",
+      "position": { "x": 760, "y": 440 },
+      "status": "idle",
+      "data": {
+        "type": "agent-def",
+        "label": "performance",
+        "ref": { "provider": "cursor", "name": "ask", "source": "cursor:builtin" }
+      }
+    },
+    {
+      "id": "n-knot",
+      "type": "knot",
+      "position": { "x": 1080, "y": 250 },
+      "status": "idle",
+      "data": {
+        "type": "knot",
+        "strategy": "synthesize",
+        "label": "one verdict"
+      }
+    },
+    {
+      "id": "n-tw",
+      "type": "tripwire",
+      "position": { "x": 1340, "y": 250 },
+      "status": "idle",
+      "data": {
+        "type": "tripwire",
+        "mode": "content",
+        "action": "park",
+        "label": "too short?",
+        "minChars": 200
+      }
+    },
+    {
+      "id": "n-gate",
+      "type": "approval",
+      "position": { "x": 1600, "y": 250 },
+      "status": "idle",
+      "data": { "type": "approval", "label": "accept review?" }
+    },
+    {
+      "id": "n-out",
+      "type": "output",
+      "position": { "x": 1860, "y": 250 },
+      "status": "idle",
+      "data": { "type": "output", "renderMode": "markdown" }
+    }
+  ],
+  "edges": [
+    { "id": "e1", "source": "n-prompt", "target": "n-lens-correct" },
+    { "id": "e2", "source": "n-prompt", "target": "n-lens-security" },
+    { "id": "e3", "source": "n-prompt", "target": "n-lens-perf" },
+    { "id": "e4", "source": "n-lens-correct", "target": "n-agent-correct", "data": { "role": "instantiate" } },
+    { "id": "e5", "source": "n-lens-security", "target": "n-agent-security", "data": { "role": "instantiate" } },
+    { "id": "e6", "source": "n-lens-perf", "target": "n-agent-perf", "data": { "role": "instantiate" } },
+    { "id": "e7", "source": "n-agent-correct", "target": "n-knot" },
+    { "id": "e8", "source": "n-agent-security", "target": "n-knot" },
+    { "id": "e9", "source": "n-agent-perf", "target": "n-knot" },
+    { "id": "e10", "source": "n-knot", "target": "n-tw" },
+    { "id": "e11", "source": "n-tw", "target": "n-gate" },
+    { "id": "e12", "source": "n-gate", "target": "n-out" }
+  ],
+  "viewport": { "x": 0, "y": 0, "zoom": 0.75 },
+  "settings": { "ply": 3, "spendTripwireUsd": 2 }
+}

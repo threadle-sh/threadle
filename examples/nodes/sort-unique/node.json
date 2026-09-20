@@ -1,0 +1,9 @@
+{
+  "id": "sort-unique",
+  "label": "Sort · unique",
+  "glyph": "⇅",
+  "description": "sorts input lines and drops duplicates (portable JS — not Unix sort -u)",
+  "entry": "node.ts",
+  "input": "text",
+  "output": "text"
+}

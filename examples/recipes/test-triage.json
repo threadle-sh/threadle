@@ -1,0 +1,118 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Recipe · Test triage",
+  "kind": "workflow",
+  "params": [
+    {
+      "name": "failures",
+      "type": "text",
+      "default": "FAIL src/auth/token.test.ts > refresh rotates the token\n  Expected: \"rotated\"\n  Received: undefined\n\nFAIL src/auth/session.test.ts > expired sessions are rejected\n  TypeError: Cannot read properties of null (reading 'expiresAt')",
+      "description": "Paste failing test output. Blank lines separate one failure from the next."
+    }
+  ],
+  "nodes": [
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": { "x": 40, "y": 0 },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "OUTCOME: a list of root causes, not a wall of red.\n\nYOU SUPPLY:\n• --dir → the repository under test\n• a model on the agent\n• paste (or --param) the failing output\n\nParse: ∀ splits on blank lines. Each failure runs the *same* agent sequentially in one session so finding #5 can reuse finding #1.\n\nCapped at 8 failures and $3. Raise both once you trust it.",
+        "size": { "width": 500, "height": 220 }
+      }
+    },
+    {
+      "id": "n-prompt",
+      "type": "prompt",
+      "position": { "x": 40, "y": 270 },
+      "status": "idle",
+      "data": {
+        "type": "prompt",
+        "label": "failing output",
+        "text": "{{param:failures}}"
+      }
+    },
+    {
+      "id": "n-iter",
+      "type": "iterator",
+      "position": { "x": 380, "y": 270 },
+      "status": "idle",
+      "data": {
+        "type": "iterator",
+        "splitMode": "blocks",
+        "maxItems": 8
+      }
+    },
+    {
+      "id": "n-frame",
+      "type": "prompt-convert",
+      "position": { "x": 640, "y": 270 },
+      "status": "idle",
+      "data": {
+        "type": "prompt-convert",
+        "template": "Investigate this single failing test in the repository (cwd is the project).\n\nDo:\n1. Open the failing file and the assertion site.\n2. Name the most likely root cause in one sentence.\n3. List the files involved.\n4. If this looks like the same root as an earlier failure in this session, say so explicitly.\n\nDo not rewrite the test unless you found the bug. Prefer diagnosis over patches.\n\n--- FAILURE ---\n\n{{input}}"
+      }
+    },
+    {
+      "id": "n-agent",
+      "type": "agent-def",
+      "position": { "x": 980, "y": 270 },
+      "status": "idle",
+      "data": {
+        "type": "agent-def",
+        "label": "triage",
+        "ref": { "provider": "cursor", "name": "ask", "source": "cursor:builtin" }
+      }
+    },
+    {
+      "id": "n-knot",
+      "type": "knot",
+      "position": { "x": 1280, "y": 270 },
+      "status": "idle",
+      "data": {
+        "type": "knot",
+        "strategy": "concat",
+        "label": "collected findings"
+      }
+    },
+    {
+      "id": "n-tw",
+      "type": "tripwire",
+      "position": { "x": 1540, "y": 270 },
+      "status": "idle",
+      "data": {
+        "type": "tripwire",
+        "mode": "content",
+        "action": "park",
+        "label": "empty triage?",
+        "minChars": 120
+      }
+    },
+    {
+      "id": "n-gate",
+      "type": "approval",
+      "position": { "x": 1800, "y": 270 },
+      "status": "idle",
+      "data": { "type": "approval", "label": "triage looks right?" }
+    },
+    {
+      "id": "n-out",
+      "type": "output",
+      "position": { "x": 2060, "y": 270 },
+      "status": "idle",
+      "data": { "type": "output", "renderMode": "markdown" }
+    }
+  ],
+  "edges": [
+    { "id": "e1", "source": "n-prompt", "target": "n-iter" },
+    { "id": "e2", "source": "n-iter", "target": "n-frame" },
+    { "id": "e3", "source": "n-frame", "target": "n-agent", "data": { "role": "instantiate" } },
+    { "id": "e4", "source": "n-agent", "target": "n-knot" },
+    { "id": "e5", "source": "n-knot", "target": "n-tw" },
+    { "id": "e6", "source": "n-tw", "target": "n-gate" },
+    { "id": "e7", "source": "n-gate", "target": "n-out" }
+  ],
+  "viewport": { "x": 0, "y": 0, "zoom": 0.75 },
+  "settings": { "spendTripwireUsd": 3 }
+}

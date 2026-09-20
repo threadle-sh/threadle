@@ -1,0 +1,110 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Example · Skill invoke + Judge",
+  "kind": "workflow",
+  "nodes": [
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": { "x": 40, "y": 20 },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "Advanced: ✦ Skill in invoke mode runs `/{name}` on a provider CLI (default Claude; click the provider chip to cycle Cursor / opencode / …). Optional inbound text is appended. Wire the result into ? Judge. Toggle ▶/↦ for invoke ↔ inject. Replace the skill name with one installed for that tool.",
+        "size": { "width": 420, "height": 140 }
+      }
+    },
+    {
+      "id": "n-prompt",
+      "type": "prompt",
+      "position": { "x": 40, "y": 220 },
+      "status": "idle",
+      "data": {
+        "type": "prompt",
+        "label": "extra context",
+        "text": "Summarize in one short paragraph whether this skill run looks successful."
+      }
+    },
+    {
+      "id": "n-skill",
+      "type": "skill",
+      "position": { "x": 340, "y": 200 },
+      "status": "idle",
+      "data": {
+        "type": "skill",
+        "path": "",
+        "name": "example-skill",
+        "mode": "invoke",
+        "label": "invoke skill"
+      }
+    },
+    {
+      "id": "n-judge",
+      "type": "judge",
+      "position": { "x": 620, "y": 180 },
+      "status": "idle",
+      "data": {
+        "type": "judge",
+        "label": "route result",
+        "unmatched": "unsure",
+        "matchers": [
+          {
+            "id": "m-pass",
+            "port": "pass",
+            "kind": "regex",
+            "pattern": "\\b(pass|ok|success|done|complete)\\b"
+          },
+          {
+            "id": "m-fail",
+            "port": "fail",
+            "kind": "regex",
+            "pattern": "\\b(fail|error|unable|cannot)\\b"
+          }
+        ]
+      }
+    },
+    {
+      "id": "n-pass",
+      "type": "output",
+      "position": { "x": 900, "y": 80 },
+      "status": "idle",
+      "data": { "type": "output", "label": "pass", "renderMode": "text" }
+    },
+    {
+      "id": "n-fail",
+      "type": "output",
+      "position": { "x": 900, "y": 200 },
+      "status": "idle",
+      "data": { "type": "output", "label": "fail", "renderMode": "text" }
+    },
+    {
+      "id": "n-unsure",
+      "type": "output",
+      "position": { "x": 900, "y": 320 },
+      "status": "idle",
+      "data": { "type": "output", "label": "unsure", "renderMode": "text" }
+    }
+  ],
+  "edges": [
+    { "id": "e-p-s", "source": "n-prompt", "target": "n-skill" },
+    { "id": "e-s-j", "source": "n-skill", "target": "n-judge" },
+    {
+      "id": "e-j-pass",
+      "source": "n-judge",
+      "target": "n-pass",
+      "sourceHandle": "out:pass"
+    },
+    {
+      "id": "e-j-fail",
+      "source": "n-judge",
+      "target": "n-fail",
+      "sourceHandle": "out:fail"
+    },
+    {
+      "id": "e-j-unsure",
+      "source": "n-judge",
+      "target": "n-unsure",
+      "sourceHandle": "out:unsure"
+    }
+  ]
+}

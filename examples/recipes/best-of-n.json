@@ -1,0 +1,158 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Recipe · Best-of-N",
+  "kind": "workflow",
+  "params": [
+    {
+      "name": "task",
+      "type": "text",
+      "default": "Name the single riskiest assumption in a local-first agent patchbay. One sentence.",
+      "description": "Identical prompt sent to each candidate agent"
+    }
+  ],
+  "settings": {
+    "ply": 3,
+    "spendTripwireUsd": 2
+  },
+  "nodes": [
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": { "x": 40, "y": 0 },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "OUTCOME: one answer from three parallel candidates (same task, different providers).\n\nYOU SUPPLY:\n• --dir → project for the agents\n• a model on each agent (swap providers if you like)\n• a model on the ⋈ pick-best merge (synthesize)\n\nFan uses ǁ ply=3. Guards: content breaker, spend ceiling, approval.\n\nCompare dock / Pick UI is later — this recipe is the graph shape.",
+        "size": { "width": 480, "height": 210 }
+      }
+    },
+    {
+      "id": "n-prompt",
+      "type": "prompt",
+      "position": { "x": 40, "y": 260 },
+      "status": "idle",
+      "data": {
+        "type": "prompt",
+        "label": "task",
+        "text": "{{param:task}}"
+      }
+    },
+    {
+      "id": "n-c1",
+      "type": "prompt-convert",
+      "position": { "x": 360, "y": 80 },
+      "status": "idle",
+      "data": {
+        "type": "prompt-convert",
+        "template": "Candidate A — answer the task in one or two sentences. No preamble.\n\n{{input}}"
+      }
+    },
+    {
+      "id": "n-c2",
+      "type": "prompt-convert",
+      "position": { "x": 360, "y": 240 },
+      "status": "idle",
+      "data": {
+        "type": "prompt-convert",
+        "template": "Candidate B — answer the task in one or two sentences. No preamble.\n\n{{input}}"
+      }
+    },
+    {
+      "id": "n-c3",
+      "type": "prompt-convert",
+      "position": { "x": 360, "y": 400 },
+      "status": "idle",
+      "data": {
+        "type": "prompt-convert",
+        "template": "Candidate C — answer the task in one or two sentences. No preamble.\n\n{{input}}"
+      }
+    },
+    {
+      "id": "n-a1",
+      "type": "agent-def",
+      "position": { "x": 680, "y": 60 },
+      "status": "idle",
+      "data": {
+        "type": "agent-def",
+        "label": "claude",
+        "ref": { "provider": "claude-code", "name": "general-purpose", "source": "claude:builtin" }
+      }
+    },
+    {
+      "id": "n-a2",
+      "type": "agent-def",
+      "position": { "x": 680, "y": 220 },
+      "status": "idle",
+      "data": {
+        "type": "agent-def",
+        "label": "cursor",
+        "ref": { "provider": "cursor", "name": "ask", "source": "cursor:builtin" }
+      }
+    },
+    {
+      "id": "n-a3",
+      "type": "agent-def",
+      "position": { "x": 680, "y": 380 },
+      "status": "idle",
+      "data": {
+        "type": "agent-def",
+        "label": "codex",
+        "ref": { "provider": "codex", "name": "codex", "source": "codex:builtin" }
+      }
+    },
+    {
+      "id": "n-knot",
+      "type": "knot",
+      "position": { "x": 980, "y": 220 },
+      "status": "idle",
+      "data": {
+        "type": "knot",
+        "strategy": "synthesize",
+        "label": "pick best",
+        "provider": "claude-code"
+      }
+    },
+    {
+      "id": "n-tw",
+      "type": "tripwire",
+      "position": { "x": 1240, "y": 220 },
+      "status": "idle",
+      "data": {
+        "type": "tripwire",
+        "mode": "content",
+        "action": "park",
+        "label": "thin pick?",
+        "minChars": 20
+      }
+    },
+    {
+      "id": "n-gate",
+      "type": "approval",
+      "position": { "x": 1480, "y": 220 },
+      "status": "idle",
+      "data": { "type": "approval", "label": "keep this pick?" }
+    },
+    {
+      "id": "n-out",
+      "type": "output",
+      "position": { "x": 1720, "y": 220 },
+      "status": "idle",
+      "data": { "type": "output", "label": "best-of-N" }
+    }
+  ],
+  "edges": [
+    { "id": "e1", "source": "n-prompt", "target": "n-c1" },
+    { "id": "e2", "source": "n-prompt", "target": "n-c2" },
+    { "id": "e3", "source": "n-prompt", "target": "n-c3" },
+    { "id": "e4", "source": "n-c1", "target": "n-a1" },
+    { "id": "e5", "source": "n-c2", "target": "n-a2" },
+    { "id": "e6", "source": "n-c3", "target": "n-a3" },
+    { "id": "e7", "source": "n-a1", "target": "n-knot" },
+    { "id": "e8", "source": "n-a2", "target": "n-knot" },
+    { "id": "e9", "source": "n-a3", "target": "n-knot" },
+    { "id": "e10", "source": "n-knot", "target": "n-tw" },
+    { "id": "e11", "source": "n-tw", "target": "n-gate" },
+    { "id": "e12", "source": "n-gate", "target": "n-out" }
+  ],
+  "viewport": { "x": 0, "y": 0, "zoom": 0.85 }
+}

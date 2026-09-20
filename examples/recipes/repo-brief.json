@@ -1,0 +1,154 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Recipe · Repo brief",
+  "kind": "workflow",
+  "params": [
+    {
+      "name": "focus",
+      "type": "text",
+      "default": "the whole repository",
+      "description": "What to explore — a path, a subsystem, or the whole repo"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": { "x": 40, "y": 0 },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "OUTCOME: one onboarding page for a repo you just cloned.\n\nYOU SUPPLY:\n• --dir → that repository\n• a model on each explorer (prefer read-only / ask agents)\n\nThree questions in parallel (parallelism=3) → synthesize merge → one brief.\n\nGuards: thin-brief circuit breaker, approval, $2 ceiling.",
+        "size": { "width": 480, "height": 200 }
+      }
+    },
+    {
+      "id": "n-prompt",
+      "type": "prompt",
+      "position": { "x": 40, "y": 250 },
+      "status": "idle",
+      "data": {
+        "type": "prompt",
+        "label": "target",
+        "text": "Explore {{param:focus}} in this repository and report what you actually find. Cite real file paths. Do not guess at conventions you have not verified."
+      }
+    },
+    {
+      "id": "n-q-arch",
+      "type": "prompt-convert",
+      "position": { "x": 400, "y": 60 },
+      "status": "idle",
+      "data": {
+        "type": "prompt-convert",
+        "template": "Answer ONE question: how is this codebase organized and how does data move through it?\n\nCover the entry points, the main modules and what each owns, and the two or three abstractions someone must understand before changing anything. Name the files.\n\n{{input}}"
+      }
+    },
+    {
+      "id": "n-q-tests",
+      "type": "prompt-convert",
+      "position": { "x": 400, "y": 250 },
+      "status": "idle",
+      "data": {
+        "type": "prompt-convert",
+        "template": "Answer ONE question: how is this project built, tested and shipped?\n\nCover the build and test commands that actually exist, what the tests cover and what they conspicuously do not, and any CI or release setup. Name the files.\n\n{{input}}"
+      }
+    },
+    {
+      "id": "n-q-risk",
+      "type": "prompt-convert",
+      "position": { "x": 400, "y": 440 },
+      "status": "idle",
+      "data": {
+        "type": "prompt-convert",
+        "template": "Answer ONE question: what would bite a newcomer here?\n\nCover external dependencies and what breaks if they change, undocumented assumptions, dead or duplicated code, and anything that looks deliberately unfinished. Name the files.\n\n{{input}}"
+      }
+    },
+    {
+      "id": "n-a-arch",
+      "type": "agent-def",
+      "position": { "x": 780, "y": 60 },
+      "status": "idle",
+      "data": {
+        "type": "agent-def",
+        "label": "architecture",
+        "ref": { "provider": "cursor", "name": "ask", "source": "cursor:builtin" }
+      }
+    },
+    {
+      "id": "n-a-tests",
+      "type": "agent-def",
+      "position": { "x": 780, "y": 250 },
+      "status": "idle",
+      "data": {
+        "type": "agent-def",
+        "label": "build & test",
+        "ref": { "provider": "cursor", "name": "ask", "source": "cursor:builtin" }
+      }
+    },
+    {
+      "id": "n-a-risk",
+      "type": "agent-def",
+      "position": { "x": 780, "y": 440 },
+      "status": "idle",
+      "data": {
+        "type": "agent-def",
+        "label": "risks",
+        "ref": { "provider": "cursor", "name": "ask", "source": "cursor:builtin" }
+      }
+    },
+    {
+      "id": "n-knot",
+      "type": "knot",
+      "position": { "x": 1100, "y": 250 },
+      "status": "idle",
+      "data": {
+        "type": "knot",
+        "strategy": "synthesize",
+        "label": "one brief"
+      }
+    },
+    {
+      "id": "n-tw",
+      "type": "tripwire",
+      "position": { "x": 1360, "y": 250 },
+      "status": "idle",
+      "data": {
+        "type": "tripwire",
+        "mode": "content",
+        "action": "park",
+        "label": "thin brief?",
+        "minChars": 300
+      }
+    },
+    {
+      "id": "n-gate",
+      "type": "approval",
+      "position": { "x": 1620, "y": 250 },
+      "status": "idle",
+      "data": { "type": "approval", "label": "edit before keeping" }
+    },
+    {
+      "id": "n-out",
+      "type": "output",
+      "position": { "x": 1880, "y": 250 },
+      "status": "idle",
+      "data": { "type": "output", "renderMode": "markdown" }
+    }
+  ],
+  "edges": [
+    { "id": "e1", "source": "n-prompt", "target": "n-q-arch" },
+    { "id": "e2", "source": "n-prompt", "target": "n-q-tests" },
+    { "id": "e3", "source": "n-prompt", "target": "n-q-risk" },
+    { "id": "e4", "source": "n-q-arch", "target": "n-a-arch", "data": { "role": "instantiate" } },
+    { "id": "e5", "source": "n-q-tests", "target": "n-a-tests", "data": { "role": "instantiate" } },
+    { "id": "e6", "source": "n-q-risk", "target": "n-a-risk", "data": { "role": "instantiate" } },
+    { "id": "e7", "source": "n-a-arch", "target": "n-knot" },
+    { "id": "e8", "source": "n-a-tests", "target": "n-knot" },
+    { "id": "e9", "source": "n-a-risk", "target": "n-knot" },
+    { "id": "e10", "source": "n-knot", "target": "n-tw" },
+    { "id": "e11", "source": "n-tw", "target": "n-gate" },
+    { "id": "e12", "source": "n-gate", "target": "n-out" }
+  ],
+  "viewport": { "x": 0, "y": 0, "zoom": 0.72 },
+  "settings": { "ply": 3, "spendTripwireUsd": 2 }
+}

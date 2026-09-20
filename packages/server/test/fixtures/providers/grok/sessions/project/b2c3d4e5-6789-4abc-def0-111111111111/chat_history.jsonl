@@ -1,0 +1,2 @@
+{"type": "user", "content": [{"type": "text", "text": "<user_query>\njust say hi\n</user_query>"}], "prompt_index": 0}
+{"type": "assistant", "content": "hi", "model_id": "grok-4.6-build"}

@@ -1,0 +1,101 @@
+{
+  "$schema": "threadle/graph@1",
+  "name": "Example \u00b7 Merge first-wins",
+  "kind": "workflow",
+  "nodes": [
+    {
+      "id": "n-note",
+      "type": "note",
+      "position": {
+        "x": 40,
+        "y": 30
+      },
+      "status": "idle",
+      "data": {
+        "type": "note",
+        "text": "Intermediate: \u22c8 Knot set to first \u2014 only the first inbound text survives. Swap to majority or concat on the node.",
+        "size": {
+          "width": 320,
+          "height": 100
+        }
+      }
+    },
+    {
+      "id": "n-a",
+      "type": "prompt",
+      "position": {
+        "x": 40,
+        "y": 160
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt",
+        "label": "early",
+        "text": "First answer arrives."
+      }
+    },
+    {
+      "id": "n-b",
+      "type": "prompt",
+      "position": {
+        "x": 40,
+        "y": 300
+      },
+      "status": "idle",
+      "data": {
+        "type": "prompt",
+        "label": "late",
+        "text": "Second answer is ignored."
+      }
+    },
+    {
+      "id": "n-knot",
+      "type": "knot",
+      "position": {
+        "x": 360,
+        "y": 220
+      },
+      "status": "idle",
+      "data": {
+        "type": "knot",
+        "strategy": "first",
+        "label": "first wins"
+      }
+    },
+    {
+      "id": "n-out",
+      "type": "output",
+      "position": {
+        "x": 640,
+        "y": 220
+      },
+      "status": "idle",
+      "data": {
+        "type": "output",
+        "renderMode": "text"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "n-a",
+      "target": "n-knot"
+    },
+    {
+      "id": "e2",
+      "source": "n-b",
+      "target": "n-knot"
+    },
+    {
+      "id": "e3",
+      "source": "n-knot",
+      "target": "n-out"
+    }
+  ],
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 0.9
+  }
+}
