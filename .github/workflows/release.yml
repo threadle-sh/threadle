@@ -1,9 +1,6 @@
 name: Release
 
-# Tags may be X.Y.Z or vX.Y.Z (must match packages/server version).
-# workflow_dispatch re-runs publish + asset upload for an existing tag
-# (e.g. after fixing a broken 0.9.0 release).
-
+# Tags may be X.Y.Z or vX.Y.Z (must match the `threadle` workspace version).
 on:
   push:
     tags:
@@ -17,18 +14,24 @@ on:
         type: string
 
 permissions:
-  contents: write
+  contents: write 
   id-token: write
+
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
+  cancel-in-progress: false
 
 jobs:
   release:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+
     steps:
       - name: Resolve tag
         id: meta
         shell: bash
         run: |
+          set -euo pipefail
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             TAG="${{ inputs.tag }}"
           else
@@ -49,45 +52,117 @@ jobs:
           cache: npm
           registry-url: https://registry.npmjs.org
 
-      - name: Build portable artifacts (all platforms)
-        run: bash scripts/release-artifacts.sh
+      - name: Refuse to touch an already-published release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.meta.outputs.tag }}"
+          if gh release view "$TAG" --json isDraft -q .isDraft >/tmp/isdraft 2>/dev/null; then
+            if [[ "$(cat /tmp/isdraft)" == "false" ]]; then
+              echo "::error::Release $TAG is already published and therefore immutable."
+              echo "::error::Its assets and tag cannot be changed. Ship the next patch version instead."
+              exit 1
+            fi
+            echo "A draft for $TAG exists — it will be replaced."
+          else
+            echo "No existing release for $TAG."
+          fi
 
-      - name: Verify version matches tag
+      - name: Verify tag matches the published package version
         id: ver
         shell: bash
         run: |
-          V=$(node -p "require('./packages/server/package.json').version")
-          TAG="${{ steps.meta.outputs.tag }}"
-          TAG_V="${TAG#v}"
+          set -euo pipefail
+          # Read the version from whatever workspace `threadle` actually resolves
+          # to, not from a hardcoded path — those can drift apart.
+          V=$(npm pkg get version -w threadle \
+            | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const o=JSON.parse(s);process.stdout.write(typeof o==='string'?o:Object.values(o)[0])})")
+          V="${V//\"/}"
+          TAG_V="${{ steps.meta.outputs.version }}"
           if [[ "$TAG_V" != "$V" ]]; then
-            echo "::error::tag $TAG does not match package.json version $V"
+            echo "::error::tag ${{ steps.meta.outputs.tag }} does not match threadle version $V"
             exit 1
           fi
           echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "releasing threadle $V"
 
-      - name: Create / update GitHub Release
-        uses: softprops/action-gh-release@v3
-        with:
-          tag_name: ${{ steps.meta.outputs.tag }}
-          name: threadle ${{ steps.ver.outputs.version }}
-          generate_release_notes: true
-          fail_on_unmatched_files: true
-          files: |
-            dist/portable/threadle-*.tar.gz
-            dist/portable/SHA256SUMS
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Publish npm
+      - name: Refuse to republish an existing npm version
         shell: bash
-        env:
-          # Only set when present — an empty NODE_AUTH_TOKEN breaks OIDC
-          # trusted publishing. Prefer Automation token (NPM_TOKEN) or
-          # configure Trusted Publisher on npm for this workflow.
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           set -euo pipefail
-          if [[ -n "${NPM_TOKEN:-}" ]]; then
-            export NODE_AUTH_TOKEN="$NPM_TOKEN"
+          V="${{ steps.ver.outputs.version }}"
+          if npm view "threadle@$V" version >/dev/null 2>&1; then
+            echo "::error::threadle@$V is already on npm. npm versions are immutable — bump and re-tag."
+            exit 1
           fi
-          npm publish -w threadle --access public --provenance
+          echo "threadle@$V is free on npm."
+
+      # ----------------------------------------------------------------- build
+
+      - name: Build portable artifacts (all platforms)
+        run: bash scripts/release-artifacts.sh
+
+      - name: Verify artifacts exist
+        id: assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          FILES=(dist/portable/threadle-*.tar.gz dist/portable/SHA256SUMS)
+          if (( ${#FILES[@]} < 2 )); then
+            echo "::error::expected tarballs + SHA256SUMS in dist/portable, found ${#FILES[@]} file(s)"
+            ls -la dist/portable || true
+            exit 1
+          fi
+          printf '%s\n' "${FILES[@]}"
+
+      # ------------------------------------------------------- draft → npm → publish
+
+      - name: Create draft release with all assets attached
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.meta.outputs.tag }}"
+          # A leftover draft from a failed run would collide; drafts are deletable.
+          gh release delete "$TAG" --yes --cleanup-tag=false 2>/dev/null || true
+          gh release create "$TAG" \
+            --draft \
+            --verify-tag \
+            --generate-notes \
+            --title "threadle ${{ steps.ver.outputs.version }}" \
+            dist/portable/threadle-*.tar.gz \
+            dist/portable/SHA256SUMS
+          echo "draft created for $TAG"
+
+      - name: Publish to npm (trusted publishing, no token)
+        shell: bash
+        run: npm publish -w threadle --access public --provenance
+
+      - name: Seal the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.meta.outputs.tag }}"
+          gh release edit "$TAG" --draft=false --latest
+          echo "published $TAG — assets and tag are now immutable"
+
+      # ---------------------------------------------------------------- cleanup
+
+      - name: Roll back the draft on failure
+        if: failure()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ steps.meta.outputs.tag }}"
+          if [[ "$(gh release view "$TAG" --json isDraft -q .isDraft 2>/dev/null)" == "true" ]]; then
+            gh release delete "$TAG" --yes --cleanup-tag=false
+            echo "::notice::Deleted the draft for $TAG. The tag still exists and is not yet immutable."
+            echo "::notice::To retry the same version: git push --delete origin $TAG && git tag -d $TAG"
+          fi
