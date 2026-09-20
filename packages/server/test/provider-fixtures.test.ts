@@ -36,7 +36,7 @@ describe("provider golden fixtures", () => {
       expect(scan.messageCount).toBeGreaterThanOrEqual(3);
       expect(scan.model).toBe("claude-sonnet-4");
       expect(scan.cwd).toBe("/tmp/threadle-claude-fixture");
-      expect(scan.cliVersion).toBe("1.0.1");
+      expect(scan.cliVersion).toBe("1.0.2");
       expect(scan.tokensIn).toBeGreaterThan(0);
     });
 

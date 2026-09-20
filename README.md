@@ -50,7 +50,7 @@ Prefer **WSL** on Windows if you want the curl installer and Linux agent paths (
 > [!TIP]
 > Sessions appear on first launch, nothing to import. `threadle check` verifies PATH, provider storage, and UI assets. `threadle check --providers` probes inject-critical CLI flags.
 
-Pin a curl release with `THREADLE_VERSION=1.0.1`. Uninstall as cleanly as you installed: `rm -rf ~/.local/share/threadle ~/.local/bin/threadle`. Everything threadle wrote lives in `~/.config/threadle`. [Install notes](docs/install.md) · [provider freshness](docs/provider-freshness.md)
+Pin a curl release with `THREADLE_VERSION=1.0.2`. Uninstall as cleanly as you installed: `rm -rf ~/.local/share/threadle ~/.local/bin/threadle`. Everything threadle wrote lives in `~/.config/threadle`. [Install notes](docs/install.md) · [provider freshness](docs/provider-freshness.md)
 
 ## Quick start
 
