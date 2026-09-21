@@ -38,6 +38,13 @@
   border-color: var(--border);
   color: var(--text);
 }
+.pal-rail-btn .pal-rail-folder,
+.pal-rail-btn :deep(.folder-mark) {
+  width: 13px;
+  height: 13px;
+  margin: 0 auto;
+  color: inherit;
+}
 .pal-pane {
   flex: 1;
   min-width: 0;

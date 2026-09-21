@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FolderMark from "@/panels/FolderMark.vue";
 import { PAL_RAIL_GROUPS, type PalTab } from "@/lib/paletteTabs";
 
 defineProps<{
@@ -23,7 +24,8 @@ const emit = defineEmits<{
         :title="t.label"
         @click="emit('select', t.id)"
       >
-        {{ t.glyph }}
+        <FolderMark v-if="t.id === 'library'" class="pal-rail-folder" />
+        <template v-else>{{ t.glyph }}</template>
       </button>
     </template>
   </div>

@@ -97,6 +97,8 @@
         <TranscriptView
           :provider="w.transcriptRef.provider"
           :session-id="w.transcriptRef.sessionId"
+          :focus-message-id="w.transcriptRef.focusMessageId"
+          :focus-seq="w.transcriptRef.focusSeq"
         />
       </div>
       <template v-else>

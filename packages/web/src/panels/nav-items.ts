@@ -44,7 +44,7 @@ export const NAV_SECTIONS: NavSection[] = [
     label: "Resources",
     items: [
       { id: "favorites", glyph: "★", label: "Favorites" },
-      { id: "library", glyph: "❝", label: "Library" },
+      { id: "library", glyph: "", label: "Library" },
       { id: "agents", glyph: "⟨/⟩", label: "Agents" },
       { id: "rules", glyph: "§", label: "Rules" },
       { id: "skills", glyph: "✦\uFE0E", label: "Skills" },

@@ -118,25 +118,32 @@
             <span v-if="bp.internals.contextEstimated" class="sip-est" title="Estimated from transcript size (chars÷4) — provider did not record per-turn usage">~est</span>
           </div>
           <div class="sip-ctx">
-            <svg
+            <button
               v-if="sparkPoints"
-              class="sip-spark"
-              viewBox="0 0 100 44"
-              preserveAspectRatio="none"
-              role="img"
-              aria-label="context tokens per request over the session"
+              type="button"
+              class="sip-spark-btn"
+              title="Open interactive context growth diagram"
+              @click="router.push(`/growth/${provider}/${sessionId}`)"
             >
-              <line
-                v-for="x in compactionTicks"
-                :key="x"
-                :x1="x"
-                :x2="x"
-                y1="3"
-                y2="41"
-                class="sip-spark-compact"
-              />
-              <polyline :points="sparkPoints" class="sip-spark-line" />
-            </svg>
+              <svg
+                class="sip-spark"
+                viewBox="0 0 100 44"
+                preserveAspectRatio="none"
+                role="img"
+                aria-label="context tokens per request over the session — click for growth view"
+              >
+                <line
+                  v-for="x in compactionTicks"
+                  :key="x"
+                  :x1="x"
+                  :x2="x"
+                  y1="3"
+                  y2="41"
+                  class="sip-spark-compact"
+                />
+                <polyline :points="sparkPoints" class="sip-spark-line" />
+              </svg>
+            </button>
             <div class="ctxbar">
               <div
                 class="ctxbar-fill"
@@ -267,6 +274,7 @@ import { computed, ref, watch } from "vue";
 import type { SessionRef } from "@threadle/shared";
 import { api } from "@/api/client";
 import { relativeTime, shortId, fmtTokens, isTokenEstimate } from "@/lib/format";
+import { estimateContextWindow } from "@/lib/contextWindow";
 import { downloadUrl } from "@/lib/convert";
 import { safeExternalHref } from "@/lib/safeHtml";
 import { useRouter } from "vue-router";
@@ -390,17 +398,9 @@ const compactionTicks = computed(() => {
  * best-effort context window: model-id hint, then bumped to the smallest
  * standard window that fits the observed peak (the peak never lies).
  */
-const ctxWindow = computed(() => {
-  const m = (ref_.value?.model ?? "").toLowerCase();
-  let win = 200_000;
-  if (m.includes("[1m]") || m.includes("gemini") || /\b1m\b/.test(m)) win = 1_000_000;
-  const peak = bp.value?.internals?.peakContext ?? 0;
-  if (peak > win) {
-    win =
-      [500_000, 1_000_000, 2_000_000, 10_000_000].find((std) => std >= peak) ?? peak;
-  }
-  return win;
-});
+const ctxWindow = computed(() =>
+  estimateContextWindow(ref_.value?.model, bp.value?.internals?.peakContext ?? 0),
+);
 const ctxPct = computed(() => {
   const last = bp.value?.internals?.lastContext ?? 0;
   return Math.min(999, Math.round((100 * last) / ctxWindow.value));
@@ -770,12 +770,26 @@ async function dl(kind: "bundle" | "context" | "reasoning"): Promise<void> {
   flex-direction: column;
   gap: 6px;
 }
+.sip-spark-btn {
+  display: block;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+.sip-spark-btn:hover .sip-spark {
+  border-color: color-mix(in srgb, var(--context) 45%, transparent);
+}
 .sip-spark {
   width: 100%;
   height: 46px;
   background: var(--input-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
+  display: block;
 }
 .sip-spark-line {
   fill: none;

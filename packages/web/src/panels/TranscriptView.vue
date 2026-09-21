@@ -160,6 +160,7 @@ const props = defineProps<{
   full?: boolean;
   /** Jump to this message after load (search hit). */
   focusMessageId?: string;
+  focusSeq?: number;
   /** Fallback when message id is missing from an older search index row. */
   focusTs?: number;
   focusRole?: string;
@@ -364,19 +365,26 @@ async function scrollToEnd(): Promise<void> {
 
 async function scrollToFocus(): Promise<void> {
   await nextTick();
+  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
   await nextTick();
+
+  const host = scrollHost();
   const id =
     props.focusMessageId ??
     (focusAbsIndex.value != null
       ? messages.value[focusAbsIndex.value - windowStart.value]?.id
       : undefined);
   const el = id ? msgEls.get(id) : undefined;
-  if (el) {
-    el.scrollIntoView({ block: "center", behavior: "smooth" });
+
+  if (host && el instanceof HTMLElement) {
+    const padTop = 12;
+    const hostRect = host.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+    const delta = elRect.top - hostRect.top - padTop;
+    host.scrollTop = Math.max(0, host.scrollTop + delta);
     return;
   }
-  // Fallback: approximate position within the scroll host.
-  const host = scrollHost();
+
   if (!host || focusAbsIndex.value == null || messages.value.length === 0) return;
   const local = focusAbsIndex.value - windowStart.value;
   if (local < 0 || local >= messages.value.length) return;
@@ -400,7 +408,6 @@ async function loadAroundFocus(): Promise<void> {
   windowStart.value = res.offset ?? 0;
   focusAbsIndex.value = res.focusIndex;
   seenTotal.value = Math.min(seenTotal.value, total.value);
-  await scrollToFocus();
   bindScrollPin();
 }
 
@@ -415,13 +422,14 @@ async function load(): Promise<void> {
   msgEls.clear();
   followPinned.value = !hasFocusTarget();
   syncStatusFromStore();
+  let wantFocus = false;
   try {
     if (hasFocusTarget()) {
+      wantFocus = true;
       await loadAroundFocus();
     } else {
       // Open on the live tail — page 0 breaks follow for long transcripts.
       await refreshLatestWindow(true);
-      await scrollToEnd();
       followPinned.value = true;
       markCaughtUp();
     }
@@ -432,6 +440,8 @@ async function load(): Promise<void> {
   } finally {
     loading.value = false;
   }
+  if (wantFocus) await scrollToFocus();
+  else if (!error.value) await scrollToEnd();
 }
 
 async function loadMore(): Promise<void> {
@@ -706,7 +716,14 @@ onUnmounted(() => {
 });
 
 watch(
-  () => [props.provider, props.sessionId, props.focusMessageId, props.focusTs, props.focusRole],
+  () => [
+    props.provider,
+    props.sessionId,
+    props.focusMessageId,
+    props.focusSeq,
+    props.focusTs,
+    props.focusRole,
+  ],
   () => {
     sessionStatus.value = undefined;
     followPinned.value = !hasFocusTarget();

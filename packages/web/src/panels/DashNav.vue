@@ -40,6 +40,7 @@
         >
           <span class="nav-glyph">
             <FileMark v-if="item.id === 'files'" />
+            <FolderMark v-else-if="item.id === 'library'" />
             <template v-else>{{ item.glyph }}</template>
           </span>
           <span v-if="!collapsed && !compact" class="nav-label">{{ item.label }}</span>
@@ -81,6 +82,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useHorizontalResize } from "@/lib/useHorizontalResize";
 import ConfirmModal, { type ConfirmModel } from "./ConfirmModal.vue";
 import FileMark from "./FileMark.vue";
+import FolderMark from "./FolderMark.vue";
 import { NAV_SECTIONS, type NavItem, type NavSection } from "./nav-items";
 
 const REPORT_ISSUE_URL = "https://github.com/threadle-sh/threadle/issues";
@@ -285,7 +287,8 @@ onUnmounted(() => window.removeEventListener("resize", onWindowResize));
 .nav-item.active .nav-glyph {
   color: var(--text);
 }
-.nav-glyph :deep(.file-mark) {
+.nav-glyph :deep(.file-mark),
+.nav-glyph :deep(.folder-mark) {
   width: 13px;
   height: 13px;
   color: inherit;

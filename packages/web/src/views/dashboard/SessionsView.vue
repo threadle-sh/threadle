@@ -229,6 +229,12 @@
                     >
                       <span class="menu-glyph">⌗</span> Blueprint
                     </button>
+                    <button
+                      class="menu-item"
+                      @click="menuAction(() => router.push(`/growth/${s.provider}/${s.id}`))"
+                    >
+                      <span class="menu-glyph"><GrowthMark /></span> Growth
+                    </button>
                     <button class="menu-item" @click="menuAction(() => sessionToWorkflow(s))">
                       <span class="menu-glyph">→</span> Workflow
                     </button>
@@ -326,6 +332,13 @@
               >
                 ⌗ blueprint
               </button>
+              <button
+                class="vsc-btn"
+                title="Interactive diagram of which prompts grew the context window"
+                @click="router.push(`/growth/${pickedSession.provider}/${pickedSession.id}`)"
+              >
+                <GrowthMark class="vsc-growth-mark" /> growth
+              </button>
               <button class="vsc-btn" @click="sessionToWorkflow(pickedSession)">
                 → workflow
               </button>
@@ -401,6 +414,16 @@
         </button>
         <button
           class="menu-item"
+          @click="
+            menuAction(() =>
+              router.push(`/growth/${sessCtx!.session.provider}/${sessCtx!.session.id}`),
+            )
+          "
+        >
+          <span class="menu-glyph"><GrowthMark /></span> Growth
+        </button>
+        <button
+          class="menu-item"
           @click="menuAction(() => sessionToWorkflow(sessCtx!.session))"
         >
           <span class="menu-glyph">→</span> Workflow
@@ -468,6 +491,7 @@ import ProviderFilterChips from "@/components/ProviderFilterChips.vue";
 import GraphLoadingOverlay from "@/components/GraphLoadingOverlay.vue";
 import SessionInfoPanel from "@/panels/SessionInfoPanel.vue";
 import SessionLivePill from "@/panels/SessionLivePill.vue";
+import GrowthMark from "@/panels/GrowthMark.vue";
 import "./chrome.css";
 
 export type SessionOpenRequest = {
