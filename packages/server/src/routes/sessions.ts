@@ -5,7 +5,7 @@ import type { SessionRef } from "@threadle/shared";
 import { registry } from "../providers/registry.js";
 import { toolInvocationBody, toolSummary } from "../providers/stream.js";
 import { renderTranscript } from "../context/extract.js";
-import { buildContextTimeline } from "../context/timeline.js";
+import { buildContextGrowth, buildContextTimeline } from "../context/timeline.js";
 import { buildSessionBundle } from "./bundle.js";
 import { FILE_PREVIEW_MAX_BYTES } from "./files.js";
 import { globalArtifacts, projectArtifacts } from "./rules.js";
@@ -360,6 +360,64 @@ sessionRoutes.get("/:provider/blueprint/:id{.+}", async (c) => {
       .sort((a, b) => b.count - a.count),
     files,
     children,
+  });
+});
+
+/** Per-prompt context growth for the interactive growth diagram */
+sessionRoutes.get("/:provider/growth/:id{.+}", async (c) => {
+  const p = registry.get(c.req.param("provider"));
+  const id = c.req.param("id");
+  const [ref, transcript] = await Promise.all([
+    p.getSession(id),
+    (p.getTranscriptFull ?? p.getTranscript).call(p, id).catch(() => []),
+  ]);
+  if (!ref) return c.json({ error: "session not found" }, 404);
+  const growth = buildContextGrowth(transcript);
+
+  let thinkingBlocks = 0;
+  let thinkingChars = 0;
+  let toolErrors = 0;
+  let userTurns = 0;
+  let assistantTurns = 0;
+  let firstTs: number | undefined;
+  let lastTs: number | undefined;
+  for (const m of transcript) {
+    if (m.timestamp) {
+      firstTs ??= m.timestamp;
+      lastTs = m.timestamp;
+    }
+    if (m.role === "user") {
+      for (const pt of m.parts) {
+        if (pt.type === "text" && pt.text) {
+          userTurns++;
+          break;
+        }
+      }
+    }
+    if (m.role === "assistant") assistantTurns++;
+    for (const part of m.parts) {
+      if (part.type === "thinking") {
+        thinkingBlocks++;
+        thinkingChars += part.text?.length ?? 0;
+      }
+      if (part.type === "tool_result" && part.isError) toolErrors++;
+    }
+  }
+  const compactions = growth.steps.reduce((n, s) => n + (s.compacted ? 1 : 0), 0);
+
+  return c.json({
+    ref,
+    ...growth,
+    metrics: {
+      messages: transcript.length,
+      userTurns,
+      assistantTurns,
+      thinkingBlocks,
+      thinkingChars,
+      toolErrors,
+      compactions,
+      durationMs: firstTs && lastTs ? lastTs - firstTs : undefined,
+    },
   });
 });
 

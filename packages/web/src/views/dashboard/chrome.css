@@ -86,7 +86,14 @@
   font-size: var(--fs-xs);
 }
 
-.menu-glyph .folder-mark {
+.menu-glyph .folder-mark,
+.menu-glyph .growth-mark {
+  width: 12px;
+  height: 12px;
+  color: currentColor;
+}
+
+.vsc-btn .growth-mark {
   width: 12px;
   height: 12px;
   color: currentColor;

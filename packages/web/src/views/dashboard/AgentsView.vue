@@ -78,6 +78,7 @@
                 class="stat-row inst-row"
                 :class="{ picked: pickedRun && pickedRun.provider === s.provider && pickedRun.id === s.id }"
                 @click="selectRun(s)"
+                @contextmenu.prevent.stop="openRunCtx($event, s)"
               >
                 <span class="stat-name mono">
                   <span class="prov-dot" :style="{ background: providerColor(s.provider) }" />
@@ -179,6 +180,7 @@
                     class="agent-card"
                     :class="{ picked: agentPicked?.provider === a.provider && agentPicked?.name === a.name }"
                     @click="pickAgent(a)"
+                    @contextmenu.prevent.stop="openDefCtx($event, a)"
                   >
                     <div class="agent-card-head">
                       <span class="agent-glyph">⟨/⟩</span>
@@ -252,6 +254,7 @@
                   :key="r.provider + r.id"
                   class="lin-inj mono"
                   @click="jumpToRun(r)"
+                  @contextmenu.prevent.stop="openRunCtx($event, r)"
                 >
                   <i class="inst-dot" :class="{ live: isSessionLive(r.status) }" />
                   <span v-if="isSubRun(r)" class="inst-sub micro-label">sub</span>
@@ -267,10 +270,123 @@
           </aside>
         </div>
 
+  <Teleport to="body">
+    <div
+      v-if="runCtx"
+      class="menu-pop wf-folder-ctx"
+      :style="{ left: runCtx.x + 'px', top: runCtx.y + 'px' }"
+      @click.stop
+      @contextmenu.prevent
+    >
+      <button type="button" class="menu-item" @click="menuAction(() => selectRun(runCtx!.session))">
+        <span class="menu-glyph">↗</span> Details
+      </button>
+      <button
+        type="button"
+        class="menu-item"
+        @click="menuAction(() => fileViewers.openTranscript(runCtx!.session.provider, runCtx!.session.id))"
+      >
+        <span class="menu-glyph">≡</span> Transcript
+      </button>
+      <button
+        type="button"
+        class="menu-item"
+        @click="
+          menuAction(() =>
+            router.push(`/blueprint/${runCtx!.session.provider}/${runCtx!.session.id}`),
+          )
+        "
+      >
+        <span class="menu-glyph">⌗</span> Blueprint
+      </button>
+      <button
+        type="button"
+        class="menu-item"
+        @click="
+          menuAction(() =>
+            router.push(`/growth/${runCtx!.session.provider}/${runCtx!.session.id}`),
+          )
+        "
+      >
+        <span class="menu-glyph"><GrowthMark /></span> Growth
+      </button>
+      <button
+        type="button"
+        class="menu-item"
+        @click="
+          menuAction(() =>
+            router.push({
+              path: '/lineage',
+              query: { focus: `${runCtx!.session.provider}:${runCtx!.session.id}` },
+            }),
+          )
+        "
+      >
+        <span class="menu-glyph">⇄</span> Lineage
+      </button>
+      <button
+        type="button"
+        class="menu-item"
+        @click="menuAction(() => openRunInSessions(runCtx!.session))"
+      >
+        <span class="menu-glyph">❯</span> Sessions view
+      </button>
+      <button
+        v-if="runCtx.session.parentId"
+        type="button"
+        class="menu-item"
+        @click="menuAction(() => openRunParent(runCtx!.session))"
+      >
+        <span class="menu-glyph">↑</span> Parent
+      </button>
+      <button type="button" class="menu-item" @click="menuAction(() => toggleRunFavorite(runCtx!.session))">
+        <span class="menu-glyph">{{ isRunFavorite(runCtx.session) ? "☆" : "★" }}</span>
+        {{ isRunFavorite(runCtx.session) ? "Remove from favorites" : "Add to favorites" }}
+      </button>
+    </div>
+
+    <div
+      v-if="defCtx"
+      class="menu-pop wf-folder-ctx"
+      :style="{ left: defCtx.x + 'px', top: defCtx.y + 'px' }"
+      @click.stop
+      @contextmenu.prevent
+    >
+      <button type="button" class="menu-item" @click="menuAction(() => pickAgent(defCtx!.agent))">
+        <span class="menu-glyph">↗</span> Details
+      </button>
+      <button
+        type="button"
+        class="menu-item"
+        @click="menuAction(() => browseAgentRuns(defCtx!.agent))"
+      >
+        <span class="menu-glyph">❯</span> Instances
+      </button>
+      <button
+        type="button"
+        class="menu-item"
+        @click="menuAction(() => useAgentInWorkflowFor(defCtx!.agent))"
+      >
+        <span class="menu-glyph">→</span> Use in workflow
+      </button>
+      <button
+        v-if="isAbsolutePath(defCtx.agent.source)"
+        type="button"
+        class="menu-item"
+        @click="menuAction(() => settings.openPath(defCtx!.agent.source))"
+      >
+        <span class="menu-glyph">✎</span> {{ settings.editorLabel }}
+      </button>
+      <button type="button" class="menu-item" @click="menuAction(() => copyAgentName(defCtx!.agent))">
+        <span class="menu-glyph">❐</span> Copy name
+      </button>
+    </div>
+  </Teleport>
+
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import type { AgentDef, SessionRef } from "@threadle/shared";
 import { isAbsolutePath, isSessionLive } from "@threadle/shared";
@@ -284,11 +400,13 @@ import {
 import { useSessionsStore } from "@/stores/sessions";
 import { useSettingsStore } from "@/stores/settings";
 import { useFileViewersStore } from "@/stores/fileViewers";
+import { useFavoritesStore } from "@/stores/favorites";
 import { agentToWorkflow } from "@/lib/convert";
 import { vColResize } from "@/lib/colResize";
 import ProviderFilterChips from "@/components/ProviderFilterChips.vue";
 import SessionInfoPanel from "@/panels/SessionInfoPanel.vue";
 import SessionLivePill from "@/panels/SessionLivePill.vue";
+import GrowthMark from "@/panels/GrowthMark.vue";
 import "./chrome.css";
 
 const props = defineProps<{
@@ -305,6 +423,12 @@ const router = useRouter();
 const sessions = useSessionsStore();
 const settings = useSettingsStore();
 const fileViewers = useFileViewersStore();
+const favorites = useFavoritesStore();
+void favorites.ensureLoaded();
+
+const runCtx = ref<{ x: number; y: number; session: SessionRef }>();
+const defCtx = ref<{ x: number; y: number; agent: AgentDef }>();
+let ctxIgnoreClick = false;
 
 
 const sorts = reactive<Record<string, { key: string; dir: 1 | -1 }>>({
@@ -476,6 +600,12 @@ function openRunParent(child: SessionRef): void {
 onMounted(() => {
   sessions.ensureHydrated();
   void loadInstances();
+  document.addEventListener("click", dismissCtx);
+  document.addEventListener("contextmenu", dismissCtx);
+});
+onUnmounted(() => {
+  document.removeEventListener("click", dismissCtx);
+  document.removeEventListener("contextmenu", dismissCtx);
 });
 
 const INST_SEL: Record<string, (s: SessionRef) => number | string> = {
@@ -517,8 +647,83 @@ const sortedInstances = computed(() => {
 async function useAgentInWorkflow(): Promise<void> {
   const a = agentPicked.value;
   if (!a) return;
+  await useAgentInWorkflowFor(a);
+}
+
+async function useAgentInWorkflowFor(a: AgentDef): Promise<void> {
   const id = await agentToWorkflow(a);
   void router.push(`/graph/${id}`);
+}
+
+function placeCtxMenu(e: MouseEvent): { x: number; y: number } {
+  const pad = 8;
+  const mw = 220;
+  const mh = 300;
+  return {
+    x: Math.min(e.clientX, window.innerWidth - mw - pad),
+    y: Math.min(e.clientY, window.innerHeight - mh - pad),
+  };
+}
+
+function openRunCtx(e: MouseEvent, s: SessionRef): void {
+  defCtx.value = undefined;
+  ctxIgnoreClick = true;
+  runCtx.value = { ...placeCtxMenu(e), session: s };
+  requestAnimationFrame(() => {
+    ctxIgnoreClick = false;
+  });
+}
+
+function openDefCtx(e: MouseEvent, a: AgentDef): void {
+  runCtx.value = undefined;
+  ctxIgnoreClick = true;
+  defCtx.value = { ...placeCtxMenu(e), agent: a };
+  requestAnimationFrame(() => {
+    ctxIgnoreClick = false;
+  });
+}
+
+function menuAction(fn: () => unknown): void {
+  try {
+    void fn();
+  } finally {
+    runCtx.value = undefined;
+    defCtx.value = undefined;
+  }
+}
+
+function dismissCtx(e: MouseEvent): void {
+  if (ctxIgnoreClick || e.button !== 0) return;
+  const t = e.target as HTMLElement;
+  if (!t.closest?.(".wf-folder-ctx")) {
+    runCtx.value = undefined;
+    defCtx.value = undefined;
+  }
+}
+
+function sessionFavoriteInput(s: SessionRef) {
+  return {
+    kind: "session" as const,
+    provider: s.provider,
+    sessionId: s.id,
+    label: s.title ?? undefined,
+  };
+}
+
+function isRunFavorite(s: SessionRef): boolean {
+  return favorites.isFavorite(sessionFavoriteInput(s));
+}
+
+function toggleRunFavorite(s: SessionRef): void {
+  void favorites.toggle(sessionFavoriteInput(s));
+}
+
+async function copyAgentName(a: AgentDef): Promise<void> {
+  try {
+    await navigator.clipboard.writeText(a.name);
+  } catch {
+    // ignore
+  }
 }
 
 const PROVIDER_LABELS: Record<string, string> = Object.fromEntries(

@@ -20,7 +20,12 @@ export interface FileViewerWindow {
   /** Session context — ⟨/⟩ materializes full .md; ❐ copies / ⇓ downloads full context. */
   contextRef?: { provider: string; sessionId: string };
   /** Interactive chat transcript (TranscriptView) — ❐ / ⇓ use reconstructed context. */
-  transcriptRef?: { provider: string; sessionId: string };
+  transcriptRef?: {
+    provider: string;
+    sessionId: string;
+    focusMessageId?: string;
+    focusSeq?: number;
+  };
   /** Tool/skill/reasoning dump — ❐ / ⇓ every invocation. */
   invocationsRef?: {
     provider: string;
@@ -135,7 +140,12 @@ export const useFileViewersStore = defineStore("fileViewers", () => {
     format?: FileViewerFormat;
     diskPath?: string;
     contextRef?: { provider: string; sessionId: string };
-    transcriptRef?: { provider: string; sessionId: string };
+    transcriptRef?: {
+      provider: string;
+      sessionId: string;
+      focusMessageId?: string;
+      focusSeq?: number;
+    };
     invocationsRef?: FileViewerWindow["invocationsRef"];
     w?: number;
     h?: number;
@@ -389,11 +399,24 @@ export const useFileViewersStore = defineStore("fileViewers", () => {
   /**
    * Open the interactive session transcript (roles / tools / thinking) in a floating window.
    * ⇓ downloads the reconstructed context markdown (same as open context).
+   * Optional `focusMessageId` scrolls the transcript to that message.
    */
-  function openTranscript(provider: string, sessionId: string): void {
+  function openTranscript(
+    provider: string,
+    sessionId: string,
+    opts?: { focusMessageId?: string },
+  ): void {
     const key = `transcript:${provider}:${sessionId}`;
     const existing = windows.value.find((w) => w.path === key);
+    const focusSeq = opts?.focusMessageId ? Date.now() : undefined;
     if (existing) {
+      if (existing.transcriptRef) {
+        existing.transcriptRef = {
+          ...existing.transcriptRef,
+          focusMessageId: opts?.focusMessageId,
+          focusSeq,
+        };
+      }
       bringToFront(existing.id);
       return;
     }
@@ -403,7 +426,12 @@ export const useFileViewersStore = defineStore("fileViewers", () => {
       path: key,
       name: `transcript · ${provider} · ${short}`,
       format: "text",
-      transcriptRef: { provider, sessionId },
+      transcriptRef: {
+        provider,
+        sessionId,
+        focusMessageId: opts?.focusMessageId,
+        focusSeq,
+      },
       w: 640,
       h: 520,
     });

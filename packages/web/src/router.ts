@@ -42,5 +42,10 @@ export const router = createRouter({
       name: "session-blueprint",
       component: () => import("./views/SessionBlueprint.vue"),
     },
+    {
+      path: "/growth/:provider/:id(.*)",
+      name: "session-growth",
+      component: () => import("./views/SessionGrowth.vue"),
+    },
   ],
 });

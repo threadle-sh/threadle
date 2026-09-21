@@ -67,6 +67,7 @@
       class="search-hit"
       :class="{ picked: searchPickedIdx === i }"
       @click="openHit(h, i)"
+      @contextmenu.prevent.stop="openHitCtx($event, h, i)"
     >
       <div class="search-hit-head">
         <span
@@ -145,10 +146,97 @@
   </template>
   </div>
   </div>
+
+  <Teleport to="body">
+    <div
+      v-if="hitCtx"
+      class="menu-pop wf-folder-ctx"
+      :style="{ left: hitCtx.x + 'px', top: hitCtx.y + 'px' }"
+      @click.stop
+      @contextmenu.prevent
+    >
+      <button type="button" class="menu-item" @click="menuAction(() => openHit(hitCtx!.hit, hitCtx!.idx))">
+        <span class="menu-glyph">↗</span>
+        {{ searchPickedIdx === hitCtx.idx ? "Collapse" : "Expand" }}
+      </button>
+      <button
+        v-if="hitCtxSession"
+        type="button"
+        class="menu-item"
+        @click="menuAction(() => openHitTranscript(hitCtx!.hit))"
+      >
+        <span class="menu-glyph">≡</span> Transcript
+      </button>
+      <button
+        v-if="hitCtxSession"
+        type="button"
+        class="menu-item"
+        @click="
+          menuAction(() =>
+            router.push(`/blueprint/${hitCtxSession!.provider}/${hitCtxSession!.sessionId}`),
+          )
+        "
+      >
+        <span class="menu-glyph">⌗</span> Blueprint
+      </button>
+      <button
+        v-if="hitCtxSession"
+        type="button"
+        class="menu-item"
+        @click="
+          menuAction(() =>
+            router.push(`/growth/${hitCtxSession!.provider}/${hitCtxSession!.sessionId}`),
+          )
+        "
+      >
+        <span class="menu-glyph"><GrowthMark /></span> Growth
+      </button>
+      <button
+        v-if="hitCtxSession"
+        type="button"
+        class="menu-item"
+        @click="
+          menuAction(() =>
+            router.push({
+              path: '/lineage',
+              query: { focus: `${hitCtxSession!.provider}:${hitCtxSession!.sessionId}` },
+            }),
+          )
+        "
+      >
+        <span class="menu-glyph">⇄</span> Lineage
+      </button>
+      <button
+        v-if="hitCtxRef"
+        type="button"
+        class="menu-item"
+        @click="menuAction(() => sessionToWorkflow(hitCtxRef!))"
+      >
+        <span class="menu-glyph">→</span> Workflow
+      </button>
+      <button
+        v-if="hitCtx.hit.docType === 'payload'"
+        type="button"
+        class="menu-item"
+        @click="menuAction(() => fileViewers.openPayload({ hash: hitCtx!.hit.sessionId }))"
+      >
+        <span class="menu-glyph"><FolderMark /></span> Open payload
+      </button>
+      <button
+        v-if="hitCtxRef"
+        type="button"
+        class="menu-item"
+        @click="menuAction(() => toggleHitFavorite(hitCtxRef!))"
+      >
+        <span class="menu-glyph">{{ isHitFavorite(hitCtxRef!) ? "☆" : "★" }}</span>
+        {{ isHitFavorite(hitCtxRef!) ? "Remove from favorites" : "Add to favorites" }}
+      </button>
+    </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import type { SessionRef } from "@threadle/shared";
 import { relativeTime, shortId } from "@/lib/format";
@@ -158,10 +246,14 @@ import {
 } from "@/lib/providers";
 import { sessionsToWorkflow } from "@/lib/convert";
 import { useSessionsStore } from "@/stores/sessions";
+import { useFileViewersStore } from "@/stores/fileViewers";
+import { useFavoritesStore } from "@/stores/favorites";
 import ProviderFilterChips from "@/components/ProviderFilterChips.vue";
 import GraphLoadingOverlay from "@/components/GraphLoadingOverlay.vue";
 import SessionInfoPanel from "@/panels/SessionInfoPanel.vue";
 import TranscriptView from "@/panels/TranscriptView.vue";
+import FolderMark from "@/panels/FolderMark.vue";
+import GrowthMark from "@/panels/GrowthMark.vue";
 import "./chrome.css";
 
 interface SearchHit {
@@ -177,6 +269,9 @@ interface SearchHit {
 
 const router = useRouter();
 const sessions = useSessionsStore();
+const fileViewers = useFileViewersStore();
+const favorites = useFavoritesStore();
+void favorites.ensureLoaded();
 
 const searchQuery = ref("");
 const searchHits = ref<SearchHit[]>([]);
@@ -186,6 +281,16 @@ const searchProviderF = ref<SearchFilter>("all");
 const searchTypeF = ref<"all" | "transcript" | "context">("all");
 const searchRoleF = ref<"all" | "input" | "output">("all");
 let searchTimer: ReturnType<typeof setTimeout> | undefined;
+
+const hitCtx = ref<{ x: number; y: number; hit: SearchHit; idx: number }>();
+let ctxIgnoreClick = false;
+
+const hitCtxSession = computed(() => (hitCtx.value ? hitSession(hitCtx.value.hit) : undefined));
+const hitCtxRef = computed(() =>
+  hitCtxSession.value
+    ? sessions.find(hitCtxSession.value.provider, hitCtxSession.value.sessionId)
+    : undefined,
+);
 
 const searchFilterChips = computed(() => {
   const chips = [...sessions.searchFilterChips];
@@ -273,6 +378,63 @@ function openHit(h: SearchHit, idx: number): void {
   }
 }
 
+function openHitTranscript(h: SearchHit): void {
+  const target = hitSession(h);
+  if (!target) return;
+  fileViewers.openTranscript(target.provider, target.sessionId, {
+    focusMessageId: h.docType === "message" ? h.messageId : undefined,
+  });
+}
+
+function placeCtxMenu(e: MouseEvent): { x: number; y: number } {
+  const pad = 8;
+  const mw = 220;
+  const mh = 280;
+  return {
+    x: Math.min(e.clientX, window.innerWidth - mw - pad),
+    y: Math.min(e.clientY, window.innerHeight - mh - pad),
+  };
+}
+
+function openHitCtx(e: MouseEvent, h: SearchHit, idx: number): void {
+  ctxIgnoreClick = true;
+  hitCtx.value = { ...placeCtxMenu(e), hit: h, idx };
+  requestAnimationFrame(() => {
+    ctxIgnoreClick = false;
+  });
+}
+
+function menuAction(fn: () => unknown): void {
+  try {
+    void fn();
+  } finally {
+    hitCtx.value = undefined;
+  }
+}
+
+function dismissCtx(e: MouseEvent): void {
+  if (ctxIgnoreClick || e.button !== 0) return;
+  const t = e.target as HTMLElement;
+  if (!t.closest?.(".wf-folder-ctx")) hitCtx.value = undefined;
+}
+
+function sessionFavoriteInput(s: SessionRef) {
+  return {
+    kind: "session" as const,
+    provider: s.provider,
+    sessionId: s.id,
+    label: s.title ?? undefined,
+  };
+}
+
+function isHitFavorite(s: SessionRef): boolean {
+  return favorites.isFavorite(sessionFavoriteInput(s));
+}
+
+function toggleHitFavorite(s: SessionRef): void {
+  void favorites.toggle(sessionFavoriteInput(s));
+}
+
 const searchPickedRef = computed(() =>
   searchPicked.value
     ? sessions.find(searchPicked.value.provider, searchPicked.value.sessionId)
@@ -300,6 +462,15 @@ async function sessionToWorkflow(s: SessionRef): Promise<void> {
     alert(`Convert failed: ${err instanceof Error ? err.message : String(err)}`);
   }
 }
+
+onMounted(() => {
+  document.addEventListener("click", dismissCtx);
+  document.addEventListener("contextmenu", dismissCtx);
+});
+onUnmounted(() => {
+  document.removeEventListener("click", dismissCtx);
+  document.removeEventListener("contextmenu", dismissCtx);
+});
 </script>
 
 <style scoped>
