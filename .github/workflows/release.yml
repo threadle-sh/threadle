@@ -170,7 +170,12 @@ jobs:
           }
           cp README.md "$PKG_DIR/README.md"
           TAG="${{ steps.meta.outputs.tag }}"
-          RAW="https://raw.githubusercontent.com/${{ github.repository }}/${TAG}"
+          REPO="${{ github.repository }}"
+          RAW="https://raw.githubusercontent.com/${REPO}/${TAG}"
+          # Pin raw image URLs to this release tag (README may already use /main/).
+          perl -i -pe 's#https://raw\.githubusercontent\.com/'"$REPO"'/main/#https://raw.githubusercontent.com/'"$REPO"'/'"$TAG"'/#g' \
+            "$PKG_DIR/README.md"
+          # Fallback: rewrite any remaining relative image srcs.
           perl -i -pe 's#src="((?:images|docs)/[^"]+)"#src="'"$RAW"'/$1"#g' \
             "$PKG_DIR/README.md"
           if grep -qE 'src="(images|docs)/' "$PKG_DIR/README.md"; then
@@ -178,10 +183,16 @@ jobs:
             grep -nE 'src="(images|docs)/' "$PKG_DIR/README.md" || true
             exit 1
           fi
-          grep -q "src=\"${RAW}/" "$PKG_DIR/README.md" || {
-            echo "::error::expected rewritten absolute image URLs in staged README"
+          grep -qE 'src="https://raw\.githubusercontent\.com/'"$REPO"'/(main|'"$TAG"')/' "$PKG_DIR/README.md" || {
+            echo "::error::expected absolute raw.githubusercontent.com image URLs in staged README"
             exit 1
           }
+          # Relative doc links break on npmjs.com — root README should already be absolute.
+          if grep -qE '\]\((docs/|examples/|SECURITY\.md|CONTRIBUTING\.md|LICENSE)\)|href="(docs/|LICENSE|SECURITY\.md|CONTRIBUTING\.md)"' "$PKG_DIR/README.md"; then
+            echo "::error::relative doc/link href(s) still present — npm cannot resolve them"
+            grep -nE '\]\((docs/|examples/|SECURITY\.md|CONTRIBUTING\.md|LICENSE)\)|href="(docs/|LICENSE|SECURITY\.md|CONTRIBUTING\.md)"' "$PKG_DIR/README.md" || true
+            exit 1
+          fi
           npm pack -w threadle --dry-run 2>&1 | grep -qi 'README.md' || {
             echo "::error::README.md is still missing from the tarball"
             exit 1
