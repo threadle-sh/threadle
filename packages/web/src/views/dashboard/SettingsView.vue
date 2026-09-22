@@ -78,7 +78,7 @@
       </button>
     </div>
     <p class="stat-note">
-      Accents for session dots, wires, and transcript assistant labels. Stored in
+      Accents for session dots, wires, and transcript agent labels. Stored in
       <span class="mono">settings.json</span> under <span class="mono">providerColors</span>.
     </p>
   </div>
