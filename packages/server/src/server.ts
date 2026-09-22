@@ -28,6 +28,7 @@ import { mcpRoutes } from "./routes/mcp.js";
 import { backupRoutes } from "./routes/backup.js";
 import { gitRoutes } from "./routes/git.js";
 import { favoriteRoutes } from "./routes/favorites.js";
+import { memoryRoutes } from "./routes/memory.js";
 import { gcTmpFiles } from "./gc.js";
 import { appLog, captureConsole, compactJobHistory } from "./jobs.js";
 
@@ -275,6 +276,7 @@ export function createApp(opts: AppOptions) {
   app.route("/api/git", gitRoutes);
   app.route("/api/backup", backupRoutes);
   app.route("/api/favorites", favoriteRoutes);
+  app.route("/api/memory", memoryRoutes);
 
   app.onError((err, c) => {
     const status = (err as { status?: number }).status;

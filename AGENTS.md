@@ -26,6 +26,7 @@ Plain terms lead. Graph JSON keeps historical type ids for compatibility.
 | Graph history | `graphs/versions/<id>/` snapshots |
 | Triggers | `~/.config/threadle/triggers.json` + `threadle daemon` |
 | Model usage | Claude 5h / 7d (+ Opus 7d) from `~/.claude.json`; Cursor monthly pools via CLI — run-log `!` + agent chip |
+| Auto-memory | Agents → **memory** chip (Claude / Grok md / Codex stage1+FS). Not Meta. Antigravity `knowledge/` → Meta when it has files; EchoVault / Grok memtrace / Codex `jobs` → no Memory nav |
 
 ## Layout
 

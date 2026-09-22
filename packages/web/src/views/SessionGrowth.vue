@@ -86,6 +86,8 @@
                 @pointermove="onPanMove"
                 @pointerup="onPanEnd"
                 @pointercancel="onPanEnd"
+                @selectstart.prevent
+                @dragstart.prevent
                 @dblclick="() => resetView()"
                 @contextmenu.prevent="openChartCtx($event)"
                 @mouseleave="onChartLeave"
@@ -254,6 +256,7 @@
 
               <div
                 v-if="tagStep && tagStyle"
+                ref="tagEl"
                 class="gr-tag mono"
                 :style="{
                   ...tagStyle,
@@ -345,7 +348,7 @@
             </div>
             </div>
             <div class="gr-axis mono">
-              <span class="gr-axis-lo">{{ fmtCtx(yScale.floor) }}</span>
+              <span class="gr-axis-lo">{{ fmtCtx((panYScale ?? yScale).floor) }}</span>
               <ul class="gr-axis-legend">
                 <li>
                   <i class="gr-leg-swatch gr-leg-user" aria-hidden="true" />
@@ -534,7 +537,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import type { SessionRef } from "@threadle/shared";
 import DashNav from "@/panels/DashNav.vue";
@@ -669,7 +672,10 @@ const layers = reactive<Record<LayerKey, boolean>>({
 const hoverIdx = ref<number>();
 const selectedIdx = ref<number>();
 const chartHost = ref<HTMLElement | null>(null);
+const tagEl = ref<HTMLElement | null>(null);
+const tagH = ref(96);
 const tipPos = ref<{ x: number; y: number }>();
+const panYScale = ref<{ floor: number; peak: number } | null>(null);
 
 const zoom = ref({ a: 0, b: 1 });
 /** When true, Y scales tightly to the visible line (min/max in view). */
@@ -825,11 +831,16 @@ const yScale = computed(() => {
 
   if (yFit.value) {
     const span = Math.max(dataMax - dataMin, 1);
-    const pad = Math.max(span * 0.08, dataMax * 0.02, 1);
-    return {
-      floor: Math.max(0, dataMin - pad),
-      peak: dataMax + pad,
-    };
+    const padAmt = Math.max(span * 0.08, dataMax * 0.02, 1);
+    let floor = Math.max(0, dataMin - padAmt);
+    let peak = dataMax + padAmt;
+    // % marks are absolute fractions of the context window — keep the full
+    // window on-scale (fit/zoom floors would push 50/80/90% off-chart).
+    if (layers.pct) {
+      peak = Math.max(peak, ctxWindow.value);
+      floor = 0;
+    }
+    return { floor, peak };
   }
 
   // Modest headroom so the curve isn't glued to the top edge.
@@ -845,29 +856,40 @@ const yScale = computed(() => {
   }
 
   let floor = 0;
-  if (zoomed.value) {
+  // Zoomed Y-crop hides absolute % lines — skip the raised floor while marks are on.
+  if (zoomed.value && !layers.pct) {
     floor = Math.max(0, Math.floor(dataMin * 0.92));
   }
   return { floor, peak };
 });
 
 function yAt(value: number): number {
-  const { floor, peak } = yScale.value;
+  const { floor, peak } = panYScale.value ?? yScale.value;
   const ySpan = Math.max(1, peak - floor);
   return pad.t + innerH - (innerH * (value - floor)) / ySpan;
+}
+
+/** Continuous X from zoom window — pans slide instead of discrete lo/hi snaps. */
+function xAt(i: number, n: number): number {
+  const avail = chartW - pad.l - pad.r;
+  if (n <= 1) return pad.l + avail / 2;
+  const { a, b } = zoom.value;
+  const span = Math.max(b - a, 1e-9);
+  const t = i / (n - 1);
+  return pad.l + (avail * (t - a)) / span;
 }
 
 const points = computed((): ChartPoint[] => {
   const n = steps.value.length;
   if (!n) return [];
   const { lo, hi } = win.value;
-  const count = hi - lo + 1;
-  const avail = chartW - pad.l - pad.r;
+  // One neighbor past each edge so the stroked line meets the clip cleanly.
+  const i0 = Math.max(0, lo - 1);
+  const i1 = Math.min(n - 1, hi + 1);
   const out: ChartPoint[] = [];
-  for (let i = lo; i <= hi; i++) {
+  for (let i = i0; i <= i1; i++) {
     const step = steps.value[i]!;
-    const j = i - lo;
-    const x = count === 1 ? pad.l + avail / 2 : pad.l + (avail * j) / (count - 1);
+    const x = xAt(i, n);
     const y = yAt(step.context);
     out.push({
       idx: i,
@@ -1095,13 +1117,78 @@ const selectedStep = computed(() =>
   selectedIdx.value != null ? steps.value[selectedIdx.value] : undefined,
 );
 
+const TAG_W = 280;
+const TAG_GAP = 18;
+
 const tagStyle = computed(() => {
   if (!tipPos.value || tagIdx.value == null) return undefined;
   const host = chartHost.value;
-  const maxW = host ? host.clientWidth - 16 : 320;
-  const left = Math.min(Math.max(8, tipPos.value.x), maxW - 220);
-  const top = Math.max(8, tipPos.value.y - 12);
-  return { left: `${left}px`, top: `${top}px` };
+  const hostW = host?.clientWidth ?? 320;
+  const hostH = host?.clientHeight ?? 280;
+  const estH = Math.max(48, tagH.value || 96);
+  const margin = 8;
+
+  // Anchor to the node center in chart pixels (SVG is stretched to the host).
+  const pt = points.value.find((p) => p.idx === tagIdx.value);
+  const cx = pt ? (pt.pctX / 100) * hostW : tipPos.value.x;
+  const cy = pt ? (pt.pctY / 100) * hostH : tipPos.value.y;
+
+  // Prefer right of the point. Vertically: below the node so the marker stays clear.
+  let left = cx + TAG_GAP;
+  let top = cy + TAG_GAP;
+
+  // Near the bottom → sit above the node instead.
+  if (top + estH > hostH - margin) {
+    top = cy - estH - TAG_GAP;
+  }
+  // Near the top with a tall tag that still covers the node when "below" —
+  // keep below if it fits; otherwise above and clamp.
+  if (top < margin) {
+    top = margin;
+  }
+  // If the node would sit inside the tag box, nudge so the point is outside.
+  if (top <= cy && top + estH >= cy) {
+    const above = cy - estH - TAG_GAP;
+    const below = cy + TAG_GAP;
+    if (below + estH <= hostH - margin) top = below;
+    else if (above >= margin) top = above;
+  }
+
+  if (top + estH > hostH - margin) {
+    left = Math.min(
+      Math.max(margin, left),
+      Math.max(margin, hostW - TAG_W - margin),
+    );
+    return { left: `${left}px`, top: "auto", bottom: `${margin}px` };
+  }
+
+  if (left + TAG_W > hostW - margin) {
+    left = cx - TAG_W - TAG_GAP;
+  }
+  left = Math.min(Math.max(margin, left), Math.max(margin, hostW - TAG_W - margin));
+
+  return { left: `${left}px`, top: `${top}px`, bottom: "auto" };
+});
+
+watch([tagStep, tipPos, tagKind], async () => {
+  if (!tagStep.value) return;
+  await nextTick();
+  const el = tagEl.value;
+  if (!el) return;
+  const h = el.offsetHeight;
+  if (h > 0) tagH.value = h;
+});
+
+let tagRo: ResizeObserver | undefined;
+watch(tagEl, (el) => {
+  tagRo?.disconnect();
+  tagRo = undefined;
+  if (!el || typeof ResizeObserver === "undefined") return;
+  tagRo = new ResizeObserver(() => {
+    const h = el.offsetHeight;
+    if (h > 0) tagH.value = h;
+  });
+  tagRo.observe(el);
 });
 
 function chipTitle(t: (typeof LAYER_TOGGLES)[number]): string {
@@ -1292,11 +1379,28 @@ function onWheel(e: WheelEvent): void {
   zoomAround(Math.exp(dy * 0.0045), frac);
 }
 
+function endPan(e?: PointerEvent): void {
+  if (!isPanning.value) return;
+  isPanning.value = false;
+  panYScale.value = null;
+  if (!e) return;
+  try {
+    (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
+  } catch {
+    // ignore
+  }
+}
+
 function onPanStart(e: PointerEvent): void {
   if (e.button !== 0 || !zoomed.value) return;
   if ((e.target as HTMLElement | null)?.closest?.(".gr-node, .gr-controls-stack")) return;
+  e.preventDefault();
+  window.getSelection()?.removeAllRanges();
   zoom.value = { ...zoomTarget };
   isPanning.value = true;
+  hoverIdx.value = undefined;
+  tipPos.value = undefined;
+  panYScale.value = { floor: yScale.value.floor, peak: yScale.value.peak };
   panStartX = e.clientX;
   panStartA = zoomTarget.a;
   panStartB = zoomTarget.b;
@@ -1305,6 +1409,7 @@ function onPanStart(e: PointerEvent): void {
 
 function onPanMove(e: PointerEvent): void {
   if (!isPanning.value || !chartHost.value) return;
+  e.preventDefault();
   const w = chartHost.value.clientWidth || 1;
   const span = panStartB - panStartA;
   const dx = (e.clientX - panStartX) / w;
@@ -1312,13 +1417,7 @@ function onPanMove(e: PointerEvent): void {
 }
 
 function onPanEnd(e: PointerEvent): void {
-  if (!isPanning.value) return;
-  isPanning.value = false;
-  try {
-    (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
-  } catch {
-    // ignore
-  }
+  endPan(e);
 }
 
 function ensureVisible(idx: number): void {
@@ -1390,18 +1489,21 @@ function placeTip(e: MouseEvent): void {
   const host = chartHost.value;
   if (!host) return;
   const rect = host.getBoundingClientRect();
+  // Raw cursor in chart coords — placement offset lives in tagStyle.
   tipPos.value = {
-    x: e.clientX - rect.left + 14,
-    y: e.clientY - rect.top - 10,
+    x: e.clientX - rect.left,
+    y: e.clientY - rect.top,
   };
 }
 
 function onNodeEnter(i: number, e: MouseEvent): void {
+  if (isPanning.value) return;
   hoverIdx.value = i;
   placeTip(e);
 }
 
 function onNodeMove(e: MouseEvent): void {
+  if (isPanning.value) return;
   placeTip(e);
 }
 
@@ -1472,7 +1574,7 @@ async function copyPointPrompt(idx: number): Promise<void> {
 function onChartLeave(): void {
   hoverIdx.value = undefined;
   tipPos.value = undefined;
-  if (isPanning.value) isPanning.value = false;
+  // Don't end pan here — pointer capture keeps drag alive outside the chart.
 }
 
 function selectStep(i: number): void {
@@ -1556,6 +1658,8 @@ onUnmounted(() => {
   document.removeEventListener("keydown", onKey);
   document.removeEventListener("click", dismissCtx);
   document.removeEventListener("contextmenu", dismissCtx);
+  tagRo?.disconnect();
+  tagRo = undefined;
   if (zoomRaf) {
     cancelAnimationFrame(zoomRaf);
     zoomRaf = 0;
@@ -1746,9 +1850,45 @@ onUnmounted(() => {
   overflow: hidden;
   cursor: crosshair;
   touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+.gr-chart *,
+.gr-chart svg,
+.gr-chart text {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+}
+.gr-chart::selection,
+.gr-chart *::selection {
+  background: transparent;
+  color: inherit;
+}
+.gr-chart:focus,
+.gr-chart:focus-visible {
+  outline: none;
 }
 .gr-chart.panning {
   cursor: grabbing;
+}
+.gr-chart.panning .gr-svg,
+.gr-chart.panning .gr-node,
+.gr-chart.panning .gr-signal-mark,
+.gr-chart.panning .gr-compact-mark,
+.gr-chart.panning .gr-cache-dot,
+.gr-chart.panning .gr-tag,
+.gr-chart.panning .gr-pct-label {
+  pointer-events: none;
+  transition: none !important;
+}
+.gr-chart.panning .gr-node:hover {
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--node, var(--text-dim)) 55%, transparent);
+  z-index: 2;
 }
 .gr-controls-stack {
   position: absolute;
@@ -2011,12 +2151,15 @@ onUnmounted(() => {
 }
 .gr-tag {
   position: absolute;
-  z-index: 6;
+  z-index: 8;
   max-width: 280px;
+  max-height: calc(100% - 16px);
+  overflow: hidden;
   pointer-events: none;
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
+  align-content: flex-start;
   gap: 6px 8px;
   background: var(--panel-bg);
   border: 1px solid;

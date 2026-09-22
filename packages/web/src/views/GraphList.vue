@@ -761,6 +761,7 @@
       <AgentsView
         v-else-if="view === 'agents'"
         :focus="agentFocus"
+        :browse="agentBrowseFocus"
         @nav="onNav"
         @open-session="onOpenSession"
       />
@@ -1017,6 +1018,10 @@ const agentFocus = computed(() => {
     name,
     provider: typeof provider === "string" && provider ? provider : undefined,
   };
+});
+const agentBrowseFocus = computed(() => {
+  const b = route.query.browse;
+  return typeof b === "string" && b ? b : undefined;
 });
 
 function onNav(id: string): void {

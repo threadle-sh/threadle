@@ -1125,3 +1125,11 @@ body.col-resizing * {
   background: var(--panel-bg-raised);
   border-color: var(--border-strong);
 }
+
+a.cl-local::after {
+  content: " (internal)";
+  font-size: 0.78em;
+  opacity: 0.5;
+  font-weight: 400;
+  speak: never;
+}

@@ -15,7 +15,13 @@
       <input
         v-model="agentFilter"
         class="threadle-input dash-search"
-        :placeholder="agentBrowse === 'defs' ? 'Filter agents…' : 'Filter runs…'"
+        :placeholder="
+          agentBrowse === 'defs'
+            ? 'Filter agents…'
+            : agentBrowse === 'memory'
+              ? 'Filter memory…'
+              : 'Filter runs…'
+        "
         spellcheck="false"
       />
       <div class="chip-row">
@@ -51,12 +57,30 @@
         >
           live{{ agentInstances.live ? ` · ${agentInstances.live}` : "" }}
         </button>
+        <button
+          class="filter-chip"
+          :class="{ active: agentBrowse === 'memory' }"
+          title="Auto-memory (Claude · Grok · Codex)"
+          @click="setAgentBrowse('memory')"
+        >
+          memory{{ memoryCount != null ? ` · ${memoryCount}` : "" }}
+        </button>
       </div>
     </div>
   </div>
 
+        <!-- memory: list + icicle -->
+        <div v-if="agentBrowse === 'memory'" class="lib-flex">
+          <MemoryBrowser
+            class="mem-browser-host"
+            :filter="agentFilter"
+            :provider-filter="agentProviderF"
+            @loaded="memoryCount = $event"
+          />
+        </div>
+
         <!-- runs / subagents / live: table + in-place detail -->
-        <div v-if="agentBrowse !== 'defs'" class="lib-flex">
+        <div v-else-if="agentBrowse !== 'defs'" class="lib-flex">
           <div class="agent-main">
             <div
               class="stat-table cols-inst"
@@ -407,11 +431,14 @@ import ProviderFilterChips from "@/components/ProviderFilterChips.vue";
 import SessionInfoPanel from "@/panels/SessionInfoPanel.vue";
 import SessionLivePill from "@/panels/SessionLivePill.vue";
 import GrowthMark from "@/panels/GrowthMark.vue";
+import MemoryBrowser from "@/panels/MemoryBrowser.vue";
 import "./chrome.css";
 
 const props = defineProps<{
   /** Deep-link: agent name (+ optional provider) from `?agent=` / `?provider=`. */
   focus?: { name: string; provider?: string };
+  /** Deep-link: `?browse=memory` etc. */
+  browse?: string;
 }>();
 
 const emit = defineEmits<{
@@ -526,9 +553,26 @@ const agentInstances = computed(() => ({
 }));
 
 /** Exclusive Agents browse modes — tiles are radios, not toggles. */
-type AgentBrowse = "defs" | "runs" | "subs" | "live";
+type AgentBrowse = "defs" | "runs" | "subs" | "live" | "memory";
 const agentBrowse = ref<AgentBrowse>("defs");
 const pickedRun = ref<SessionRef>();
+const memoryCount = ref<number | null>(null);
+
+const BROWSE_MODES: AgentBrowse[] = ["defs", "runs", "subs", "live", "memory"];
+
+function browseFromProp(raw?: string): AgentBrowse | undefined {
+  if (!raw) return undefined;
+  return BROWSE_MODES.includes(raw as AgentBrowse) ? (raw as AgentBrowse) : undefined;
+}
+
+watch(
+  () => props.browse,
+  (b) => {
+    const mode = browseFromProp(b);
+    if (mode && mode !== agentBrowse.value) setAgentBrowse(mode);
+  },
+  { immediate: true },
+);
 
 const pickedRunLiveStatus = computed(() => {
   const p = pickedRun.value;
@@ -543,9 +587,24 @@ function setAgentBrowse(mode: AgentBrowse): void {
   agentBrowse.value = mode;
   if (mode === "defs") {
     pickedRun.value = undefined;
+  } else if (mode === "memory") {
+    pickedRun.value = undefined;
+    agentPicked.value = undefined;
   } else {
     agentPicked.value = undefined;
   }
+  const cur = router.currentRoute.value.query;
+  const nextBrowse = mode === "defs" ? undefined : mode;
+  const curBrowse = typeof cur.browse === "string" ? cur.browse : undefined;
+  if (curBrowse === nextBrowse && cur.view === "agents") return;
+  const q: Record<string, string> = {};
+  for (const [k, v] of Object.entries(cur)) {
+    if (typeof v === "string") q[k] = v;
+  }
+  q.view = "agents";
+  if (nextBrowse) q.browse = nextBrowse;
+  else delete q.browse;
+  void router.replace({ query: q });
 }
 
 function selectRun(s: SessionRef): void {
@@ -600,6 +659,7 @@ function openRunParent(child: SessionRef): void {
 onMounted(() => {
   sessions.ensureHydrated();
   void loadInstances();
+  void prefetchMemoryCount();
   document.addEventListener("click", dismissCtx);
   document.addEventListener("contextmenu", dismissCtx);
 });
@@ -607,6 +667,16 @@ onUnmounted(() => {
   document.removeEventListener("click", dismissCtx);
   document.removeEventListener("contextmenu", dismissCtx);
 });
+
+async function prefetchMemoryCount(): Promise<void> {
+  try {
+    const res = await fetch("/api/memory");
+    const data = (await res.json()) as unknown[];
+    memoryCount.value = Array.isArray(data) ? data.length : 0;
+  } catch {
+    memoryCount.value = 0;
+  }
+}
 
 const INST_SEL: Record<string, (s: SessionRef) => number | string> = {
   agent: (s) => s.agent ?? "",
@@ -901,6 +971,11 @@ const agentGroups = computed(() => {
   display: flex;
   gap: 16px;
   align-items: flex-start;
+}
+.mem-browser-host {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
 }
 .lib-aside {
   width: 340px;

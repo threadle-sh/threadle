@@ -77,6 +77,7 @@
                 v-if="fmtOf(part.text) === 'markdown'"
                 class="t-text"
                 v-html="renderMd(part.text ?? '')"
+                @click="onMdClick"
               />
               <div
                 v-else-if="fmtOf(part.text) === 'svg'"
@@ -137,6 +138,11 @@
       </div>
     </template>
   </div>
+  <ConfirmModal
+    v-model="outboundDlg"
+    @confirm="onConfirmOutbound"
+    @cancel="pendingOutbound = undefined"
+  />
 </template>
 
 <script setup lang="ts">
@@ -152,8 +158,11 @@ import {
   safeHighlight,
   safeSvg,
 } from "@/lib/safeHtml";
+import { interceptContentLinkClick } from "@/lib/contentLinks";
 import { useSessionsStore } from "@/stores/sessions";
+import { useFileViewersStore } from "@/stores/fileViewers";
 import { displayMessageRole } from "@/lib/messageRole";
+import ConfirmModal, { type ConfirmModel } from "@/panels/ConfirmModal.vue";
 
 const props = defineProps<{
   provider: string;
@@ -173,6 +182,42 @@ const emit = defineEmits<{
 
 const PAGE = 200;
 const sessions = useSessionsStore();
+const fileViewers = useFileViewersStore();
+const outboundDlg = ref<ConfirmModel>();
+const pendingOutbound = ref<string>();
+
+const transcriptBaseDir = computed(() => {
+  const s = sessions.find(props.provider, props.sessionId);
+  const dir = s?.projectDir?.replace(/\\/g, "/").replace(/\/+$/, "");
+  return dir || undefined;
+});
+
+function onMdClick(e: MouseEvent): void {
+  interceptContentLinkClick(e, {
+    baseDir: transcriptBaseDir.value,
+    onLocal: (filePath) => {
+      void fileViewers.open(filePath);
+    },
+    onExternal: (url, domain) => {
+      pendingOutbound.value = url;
+      outboundDlg.value = {
+        title: "Open URL",
+        emphasis: domain,
+        body: " — leave threadle and open this site?",
+        detail: url,
+        confirmLabel: "Open",
+        cancelLabel: "Cancel",
+      };
+    },
+  });
+}
+
+function onConfirmOutbound(): void {
+  const url = pendingOutbound.value;
+  pendingOutbound.value = undefined;
+  if (!url) return;
+  window.open(url, "_blank", "noopener,noreferrer");
+}
 
 const assistantRoleStyle = computed(() => ({
   color: providerColor(props.provider),
@@ -923,7 +968,6 @@ function clearSelection(): void {
 .t-msg.focus {
   border-color: var(--lane-session);
   background: color-mix(in srgb, var(--lane-session) 14%, transparent);
-  box-shadow: inset 3px 0 0 var(--lane-session);
 }
 .t-msg.synthetic {
   border-style: dashed;

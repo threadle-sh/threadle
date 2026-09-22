@@ -117,6 +117,7 @@
           :class="htmlClass(w)"
           :data-fv-id="w.id"
           v-html="htmlBody(w)"
+          @click="onBodyClick($event, w)"
         />
       </template>
       <div
@@ -129,6 +130,11 @@
     </div>
   </div>
   <ConfirmModal v-model="missingDlg" @confirm="onMissingDismiss" @cancel="onMissingDismiss" />
+  <ConfirmModal
+    v-model="outboundDlg"
+    @confirm="onConfirmOutbound"
+    @cancel="pendingOutbound = undefined"
+  />
 </template>
 
 <script setup lang="ts">
@@ -148,6 +154,7 @@ import {
   type ViewerRender,
   type ResolvedFormat,
 } from "@/lib/fileViewerFormat";
+import { interceptContentLinkClick } from "@/lib/contentLinks";
 
 const viewers = useFileViewersStore();
 const settings = useSettingsStore();
@@ -180,6 +187,44 @@ const missingDlg = computed({
 
 function onMissingDismiss(): void {
   viewers.dismissMissingAlert();
+}
+
+const outboundDlg = ref<ConfirmModel>();
+const pendingOutbound = ref<string>();
+
+function parentDir(filePath: string | undefined): string | undefined {
+  if (!filePath) return undefined;
+  const n = filePath.replace(/\\/g, "/");
+  const i = n.lastIndexOf("/");
+  if (i <= 0) return undefined;
+  return n.slice(0, i);
+}
+
+function onBodyClick(e: MouseEvent, w: FileViewerWindow): void {
+  interceptContentLinkClick(e, {
+    baseDir: parentDir(w.diskPath ?? w.path),
+    onLocal: (filePath) => {
+      void viewers.open(filePath);
+    },
+    onExternal: (url, domain) => {
+      pendingOutbound.value = url;
+      outboundDlg.value = {
+        title: "Open URL",
+        emphasis: domain,
+        body: " — leave threadle and open this site?",
+        detail: url,
+        confirmLabel: "Open",
+        cancelLabel: "Cancel",
+      };
+    },
+  });
+}
+
+function onConfirmOutbound(): void {
+  const url = pendingOutbound.value;
+  pendingOutbound.value = undefined;
+  if (!url) return;
+  window.open(url, "_blank", "noopener,noreferrer");
 }
 
 async function onCopy(w: FileViewerWindow): Promise<void> {
