@@ -1,11 +1,11 @@
 {
   "name": "threadle",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Local-first node-graph patchbay for Claude Code, opencode, Cursor Agent, Antigravity, Codex, Copilot, and Grok Build sessions.",
   "type": "module",
   "license": "MIT",
   "author": "Fabian Bienk (https://github.com/zFarbp)",
-  "homepage": "https://github.com/threadle-sh/threadle#readme",
+  "homepage": "https://threadle.sh",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/threadle-sh/threadle.git",
