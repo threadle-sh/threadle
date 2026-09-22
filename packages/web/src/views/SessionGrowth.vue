@@ -806,15 +806,6 @@ const points = computed((): ChartPoint[] => {
     const j = i - lo;
     const x = count === 1 ? pad.l + avail / 2 : pad.l + (avail * j) / (count - 1);
     const y = yAt(step.context);
-    const prev = i > 0 ? steps.value[i - 1] : undefined;
-    const promptKey = step.promptMessageId ?? step.assistantMessageId;
-    const prevKey = prev
-      ? (prev.promptMessageId ?? prev.assistantMessageId)
-      : undefined;
-    // Prompts-only view: every point is a user prompt. Full turns: first sample
-    // after a new user message is the prompt landmark; later samples are agent.
-    const kind: "user" | "agent" =
-      layers.prompts || !prev || promptKey !== prevKey ? "user" : "agent";
     out.push({
       idx: i,
       x,
@@ -822,11 +813,32 @@ const points = computed((): ChartPoint[] => {
       pctX: (100 * x) / chartW,
       pctY: (100 * y) / chartH,
       step,
-      kind,
+      kind: stepKindAt(i),
     });
   }
   return out;
 });
+
+function stepKindAt(i: number): "user" | "agent" {
+  if (layers.prompts) return "user";
+  const step = steps.value[i];
+  if (!step) return "user";
+  const prev = i > 0 ? steps.value[i - 1] : undefined;
+  const promptKey = step.promptMessageId ?? step.assistantMessageId;
+  const prevKey = prev
+    ? (prev.promptMessageId ?? prev.assistantMessageId)
+    : undefined;
+  return !prev || promptKey !== prevKey ? "user" : "agent";
+}
+
+function focusMessageIdForStep(i: number): string | undefined {
+  const step = steps.value[i];
+  if (!step) return undefined;
+  if (stepKindAt(i) === "agent") {
+    return step.assistantMessageId ?? step.promptMessageId;
+  }
+  return step.promptMessageId ?? step.assistantMessageId;
+}
 
 const linePath = computed(() => {
   const pts = points.value;
@@ -1373,7 +1385,7 @@ function openStepTranscript(i: number): void {
   const step = steps.value[i];
   if (!step) return;
   fileViewers.openTranscript(provider.value, sessionId.value, {
-    focusMessageId: step.promptMessageId ?? step.assistantMessageId,
+    focusMessageId: focusMessageIdForStep(i),
   });
 }
 
