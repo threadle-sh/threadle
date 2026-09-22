@@ -80,7 +80,7 @@
           }"
         />
         <span class="search-hit-title">{{ hitTitle(h) }}</span>
-        <span v-if="h.role" class="op-badge">{{ h.role }}</span>
+        <span v-if="h.role" class="op-badge">{{ displayMessageRole(h.role) }}</span>
         <span v-if="h.docType === 'payload'" class="op-badge rule-skill">{{
           h.extra?.kind ?? "payload"
         }}</span>
@@ -133,6 +133,14 @@
           :focus-message-id="searchFocus?.messageId"
           :focus-ts="searchFocus?.ts"
           :focus-role="searchFocus?.role"
+          @select-message="
+            (id) =>
+              fileViewers.setTranscriptSelection(
+                searchPicked!.provider,
+                searchPicked!.sessionId,
+                id,
+              )
+          "
         />
         <SessionInfoPanel
           v-else
@@ -240,6 +248,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import type { SessionRef } from "@threadle/shared";
 import { relativeTime, shortId } from "@/lib/format";
+import { displayMessageRole } from "@/lib/messageRole";
 import {
   type SearchFilter,
   providerColor,

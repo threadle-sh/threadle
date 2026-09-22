@@ -65,6 +65,11 @@ const PREVIEW_MAX = 1_500_000;
 
 export const useFileViewersStore = defineStore("fileViewers", () => {
   const windows = ref<FileViewerWindow[]>([]);
+  const transcriptSelection = ref<{
+    provider: string;
+    sessionId: string;
+    messageId: string;
+  }>();
   /** Disk paths known missing (failed open / exists probe). */
   const missingPathSet = ref<Set<string>>(new Set());
   const missingAlert = ref<MissingFileAlert>();
@@ -438,6 +443,26 @@ export const useFileViewersStore = defineStore("fileViewers", () => {
     win.loading = false;
   }
 
+  function hasTranscript(provider: string, sessionId: string): boolean {
+    const key = `transcript:${provider}:${sessionId}`;
+    return windows.value.some((w) => w.path === key && !!w.transcriptRef);
+  }
+
+  function setTranscriptSelection(
+    provider: string,
+    sessionId: string,
+    messageId: string | undefined,
+  ): void {
+    if (!messageId) {
+      const cur = transcriptSelection.value;
+      if (cur?.provider === provider && cur.sessionId === sessionId) {
+        transcriptSelection.value = undefined;
+      }
+      return;
+    }
+    transcriptSelection.value = { provider, sessionId, messageId };
+  }
+
   /**
    * Open the reconstructed session context (markdown) in a floating window.
    * Large contexts are capped like file previews (`truncated: true`).
@@ -633,6 +658,7 @@ export const useFileViewersStore = defineStore("fileViewers", () => {
 
   return {
     windows,
+    transcriptSelection,
     missingPaths,
     missingAlert,
     isMissing,
@@ -645,6 +671,8 @@ export const useFileViewersStore = defineStore("fileViewers", () => {
     openDocument,
     openInvocations,
     openTranscript,
+    hasTranscript,
+    setTranscriptSelection,
     openContext,
     openPayload,
     refreshLive,

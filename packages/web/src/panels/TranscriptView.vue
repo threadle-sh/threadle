@@ -57,7 +57,7 @@
               class="t-role"
               :class="msg.role"
               :style="msg.role === 'assistant' ? assistantRoleStyle : undefined"
-            >{{ msg.role }}</span>
+            >{{ displayMessageRole(msg.role) }}</span>
             <span v-if="msg.synthetic" class="threadle-chip">injected context</span>
             <span class="t-time" :title="msg.timestamp ? new Date(msg.timestamp).toLocaleString() : undefined">{{
               time(msg.timestamp)
@@ -153,6 +153,7 @@ import {
   safeSvg,
 } from "@/lib/safeHtml";
 import { useSessionsStore } from "@/stores/sessions";
+import { displayMessageRole } from "@/lib/messageRole";
 
 const props = defineProps<{
   provider: string;
@@ -165,7 +166,10 @@ const props = defineProps<{
   focusTs?: number;
   focusRole?: string;
 }>();
-const emit = defineEmits<{ selection: [range: [number, number] | undefined] }>();
+const emit = defineEmits<{
+  selection: [range: [number, number] | undefined];
+  selectMessage: [messageId: string | undefined];
+}>();
 
 const PAGE = 200;
 const sessions = useSessionsStore();
@@ -756,12 +760,14 @@ function onSelect(i: number, e: MouseEvent): void {
     selection.value = [abs, abs];
   }
   emit("selection", selection.value);
+  emit("selectMessage", messages.value[i]?.id);
 }
 
 function clearSelection(): void {
   anchor = undefined;
   selection.value = undefined;
   emit("selection", undefined);
+  emit("selectMessage", undefined);
 }
 </script>
 

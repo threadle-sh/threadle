@@ -474,7 +474,7 @@
                 :key="i"
                 class="bp-call"
               >
-                <span class="bp-call-time">{{ row.role }}</span>
+                <span class="bp-call-time">{{ displayMessageRole(row.role) }}</span>
                 <span class="bp-call-text">{{ row.summary }}</span>
               </div>
               <div v-if="transcriptPreviewMore" class="bp-call-more">
@@ -701,6 +701,7 @@ import { api } from "@/api/client";
 import { downloadUrl, sessionsToWorkflow, referenceContextToWorkflow, referenceContextToLibrary } from "@/lib/convert";
 import { useHorizontalResize } from "@/lib/useHorizontalResize";
 import { useFilterChipMenu } from "@/lib/useFilterChipMenu";
+import { displayMessageRole } from "@/lib/messageRole";
 import FilterChipMenu from "@/components/FilterChipMenu.vue";
 import GraphLoadingOverlay from "@/components/GraphLoadingOverlay.vue";
 

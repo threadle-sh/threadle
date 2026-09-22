@@ -99,6 +99,14 @@
           :session-id="w.transcriptRef.sessionId"
           :focus-message-id="w.transcriptRef.focusMessageId"
           :focus-seq="w.transcriptRef.focusSeq"
+          @select-message="
+            (id) =>
+              viewers.setTranscriptSelection(
+                w.transcriptRef!.provider,
+                w.transcriptRef!.sessionId,
+                id,
+              )
+          "
         />
       </div>
       <template v-else>

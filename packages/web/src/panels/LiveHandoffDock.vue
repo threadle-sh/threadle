@@ -42,7 +42,7 @@
           : "Pick an agent and send a message, or Start with seed." }}
       </div>
       <div v-for="(m, i) in msgs" :key="i" class="lh-msg" :class="m.role">
-        <span class="lh-role micro-label">{{ m.role }}</span>
+        <span class="lh-role micro-label">{{ displayMessageRole(m.role) }}</span>
         <pre class="lh-text">{{ m.text }}</pre>
       </div>
       <div v-if="busy" class="lh-busy mono">{{ progress || "working…" }}</div>
@@ -103,6 +103,7 @@ import type {
 } from "@threadle/shared";
 import { defaultConfigFor } from "@threadle/shared";
 import { api } from "@/api/client";
+import { displayMessageRole } from "@/lib/messageRole";
 
 export interface LiveHandoffSession {
   provider: ProviderId;

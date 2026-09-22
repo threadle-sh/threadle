@@ -53,7 +53,7 @@
           no context samples for this session
         </div>
         <div v-else-if="!loading && !steps.length" class="gr-dim">
-          no user prompts in this session
+          {{ layers.solo ? "no solo prompt runs in this view" : "no user prompts in this session" }}
         </div>
         <div
           v-else-if="!loading && steps.length"
@@ -205,7 +205,17 @@
                 :style="{ left: pt.pctX + '%', top: pt.pctY + '%' }"
                 :title="`reasoning · ${pt.step.thinkingBlocks} block${(pt.step.thinkingBlocks ?? 0) === 1 ? '' : 's'}`"
               >
-                ◎
+                ∴
+              </div>
+
+              <div
+                v-for="pt in toolPoints"
+                :key="'tool-' + pt.idx"
+                class="gr-signal-mark gr-signal-tools mono"
+                :style="{ left: pt.pctX + '%', top: pt.pctY + '%' }"
+                :title="toolMarkTitle(pt.step)"
+              >
+                ⚙
               </div>
 
               <div
@@ -276,7 +286,13 @@
                 </div>
                 <div v-if="tagSignals(tagStep)" class="gr-tag-signals">
                   <span v-if="tagStep.thinkingBlocks" class="gr-tag-sig"
-                    >◎ {{ tagStep.thinkingBlocks }}</span
+                    >∴ {{ tagStep.thinkingBlocks }}</span
+                  >
+                  <span v-if="tagStep.toolCalls" class="gr-tag-sig gr-tag-sig-tools"
+                    >⚙ {{ tagStep.toolCalls
+                    }}<template v-if="tagStep.skillCalls"
+                      > · skill {{ tagStep.skillCalls }}</template
+                    ></span
                   >
                   <span v-if="tagStep.toolErrors" class="gr-tag-sig gr-tag-sig-err"
                     >! {{ tagStep.toolErrors }}</span
@@ -382,7 +398,7 @@
               :class="{ picked: selectedIdx === c.idx }"
               :style="selectedIdx === c.idx ? { borderColor: provSoft } : undefined"
               :title="c.step.promptPreview"
-              @click="focusStep(c.idx)"
+              @click="onContribClick(c.idx)"
               @dblclick="openStepTranscript(c.idx)"
               @contextmenu.prevent.stop="openPointCtx($event, c.idx)"
             >
@@ -557,6 +573,8 @@ interface GrowthStep {
   thinkingBlocks?: number;
   thinkingChars?: number;
   toolErrors?: number;
+  toolCalls?: number;
+  skillCalls?: number;
 }
 
 interface GrowthData {
@@ -589,17 +607,34 @@ interface ChartPoint {
   kind: "user" | "agent";
 }
 
-type LayerKey = "prompts" | "cache" | "pct" | "reasoning" | "errors";
+type LayerKey = "prompts" | "solo" | "cache" | "pct" | "reasoning" | "tools" | "errors";
 
 const LAYER_TOGGLES: Array<{ key: LayerKey; glyph: string; label: string; title: string }> = [
-  { key: "prompts", glyph: "❝", label: "prompts", title: "One point per user prompt" },
+  {
+    key: "prompts",
+    glyph: "❝",
+    label: "prompts only",
+    title: "One point per user prompt",
+  },
+  {
+    key: "solo",
+    glyph: "·",
+    label: "solo",
+    title: "Only prompt runs with a single growth sample",
+  },
   { key: "cache", glyph: "▤", label: "cache", title: "Cache-read tokens (usage providers)" },
   { key: "pct", glyph: "%", label: "marks", title: "50% / 80% / 90% of window" },
   {
     key: "reasoning",
-    glyph: "◎",
+    glyph: "∴",
     label: "reasoning",
     title: "Mark turns that include thinking / reasoning blocks",
+  },
+  {
+    key: "tools",
+    glyph: "⚙",
+    label: "tools",
+    title: "Mark turns with tool / skill invocations",
   },
   {
     key: "errors",
@@ -624,9 +659,11 @@ const error = ref<string>();
 const data = ref<GrowthData>();
 const layers = reactive<Record<LayerKey, boolean>>({
   prompts: true,
+  solo: false,
   cache: false,
   pct: false,
   reasoning: false,
+  tools: false,
   errors: false,
 });
 const hoverIdx = ref<number>();
@@ -669,10 +706,14 @@ function collapseToPrompts(list: GrowthStep[]): GrowthStep[] {
     let thinkingBlocks = 0;
     let thinkingChars = 0;
     let toolErrors = 0;
+    let toolCalls = 0;
+    let skillCalls = 0;
     for (const s of run) {
       thinkingBlocks += s.thinkingBlocks ?? 0;
       thinkingChars += s.thinkingChars ?? 0;
       toolErrors += s.toolErrors ?? 0;
+      toolCalls += s.toolCalls ?? 0;
+      skillCalls += s.skillCalls ?? 0;
     }
     if (thinkingBlocks) last.thinkingBlocks = thinkingBlocks;
     else delete last.thinkingBlocks;
@@ -680,6 +721,10 @@ function collapseToPrompts(list: GrowthStep[]): GrowthStep[] {
     else delete last.thinkingChars;
     if (toolErrors) last.toolErrors = toolErrors;
     else delete last.toolErrors;
+    if (toolCalls) last.toolCalls = toolCalls;
+    else delete last.toolCalls;
+    if (skillCalls) last.skillCalls = skillCalls;
+    else delete last.skillCalls;
     out.push(last);
     run = [];
   };
@@ -702,9 +747,27 @@ function collapseToPrompts(list: GrowthStep[]): GrowthStep[] {
 
 const steps = computed(() => {
   const all = rawSteps.value;
-  if (!layers.prompts) return all;
-  return collapseToPrompts(all);
+  const base = layers.prompts ? collapseToPrompts(all) : all;
+  if (!layers.solo) return base;
+  const counts = promptSampleCounts(all);
+  return base.filter((s) => {
+    const key = s.promptMessageId ?? s.assistantMessageId;
+    return (counts.get(key) ?? 0) === 1;
+  });
 });
+
+function promptSampleCounts(list: GrowthStep[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const s of list) {
+    const key = s.promptMessageId ?? s.assistantMessageId;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return counts;
+}
+
+function promptKeyOf(step: GrowthStep): string {
+  return step.promptMessageId ?? step.assistantMessageId;
+}
 
 const peak = computed(() => {
   const fromSteps = steps.value.reduce((a, s) => Math.max(a, s.context), 0);
@@ -823,12 +886,14 @@ function stepKindAt(i: number): "user" | "agent" {
   if (layers.prompts) return "user";
   const step = steps.value[i];
   if (!step) return "user";
+  const key = promptKeyOf(step);
   const prev = i > 0 ? steps.value[i - 1] : undefined;
-  const promptKey = step.promptMessageId ?? step.assistantMessageId;
-  const prevKey = prev
-    ? (prev.promptMessageId ?? prev.assistantMessageId)
-    : undefined;
-  return !prev || promptKey !== prevKey ? "user" : "agent";
+  const next = i + 1 < steps.value.length ? steps.value[i + 1] : undefined;
+  const prevKey = prev ? promptKeyOf(prev) : undefined;
+  const nextKey = next ? promptKeyOf(next) : undefined;
+  const isFirstOfRun = !prev || key !== prevKey;
+  const hasLaterInRun = !!next && nextKey === key;
+  return isFirstOfRun && hasLaterInRun ? "user" : "agent";
 }
 
 function focusMessageIdForStep(i: number): string | undefined {
@@ -897,6 +962,10 @@ const reasoningPoints = computed(() =>
   layers.reasoning ? points.value.filter((p) => (p.step.thinkingBlocks ?? 0) > 0) : [],
 );
 
+const toolPoints = computed(() =>
+  layers.tools ? points.value.filter((p) => (p.step.toolCalls ?? 0) > 0) : [],
+);
+
 const errorPoints = computed(() =>
   layers.errors ? points.value.filter((p) => (p.step.toolErrors ?? 0) > 0) : [],
 );
@@ -905,17 +974,25 @@ const chipCounts = computed(() => {
   const list = steps.value;
   let reasoning = 0;
   let errors = 0;
+  let tools = 0;
   for (const s of list) {
     reasoning += s.thinkingBlocks ?? 0;
     errors += s.toolErrors ?? 0;
+    tools += s.toolCalls ?? 0;
   }
-  return { reasoning, errors, prompts: list.length };
+  let solo = 0;
+  for (const n of promptSampleCounts(rawSteps.value).values()) {
+    if (n === 1) solo += 1;
+  }
+  return { reasoning, errors, tools, solo, prompts: list.length };
 });
 
 const visibleLayerToggles = computed(() =>
   LAYER_TOGGLES.filter((t) => {
     if (t.key === "reasoning") return chipCounts.value.reasoning > 0;
     if (t.key === "errors") return chipCounts.value.errors > 0;
+    if (t.key === "tools") return chipCounts.value.tools > 0;
+    if (t.key === "solo") return chipCounts.value.solo > 0;
     return true;
   }),
 );
@@ -1043,6 +1120,14 @@ function chipCount(key: LayerKey): number | undefined {
     const n = chipCounts.value.errors;
     return n > 0 ? n : undefined;
   }
+  if (key === "tools") {
+    const n = chipCounts.value.tools;
+    return n > 0 ? n : undefined;
+  }
+  if (key === "solo") {
+    const n = chipCounts.value.solo;
+    return n > 0 ? n : undefined;
+  }
   return undefined;
 }
 
@@ -1061,13 +1146,20 @@ function tagUsage(step: GrowthStep): { cache?: number; input?: number; hit?: num
 }
 
 function tagSignals(step: GrowthStep): boolean {
-  return !!(step.thinkingBlocks || step.toolErrors || step.compacted);
+  return !!(step.thinkingBlocks || step.toolCalls || step.toolErrors || step.compacted);
+}
+
+function toolMarkTitle(step: GrowthStep): string {
+  const n = step.toolCalls ?? 0;
+  const skills = step.skillCalls ?? 0;
+  const base = `tools · ${n} call${n === 1 ? "" : "s"}`;
+  return skills ? `${base} · skill ${skills}` : base;
 }
 
 function toggleLayer(key: LayerKey): void {
   if (key === "cache" && data.value?.estimated) return;
   layers[key] = !layers[key];
-  if (key === "prompts") {
+  if (key === "prompts" || key === "solo") {
     selectedIdx.value = undefined;
     hoverIdx.value = undefined;
     tipPos.value = undefined;
@@ -1076,19 +1168,35 @@ function toggleLayer(key: LayerKey): void {
 }
 
 watch(
-  () => [chipCounts.value.reasoning, chipCounts.value.errors] as const,
-  ([reasoning, errors], prev) => {
-    const [prevReasoning = 0, prevErrors = 0] = prev ?? [];
+  () =>
+    [chipCounts.value.reasoning, chipCounts.value.errors, chipCounts.value.tools] as const,
+  ([reasoning, errors, tools], prev) => {
+    const [prevReasoning = 0, prevErrors = 0, prevTools = 0] = prev ?? [];
     if (reasoning === 0) layers.reasoning = false;
     else if (prevReasoning === 0) layers.reasoning = true;
     if (errors === 0) layers.errors = false;
     else if (prevErrors === 0) layers.errors = true;
+    if (tools === 0) layers.tools = false;
+    else if (prevTools === 0) layers.tools = true;
   },
 );
 
 watch(
   () => steps.value.length,
   () => resetView(),
+);
+
+watch(
+  () => fileViewers.transcriptSelection,
+  (sel) => {
+    if (!sel) return;
+    if (sel.provider !== provider.value || sel.sessionId !== sessionId.value) return;
+    let found = steps.value.findIndex((s) => s.assistantMessageId === sel.messageId);
+    if (found < 0) {
+      found = steps.value.findIndex((s) => s.promptMessageId === sel.messageId);
+    }
+    if (found >= 0) focusStep(found);
+  },
 );
 
 let zoomTarget = { a: 0, b: 1 };
@@ -1376,6 +1484,13 @@ function focusStep(i: number): void {
   requestAnimationFrame(() => selectStep(i));
 }
 
+function onContribClick(i: number): void {
+  focusStep(i);
+  if (fileViewers.hasTranscript(provider.value, sessionId.value)) {
+    openStepTranscript(i);
+  }
+}
+
 function onNodeClick(i: number): void {
   selectStep(i);
   openStepTranscript(i);
@@ -1409,6 +1524,7 @@ async function load(): Promise<void> {
     if (data.value.estimated) layers.cache = false;
     // Enable signal chips only when the chart can actually mark them.
     layers.reasoning = chipCounts.value.reasoning > 0;
+    layers.tools = chipCounts.value.tools > 0;
     layers.errors = chipCounts.value.errors > 0;
   } catch (e) {
     data.value = undefined;
@@ -1858,6 +1974,10 @@ onUnmounted(() => {
 .gr-signal-reason {
   color: var(--text-dim);
 }
+.gr-signal-tools {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--gr-prov, var(--text-dim)) 35%, var(--border));
+}
 .gr-signal-err {
   color: var(--status-error, #c45c5c);
   border-color: color-mix(in srgb, var(--status-error, #c45c5c) 40%, var(--border));
@@ -1970,6 +2090,10 @@ onUnmounted(() => {
 .gr-tag-sig-err {
   color: var(--status-error, #c45c5c);
   border-color: color-mix(in srgb, var(--status-error, #c45c5c) 40%, var(--border));
+}
+.gr-tag-sig-tools {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--tag, var(--text-dim)) 35%, var(--border));
 }
 .gr-tag-prompt {
   flex: 1 1 100%;

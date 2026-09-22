@@ -203,36 +203,30 @@ describe("buildContextGrowth", () => {
     expect(g.steps[1]!.promptPreview).toBe("real question");
   });
 
-  it("estimates chars÷4 and still pairs prompts", () => {
+  it("counts tool and skill invocations on growth steps", () => {
     const transcript: NormalizedMessage[] = [
       {
         id: "u1",
         role: "user",
-        parts: [{ type: "text", text: "abcd" }],
+        parts: [{ type: "text", text: "run checks" }],
       },
       {
         id: "a1",
         role: "assistant",
-        parts: [{ type: "text", text: "efghijkl" }],
-      },
-      {
-        id: "u2",
-        role: "user",
-        parts: [{ type: "text", text: "xxxx" }],
-      },
-      {
-        id: "a2",
-        role: "assistant",
-        parts: [{ type: "text", text: "yyyy" }],
+        parts: [
+          { type: "tool_use", toolName: "Bash", toolInput: { command: "npm test" } },
+          { type: "tool_use", toolName: "Skill", toolInput: { skill: "review" } },
+        ],
+        tokens: { input: 2000, cacheRead: 100 },
       },
     ];
     const g = buildContextGrowth(transcript);
-    expect(g.estimated).toBe(true);
-    expect(g.steps.map((s) => s.context)).toEqual([3, 5]);
-    expect(g.steps[0]!.promptPreview).toBe("abcd");
-    expect(g.steps[1]!.promptMessageId).toBe("u2");
-    expect(g.steps[1]!.delta).toBe(2);
-    expect(g.steps[0]!.input).toBeUndefined();
-    expect(g.steps[0]!.cacheRead).toBeUndefined();
+    expect(g.steps).toHaveLength(1);
+    expect(g.steps[0]).toMatchObject({
+      toolCalls: 2,
+      skillCalls: 1,
+      assistantMessageId: "a1",
+      promptMessageId: "u1",
+    });
   });
 });

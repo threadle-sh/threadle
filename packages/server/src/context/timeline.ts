@@ -41,18 +41,26 @@ function messageSignals(m: NormalizedMessage): {
   thinkingBlocks: number;
   thinkingChars: number;
   toolErrors: number;
+  toolCalls: number;
+  skillCalls: number;
 } {
   let thinkingBlocks = 0;
   let thinkingChars = 0;
   let toolErrors = 0;
+  let toolCalls = 0;
+  let skillCalls = 0;
   for (const part of m.parts) {
     if (part.type === "thinking") {
       thinkingBlocks++;
       thinkingChars += part.text?.length ?? 0;
     }
     if (part.type === "tool_result" && part.isError) toolErrors++;
+    if (part.type === "tool_use") {
+      toolCalls++;
+      if (part.toolName === "Skill") skillCalls++;
+    }
   }
-  return { thinkingBlocks, thinkingChars, toolErrors };
+  return { thinkingBlocks, thinkingChars, toolErrors, toolCalls, skillCalls };
 }
 
 export interface ContextGrowthStep {
@@ -68,6 +76,8 @@ export interface ContextGrowthStep {
   thinkingBlocks?: number;
   thinkingChars?: number;
   toolErrors?: number;
+  toolCalls?: number;
+  skillCalls?: number;
 }
 
 export interface ContextGrowth {
@@ -95,6 +105,8 @@ type RawStep = {
   thinkingBlocks?: number;
   thinkingChars?: number;
   toolErrors?: number;
+  toolCalls?: number;
+  skillCalls?: number;
 };
 
 function finalizeGrowth(raw: RawStep[], estimated: boolean): ContextGrowth {
@@ -118,6 +130,8 @@ function finalizeGrowth(raw: RawStep[], estimated: boolean): ContextGrowth {
       ...(s.thinkingBlocks ? { thinkingBlocks: s.thinkingBlocks } : {}),
       ...(s.thinkingChars ? { thinkingChars: s.thinkingChars } : {}),
       ...(s.toolErrors ? { toolErrors: s.toolErrors } : {}),
+      ...(s.toolCalls ? { toolCalls: s.toolCalls } : {}),
+      ...(s.skillCalls ? { skillCalls: s.skillCalls } : {}),
     });
     prev = s.context;
   }

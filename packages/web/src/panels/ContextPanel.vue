@@ -30,7 +30,7 @@
             >
             <label
               ><input type="checkbox" v-model="excerptRoles.assistant" />
-              assistant</label
+              agent</label
             >
           </span>
         </label>
