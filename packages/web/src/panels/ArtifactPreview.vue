@@ -71,16 +71,28 @@
       class="ap-editor threadle-input"
       spellcheck="false"
     />
-    <div v-else class="ap-body t-text" v-html="rendered" />
+    <div
+      v-else
+      class="ap-body t-text"
+      v-html="rendered"
+      @click="onBodyClick"
+    />
   </aside>
+  <ConfirmModal
+    v-model="outboundDlg"
+    @confirm="onConfirmOutbound"
+    @cancel="pendingOutbound = undefined"
+  />
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { escapeHtml, renderMd } from "@/lib/safeHtml";
+import { interceptContentLinkClick } from "@/lib/contentLinks";
 import { useSettingsStore } from "@/stores/settings";
 import { useFileViewersStore, isLikelyTextPath } from "@/stores/fileViewers";
 import { useFavoritesStore } from "@/stores/favorites";
+import ConfirmModal, { type ConfirmModel } from "@/panels/ConfirmModal.vue";
 
 export interface PreviewArtifact {
   path: string;
@@ -104,6 +116,43 @@ const fileViewers = useFileViewersStore();
 const favorites = useFavoritesStore();
 void settings.load();
 void favorites.ensureLoaded();
+
+const outboundDlg = ref<ConfirmModel>();
+const pendingOutbound = ref<string>();
+
+function artifactBaseDir(): string | undefined {
+  const n = props.artifact.path.replace(/\\/g, "/");
+  const i = n.lastIndexOf("/");
+  if (i <= 0) return undefined;
+  return n.slice(0, i);
+}
+
+function onBodyClick(e: MouseEvent): void {
+  interceptContentLinkClick(e, {
+    baseDir: artifactBaseDir(),
+    onLocal: (filePath) => {
+      void fileViewers.open(filePath);
+    },
+    onExternal: (url, domain) => {
+      pendingOutbound.value = url;
+      outboundDlg.value = {
+        title: "Open URL",
+        emphasis: domain,
+        body: " — leave threadle and open this site?",
+        detail: url,
+        confirmLabel: "Open",
+        cancelLabel: "Cancel",
+      };
+    },
+  });
+}
+
+function onConfirmOutbound(): void {
+  const url = pendingOutbound.value;
+  pendingOutbound.value = undefined;
+  if (!url) return;
+  window.open(url, "_blank", "noopener,noreferrer");
+}
 
 function artFavoriteInput() {
   if (props.artifact.kind === "skill") {

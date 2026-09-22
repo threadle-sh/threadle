@@ -6,6 +6,7 @@
 import MarkdownIt from "markdown-it";
 import DOMPurify from "dompurify";
 import hljs from "highlight.js/lib/common";
+import { decorateContentLinkHtml } from "./contentLinks";
 
 export function escapeHtml(s: string): string {
   return s
@@ -55,11 +56,12 @@ const md = new MarkdownIt({
 /** Markdown → HTML; raw HTML in source is escaped (html:false) then purified. */
 export function renderMd(text: string): string {
   const raw = md.render(text ?? "");
-  return DOMPurify.sanitize(raw, {
+  const clean = DOMPurify.sanitize(raw, {
     USE_PROFILES: { html: true },
     FORBID_TAGS: ["style", "form", "input", "button", "textarea", "select"],
     FORBID_ATTR: ["style"],
   });
+  return decorateContentLinkHtml(clean);
 }
 
 const HTML_DOC_ALLOW = new Set([

@@ -33,15 +33,27 @@
     <div v-if="actionError" class="art-err">{{ actionError }}</div>
     <div v-if="loading" class="art-dim">loading…</div>
     <div v-else-if="error" class="art-dim">{{ error }}</div>
-    <div v-else class="art-body t-text" v-html="rendered" />
+    <div
+      v-else
+      class="art-body t-text"
+      v-html="rendered"
+      @click="onBodyClick"
+    />
   </div>
+  <ConfirmModal
+    v-model="outboundDlg"
+    @confirm="onConfirmOutbound"
+    @cancel="pendingOutbound = undefined"
+  />
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { renderMd } from "@/lib/safeHtml";
+import { interceptContentLinkClick } from "@/lib/contentLinks";
 import { useSettingsStore } from "@/stores/settings";
 import { useFileViewersStore, isLikelyTextPath } from "@/stores/fileViewers";
+import ConfirmModal, { type ConfirmModel } from "@/panels/ConfirmModal.vue";
 
 const props = defineProps<{
   path: string;
@@ -66,6 +78,43 @@ const emit = defineEmits<{
 const settings = useSettingsStore();
 const fileViewers = useFileViewersStore();
 void settings.load();
+
+const outboundDlg = ref<ConfirmModel>();
+const pendingOutbound = ref<string>();
+
+function artifactBaseDir(): string | undefined {
+  const n = props.path.replace(/\\/g, "/");
+  const i = n.lastIndexOf("/");
+  if (i <= 0) return undefined;
+  return n.slice(0, i);
+}
+
+function onBodyClick(e: MouseEvent): void {
+  interceptContentLinkClick(e, {
+    baseDir: artifactBaseDir(),
+    onLocal: (filePath) => {
+      void fileViewers.open(filePath);
+    },
+    onExternal: (url, domain) => {
+      pendingOutbound.value = url;
+      outboundDlg.value = {
+        title: "Open URL",
+        emphasis: domain,
+        body: " — leave threadle and open this site?",
+        detail: url,
+        confirmLabel: "Open",
+        cancelLabel: "Cancel",
+      };
+    },
+  });
+}
+
+function onConfirmOutbound(): void {
+  const url = pendingOutbound.value;
+  pendingOutbound.value = undefined;
+  if (!url) return;
+  window.open(url, "_blank", "noopener,noreferrer");
+}
 
 const content = ref("");
 const loading = ref(true);

@@ -40,6 +40,14 @@ describe("renderMd", () => {
     expect(html).toMatch(/<code>code<\/code>/);
   });
 
+  it("marks local markdown links as internal", () => {
+    const html = renderMd("[topic](emeland-ui-refactor.md) and [web](https://example.com)");
+    expect(html).toMatch(/cl-local/);
+    expect(html).toMatch(/emeland-ui-refactor\.md/);
+    // external stays undecorated
+    expect(html).not.toMatch(/href="https:\/\/example\.com"[^>]*cl-local/);
+  });
+
   it("neutralizes script tags in markdown source", () => {
     const html = renderMd(`<script>fetch('/api/run/workflow',{method:'POST'})</script>`);
     expect(html).not.toMatch(/<script/i);
