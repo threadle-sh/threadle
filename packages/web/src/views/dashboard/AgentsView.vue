@@ -22,7 +22,9 @@
               ? 'Filter memory…'
               : agentBrowse === 'plugins'
                 ? 'Filter plugins…'
-                : 'Filter runs…'
+                : agentBrowse === 'graph'
+                  ? 'Filter graph…'
+                  : 'Filter runs…'
         "
         spellcheck="false"
       />
@@ -58,6 +60,14 @@
           @click="setAgentBrowse('live')"
         >
           live{{ agentInstances.live ? ` · ${agentInstances.live}` : "" }}
+        </button>
+        <button
+          class="filter-chip"
+          :class="{ active: agentBrowse === 'graph' }"
+          title="Agent defs, instances, and subagent links"
+          @click="setAgentBrowse('graph')"
+        >
+          graph
         </button>
         <button
           class="filter-chip"
@@ -100,8 +110,116 @@
           />
         </div>
 
+        <!-- graph: defs + instances + sub edges -->
+        <div v-else-if="agentBrowse === 'graph'" class="ag-graph-row">
+          <AgentsGraph
+            :agents="sessions.agents"
+            :instances="instanceSource"
+            :filter="agentFilter"
+            :provider-filter="agentProviderF"
+            :picked-def="agentPicked"
+            :picked-run="pickedRun"
+            @pick="onGraphPick"
+            @open-run="openRunInSessions"
+            @more-runs="browseAgentRuns"
+            @clear="onGraphClear"
+            @ctx-def="onGraphCtxDef"
+            @ctx-run="onGraphCtxRun"
+          >
+            <template #aside>
+              <aside v-if="pickedRun" class="lib-aside ag-graph-aside">
+                <div class="lib-aside-head">
+                  <div class="sess-detail-titles">
+                    <span class="lib-aside-title mono">{{ pickedRun.title ?? shortId(pickedRun.id) }}</span>
+                    <div class="sess-detail-meta mono">
+                      <SessionLivePill :status="pickedRunLiveStatus" />
+                      <span v-if="isSubRun(pickedRun)" class="inst-sub micro-label">sub</span>
+                      <span v-if="pickedRun.agent" class="sess-detail-agent">⟨/⟩ {{ pickedRun.agent }}</span>
+                    </div>
+                  </div>
+                  <DetailExpandControls
+                    @expand="runDetailExpanded = true"
+                    @close="closePickedRun"
+                  />
+                </div>
+                <div class="sess-detail-actions">
+                  <button class="vsc-btn" title="Open in Sessions" @click="openRunInSessions(pickedRun)">
+                    ❯ sessions
+                  </button>
+                  <button
+                    class="vsc-btn"
+                    title="View the interactive message transcript in a floating window"
+                    @click="fileViewers.openTranscript(pickedRun.provider, pickedRun.id)"
+                  >
+                    ≡ transcript
+                  </button>
+                  <button
+                    class="vsc-btn"
+                    @click="router.push(`/blueprint/${pickedRun.provider}/${pickedRun.id}`)"
+                  >
+                    ⌗ blueprint
+                  </button>
+                  <button
+                    v-if="pickedRun.parentId"
+                    class="vsc-btn"
+                    title="Open parent session"
+                    @click="openRunParent(pickedRun)"
+                  >
+                    ↑ parent
+                  </button>
+                </div>
+                <SessionInfoPanel
+                  :provider="pickedRun.provider"
+                  :session-id="pickedRun.id"
+                  :seed="pickedRun"
+                  @open-parent="openRunParent(pickedRun)"
+                />
+              </aside>
+              <aside v-else-if="agentPicked" class="lib-aside ag-graph-aside">
+                <div class="lib-aside-head">
+                  <span class="lib-aside-title mono">⟨/⟩ {{ agentPicked.name }}</span>
+                  <DetailExpandControls
+                    @expand="agentDetailExpanded = true"
+                    @close="closeAgentPicked"
+                  />
+                </div>
+                <div class="run-kv mono">
+                  <span class="run-key">provider</span><span class="run-val">{{ agentPicked.provider }}</span>
+                  <span class="run-key">kind</span><span class="run-val">{{ agentPicked.kind ?? "—" }}</span>
+                  <span class="run-key">scope</span><span class="run-val">{{ agentPicked.scope }}</span>
+                  <span class="run-key">model</span><span class="run-val">{{ agentPicked.model ?? "session default" }}</span>
+                  <span class="run-key">used</span
+                  ><span class="run-val">
+                    {{ agentUsage(agentPicked).count
+                      ? `${agentUsage(agentPicked).count} sessions · last ${agentUsage(agentPicked).last}`
+                      : "never" }}
+                  </span>
+                </div>
+                <div class="sess-detail-actions">
+                  <button class="vsc-btn" title="Show this agent's instances" @click="browseAgentRuns(agentPicked)">
+                    ❯ instances
+                  </button>
+                  <button
+                    v-if="isAbsolutePath(agentPicked.source)"
+                    class="vsc-btn"
+                    @click="settings.openPath(agentPicked.source)"
+                  >
+                    ✎ {{ settings.editorLabel }}
+                  </button>
+                </div>
+              </aside>
+              <aside v-else class="lib-aside lib-aside-empty ag-graph-aside">
+                <p class="stat-note">Select a def or run on the graph.</p>
+              </aside>
+            </template>
+          </AgentsGraph>
+        </div>
+
         <!-- runs / subagents / live: table + in-place detail -->
-        <div v-else-if="agentBrowse !== 'defs'" class="lib-flex">
+        <div
+          v-else-if="agentBrowse === 'runs' || agentBrowse === 'subs' || agentBrowse === 'live'"
+          class="lib-flex"
+        >
           <div class="agent-main">
             <div
               class="stat-table cols-inst"
@@ -127,8 +245,13 @@
               >
                 <span class="stat-name mono">
                   <span class="prov-dot" :style="{ background: providerColor(s.provider) }" />
-                  {{ s.agent }}
+                  {{ s.agent || "—" }}
                   <span v-if="isSubRun(s)" class="inst-sub micro-label">sub</span>
+                  <span
+                    v-else-if="!s.agent"
+                    class="inst-sub micro-label"
+                    title="Parent session (no agent tag)"
+                  >parent</span>
                 </span>
                 <span class="stat-name inst-title" :title="s.title ?? s.id">{{ s.title ?? shortId(s.id) }}</span>
                 <span class="stat-val inst-proj mono" :title="s.projectDir">{{ s.projectDir?.split("/").pop() ?? "—" }}</span>
@@ -210,32 +333,6 @@
           <aside v-else class="lib-aside lib-aside-empty">
             <p class="stat-note">Select a run to inspect it here.</p>
           </aside>
-
-          <DetailExpandModal
-            :open="!!pickedRun && runDetailExpanded"
-            :label="pickedRun?.title ?? (pickedRun ? shortId(pickedRun.id) : 'Run')"
-            @close="runDetailExpanded = false"
-          >
-            <template v-if="pickedRun">
-              <div class="lib-aside-head">
-                <div class="sess-detail-titles">
-                  <span class="lib-aside-title mono">{{ pickedRun.title ?? shortId(pickedRun.id) }}</span>
-                  <div class="sess-detail-meta mono">
-                    <SessionLivePill :status="pickedRunLiveStatus" />
-                    <span v-if="isSubRun(pickedRun)" class="inst-sub micro-label">sub</span>
-                    <span v-if="pickedRun.agent" class="sess-detail-agent">⟨/⟩ {{ pickedRun.agent }}</span>
-                  </div>
-                </div>
-                <DetailExpandControls hide-expand @close="runDetailExpanded = false" />
-              </div>
-              <SessionInfoPanel
-                :provider="pickedRun.provider"
-                :session-id="pickedRun.id"
-                :seed="pickedRun"
-                @open-parent="openRunParent(pickedRun)"
-              />
-            </template>
-          </DetailExpandModal>
         </div>
 
         <div v-else class="lib-flex">
@@ -345,76 +442,129 @@
             </template>
             <p v-else class="stat-note">no prompt body recorded for this agent</p>
           </aside>
-
-          <DetailExpandModal
-            :open="!!agentPicked && agentDetailExpanded"
-            :label="agentPicked ? `⟨/⟩ ${agentPicked.name}` : 'Agent'"
-            @close="agentDetailExpanded = false"
-          >
-            <template v-if="agentPicked">
-              <div class="lib-aside-head">
-                <span class="lib-aside-title mono">⟨/⟩ {{ agentPicked.name }}</span>
-                <DetailExpandControls hide-expand @close="agentDetailExpanded = false" />
-              </div>
-              <div class="run-kv mono">
-                <span class="run-key">provider</span><span class="run-val">{{ agentPicked.provider }}</span>
-                <span class="run-key">kind</span><span class="run-val">{{ agentPicked.kind ?? "—" }}</span>
-                <span class="run-key">scope</span><span class="run-val">{{ agentPicked.scope }}</span>
-                <span class="run-key">model</span><span class="run-val">{{ agentPicked.model ?? "session default" }}</span>
-                <span class="run-key">source</span><span class="run-val">{{ agentPicked.source }}</span>
-                <span class="run-key">used</span
-                ><span class="run-val">
-                  {{ agentUsage(agentPicked).count
-                    ? `${agentUsage(agentPicked).count} sessions · last ${agentUsage(agentPicked).last} · ${fmtTokens(agentUsage(agentPicked).tokensOut)} tok out`
-                    : "never" }}
-                </span>
-              </div>
-              <div class="sess-detail-actions">
-                <button class="vsc-btn" title="New workflow: prompt wired into this agent" @click="useAgentInWorkflow">
-                  → use in workflow
-                </button>
-                <button
-                  class="vsc-btn"
-                  title="Show this agent's instances"
-                  @click="browseAgentRuns(agentPicked)"
-                >
-                  ❯ instances
-                </button>
-                <button
-                  v-if="isAbsolutePath(agentPicked.source)"
-                  class="vsc-btn"
-                  @click="settings.openPath(agentPicked.source)"
-                >
-                  ✎ {{ settings.editorLabel }}
-                </button>
-              </div>
-              <template v-if="agentUsage(agentPicked).recent.length">
-                <div class="micro-label">
-                  recent ({{ agentUsage(agentPicked).count
-                  }}<template v-if="agentUsage(agentPicked).live"> · {{ agentUsage(agentPicked).live }} live</template>)
-                </div>
-                <div class="lin-injlist">
-                  <button
-                    v-for="r in agentUsage(agentPicked).recent"
-                    :key="r.provider + r.id"
-                    class="lin-inj mono"
-                    @click="jumpToRun(r)"
-                    @contextmenu.prevent.stop="openRunCtx($event, r)"
-                  >
-                    <i class="inst-dot" :class="{ live: isSessionLive(r.status) }" />
-                    <span v-if="isSubRun(r)" class="inst-sub micro-label">sub</span>
-                    {{ r.title ?? shortId(r.id) }} <em>{{ relativeTime(r.updatedAt) }}</em>
-                  </button>
-                </div>
-              </template>
-              <template v-if="agentPicked.raw">
-                <div class="micro-label">system prompt / definition</div>
-                <pre class="lin-content mono">{{ agentPicked.raw.slice(0, 12000) }}</pre>
-              </template>
-              <p v-else class="stat-note">no prompt body recorded for this agent</p>
-            </template>
-          </DetailExpandModal>
         </div>
+
+  <!-- Always mounted so graph / runs / defs asides can open the same expand popup -->
+  <DetailExpandModal
+    :open="!!pickedRun && runDetailExpanded"
+    :label="pickedRun?.title ?? (pickedRun ? shortId(pickedRun.id) : 'Run')"
+    @close="runDetailExpanded = false"
+  >
+    <template v-if="pickedRun">
+      <div class="lib-aside-head">
+        <div class="sess-detail-titles">
+          <span class="lib-aside-title mono">{{ pickedRun.title ?? shortId(pickedRun.id) }}</span>
+          <div class="sess-detail-meta mono">
+            <SessionLivePill :status="pickedRunLiveStatus" />
+            <span v-if="isSubRun(pickedRun)" class="inst-sub micro-label">sub</span>
+            <span v-if="pickedRun.agent" class="sess-detail-agent">⟨/⟩ {{ pickedRun.agent }}</span>
+          </div>
+        </div>
+        <DetailExpandControls hide-expand @close="runDetailExpanded = false" />
+      </div>
+      <div class="sess-detail-actions">
+        <button class="vsc-btn" title="Open in Sessions" @click="openRunInSessions(pickedRun)">
+          ❯ sessions
+        </button>
+        <button
+          class="vsc-btn"
+          title="View the interactive message transcript in a floating window"
+          @click="fileViewers.openTranscript(pickedRun.provider, pickedRun.id)"
+        >
+          ≡ transcript
+        </button>
+        <button
+          class="vsc-btn"
+          @click="router.push(`/blueprint/${pickedRun.provider}/${pickedRun.id}`)"
+        >
+          ⌗ blueprint
+        </button>
+        <button
+          v-if="pickedRun.parentId"
+          class="vsc-btn"
+          title="Open parent session"
+          @click="openRunParent(pickedRun)"
+        >
+          ↑ parent
+        </button>
+      </div>
+      <SessionInfoPanel
+        :provider="pickedRun.provider"
+        :session-id="pickedRun.id"
+        :seed="pickedRun"
+        @open-parent="openRunParent(pickedRun)"
+      />
+    </template>
+  </DetailExpandModal>
+
+  <DetailExpandModal
+    :open="!!agentPicked && agentDetailExpanded"
+    :label="agentPicked ? `⟨/⟩ ${agentPicked.name}` : 'Agent'"
+    @close="agentDetailExpanded = false"
+  >
+    <template v-if="agentPicked">
+      <div class="lib-aside-head">
+        <span class="lib-aside-title mono">⟨/⟩ {{ agentPicked.name }}</span>
+        <DetailExpandControls hide-expand @close="agentDetailExpanded = false" />
+      </div>
+      <div class="run-kv mono">
+        <span class="run-key">provider</span><span class="run-val">{{ agentPicked.provider }}</span>
+        <span class="run-key">kind</span><span class="run-val">{{ agentPicked.kind ?? "—" }}</span>
+        <span class="run-key">scope</span><span class="run-val">{{ agentPicked.scope }}</span>
+        <span class="run-key">model</span><span class="run-val">{{ agentPicked.model ?? "session default" }}</span>
+        <span class="run-key">source</span><span class="run-val">{{ agentPicked.source }}</span>
+        <span class="run-key">used</span
+        ><span class="run-val">
+          {{ agentUsage(agentPicked).count
+            ? `${agentUsage(agentPicked).count} sessions · last ${agentUsage(agentPicked).last} · ${fmtTokens(agentUsage(agentPicked).tokensOut)} tok out`
+            : "never" }}
+        </span>
+      </div>
+      <div class="sess-detail-actions">
+        <button class="vsc-btn" title="New workflow: prompt wired into this agent" @click="useAgentInWorkflow">
+          → use in workflow
+        </button>
+        <button
+          class="vsc-btn"
+          title="Show this agent's instances"
+          @click="browseAgentRuns(agentPicked)"
+        >
+          ❯ instances
+        </button>
+        <button
+          v-if="isAbsolutePath(agentPicked.source)"
+          class="vsc-btn"
+          @click="settings.openPath(agentPicked.source)"
+        >
+          ✎ {{ settings.editorLabel }}
+        </button>
+      </div>
+      <template v-if="agentUsage(agentPicked).recent.length">
+        <div class="micro-label">
+          recent ({{ agentUsage(agentPicked).count
+          }}<template v-if="agentUsage(agentPicked).live"> · {{ agentUsage(agentPicked).live }} live</template>)
+        </div>
+        <div class="lin-injlist">
+          <button
+            v-for="r in agentUsage(agentPicked).recent"
+            :key="r.provider + r.id"
+            class="lin-inj mono"
+            @click="jumpToRun(r)"
+            @contextmenu.prevent.stop="openRunCtx($event, r)"
+          >
+            <i class="inst-dot" :class="{ live: isSessionLive(r.status) }" />
+            <span v-if="isSubRun(r)" class="inst-sub micro-label">sub</span>
+            {{ r.title ?? shortId(r.id) }} <em>{{ relativeTime(r.updatedAt) }}</em>
+          </button>
+        </div>
+      </template>
+      <template v-if="agentPicked.raw">
+        <div class="micro-label">system prompt / definition</div>
+        <pre class="lin-content mono">{{ agentPicked.raw.slice(0, 12000) }}</pre>
+      </template>
+      <p v-else class="stat-note">no prompt body recorded for this agent</p>
+    </template>
+  </DetailExpandModal>
 
   <Teleport to="body">
     <div
@@ -424,9 +574,6 @@
       @click.stop
       @contextmenu.prevent
     >
-      <button type="button" class="menu-item" @click="menuAction(() => selectRun(runCtx!.session))">
-        <span class="menu-glyph">↗</span> Details
-      </button>
       <button
         type="button"
         class="menu-item"
@@ -498,9 +645,6 @@
       @click.stop
       @contextmenu.prevent
     >
-      <button type="button" class="menu-item" @click="menuAction(() => pickAgent(defCtx!.agent))">
-        <span class="menu-glyph">↗</span> Details
-      </button>
       <button
         type="button"
         class="menu-item"
@@ -532,7 +676,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import type { AgentDef, SessionRef } from "@threadle/shared";
 import { isAbsolutePath, isSessionLive } from "@threadle/shared";
@@ -549,12 +693,14 @@ import { useFileViewersStore } from "@/stores/fileViewers";
 import { useFavoritesStore } from "@/stores/favorites";
 import { agentToWorkflow } from "@/lib/convert";
 import { vColResize } from "@/lib/colResize";
+import { api } from "@/api/client";
 import ProviderFilterChips from "@/components/ProviderFilterChips.vue";
 import SessionInfoPanel from "@/panels/SessionInfoPanel.vue";
 import SessionLivePill from "@/panels/SessionLivePill.vue";
 import GrowthMark from "@/panels/GrowthMark.vue";
 import MemoryBrowser from "@/panels/MemoryBrowser.vue";
 import PluginsBrowser from "@/panels/PluginsBrowser.vue";
+import AgentsGraph, { type GraphPick } from "@/panels/AgentsGraph.vue";
 import DetailExpandControls from "@/panels/DetailExpandControls.vue";
 import DetailExpandModal from "@/panels/DetailExpandModal.vue";
 import "./chrome.css";
@@ -686,7 +832,7 @@ const agentInstances = computed(() => ({
 }));
 
 /** Exclusive Agents browse modes — tiles are radios, not toggles. */
-type AgentBrowse = "defs" | "runs" | "subs" | "live" | "memory" | "plugins";
+type AgentBrowse = "defs" | "runs" | "subs" | "live" | "graph" | "memory" | "plugins";
 const agentBrowse = ref<AgentBrowse>("defs");
 const pickedRun = ref<SessionRef>();
 const runDetailExpanded = ref(false);
@@ -703,6 +849,7 @@ const BROWSE_MODES: AgentBrowse[] = [
   "runs",
   "subs",
   "live",
+  "graph",
   "memory",
   "plugins",
 ];
@@ -737,6 +884,8 @@ function setAgentBrowse(mode: AgentBrowse): void {
   } else if (mode === "memory" || mode === "plugins") {
     pickedRun.value = undefined;
     agentPicked.value = undefined;
+  } else if (mode === "graph") {
+    // keep def / run selection for the graph aside
   } else {
     agentPicked.value = undefined;
   }
@@ -752,6 +901,35 @@ function setAgentBrowse(mode: AgentBrowse): void {
   if (nextBrowse) q.browse = nextBrowse;
   else delete q.browse;
   void router.replace({ query: q });
+}
+
+function onGraphPick(p: GraphPick): void {
+  if (p.kind === "def") {
+    agentPicked.value = p.agent;
+    agentDetailExpanded.value = false;
+    pickedRun.value = undefined;
+    runDetailExpanded.value = false;
+  } else {
+    pickedRun.value = p.session;
+    runDetailExpanded.value = false;
+    agentPicked.value = undefined;
+    agentDetailExpanded.value = false;
+  }
+}
+
+function onGraphClear(): void {
+  pickedRun.value = undefined;
+  runDetailExpanded.value = false;
+  agentPicked.value = undefined;
+  agentDetailExpanded.value = false;
+}
+
+function onGraphCtxDef(payload: { event: MouseEvent; agent: AgentDef }): void {
+  openDefCtx(payload.event, payload.agent);
+}
+
+function onGraphCtxRun(payload: { event: MouseEvent; session: SessionRef }): void {
+  openRunCtx(payload.event, payload.session);
 }
 
 function selectRun(s: SessionRef): void {
@@ -779,29 +957,54 @@ function openRunInSessions(s: SessionRef): void {
   emit("nav", "sessions");
 }
 
-function openRunParent(child: SessionRef): void {
+async function openRunParent(child: SessionRef): Promise<void> {
   if (!child.parentId) return;
-  const parent =
+  let parent =
+    sessions.find(child.provider, child.parentId) ??
     sessions.sessions.find(
       (p) => p.provider === child.provider && p.id === child.parentId,
     ) ??
     instanceSource.value.find(
       (p) => p.provider === child.provider && p.id === child.parentId,
     );
+  // Clear filters so the parent + siblings aren't hidden after graph / def drill-in
+  agentFilter.value = "";
+  if (agentProviderF.value !== "all" && agentProviderF.value !== child.provider) {
+    agentProviderF.value = child.provider;
+  }
+  if (!parent) {
+    try {
+      parent = await api.session(child.provider, child.parentId);
+    } catch {
+      /* keep stub below */
+    }
+  }
   if (parent) {
-    // stay in Agents: show parent in the runs aside
-    setAgentBrowse("runs");
+    setAgentBrowse(isSubRun(parent) ? "subs" : "runs");
     pickedRun.value = parent;
+    void scrollPickedRunIntoView();
     return;
   }
+  setAgentBrowse("runs");
   pickedRun.value = {
     provider: child.provider,
     id: child.parentId,
     projectDir: child.projectDir,
+    title: child.title ? `↑ ${child.title}` : undefined,
     updatedAt: child.updatedAt,
     status: "unknown",
     kind: "session",
   };
+  void scrollPickedRunIntoView();
+}
+
+async function scrollPickedRunIntoView(): Promise<void> {
+  await nextTick();
+  requestAnimationFrame(() => {
+    document
+      .querySelector(".cols-inst .stat-row.picked")
+      ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  });
 }
 
 
@@ -864,9 +1067,28 @@ const sortedInstances = computed(() => {
     }
     return true;
   });
+  // Keep the selected run visible (e.g. parent sessions without an agent tag)
+  const picked = pickedRun.value;
+  if (
+    picked &&
+    !rows.some((s) => s.provider === picked.provider && s.id === picked.id)
+  ) {
+    rows = [picked, ...rows];
+  }
   const sort = sorts.inst ?? { key: "last", dir: -1 };
   const sel = INST_SEL[sort.key] ?? ((s: SessionRef) => s.updatedAt);
   rows = [...rows].sort((a, b) => {
+    // Pin picked parent, then its children, so ↑ parent shows the full family
+    if (picked) {
+      const rank = (s: SessionRef): number => {
+        if (s.provider === picked.provider && s.id === picked.id) return 0;
+        if (s.provider === picked.provider && s.parentId === picked.id) return 1;
+        return 2;
+      };
+      const ra = rank(a);
+      const rb = rank(b);
+      if (ra !== rb) return ra - rb;
+    }
     const x = sel(a);
     const y = sel(b);
     return (x < y ? -1 : x > y ? 1 : 0) * sort.dir;
@@ -1131,6 +1353,19 @@ const agentGroups = computed(() => {
   display: flex;
   gap: 16px;
   align-items: flex-start;
+}
+.ag-graph-row {
+  min-height: calc(100vh - 200px);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.ag-graph-aside {
+  position: static;
+  top: auto;
+  align-self: stretch;
+  max-height: none;
+  height: 100%;
 }
 .mem-browser-host {
   flex: 1;
