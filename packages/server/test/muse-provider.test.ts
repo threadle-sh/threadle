@@ -145,9 +145,11 @@ describe("muse model soft catalog", () => {
 
 describe("muse jsonl ingest", () => {
   it("reads session id from stream.id and terminal text", async () => {
-    const { ingestMuseJsonLine } = await import("../src/providers/muse/inject.js");
-    const state = { sessionId: undefined as string | undefined, resultText: undefined as string | undefined, deltas: [] as string[] };
-    ingestMuseJsonLine(
+    const { ingestMuseJsonLine, createMuseIngestState } = await import(
+      "../src/providers/muse/inject.js"
+    );
+    const state = createMuseIngestState(1_000);
+    const logs1 = ingestMuseJsonLine(
       JSON.stringify({
         stream: { kind: "session", id: "01a0ce79-7535-7d92-bca9-b68e3bcf5a01" },
         payload_type: "run.output.delta",
@@ -156,7 +158,9 @@ describe("muse jsonl ingest", () => {
       state,
     );
     expect(state.sessionId).toBe("01a0ce79-7535-7d92-bca9-b68e3bcf5a01");
-    ingestMuseJsonLine(
+    expect(logs1.some(([lane]) => lane === "text")).toBe(true);
+    expect(logs1.some(([lane, t]) => lane === "meta" && t.includes("first answer"))).toBe(true);
+    const logs2 = ingestMuseJsonLine(
       JSON.stringify({
         stream: { kind: "session", id: "01a0ce79-7535-7d92-bca9-b68e3bcf5a01" },
         payload_type: "run.terminal.completed",
@@ -165,5 +169,102 @@ describe("muse jsonl ingest", () => {
       state,
     );
     expect(state.resultText).toBe("Hello, world.");
+    expect(logs2.some(([lane, t]) => lane === "meta" && t.startsWith("■"))).toBe(true);
+  });
+
+  it("surfaces spawn/timing meta from exec --json fixture", async () => {
+    const {
+      ingestMuseJsonLine,
+      createMuseIngestState,
+      museExecEnv,
+    } = await import("../src/providers/muse/inject.js");
+    const { formatDuration } = await import("../src/providers/run-metrics.js");
+    expect(formatDuration(4500)).toBe("4.5s");
+
+    const off = museExecEnv(false);
+    expect(off.MUSE_EXPERIMENTAL_SKILL_REMINDER).toBe("0");
+    expect(off.MUSE_EXPERIMENTAL_VERIFY_REMINDER).toBe("0");
+    const on = museExecEnv(true);
+    expect(on.MUSE_EXPERIMENTAL_SKILL_REMINDER).toBeUndefined();
+
+    const fixture = path.join(HERE, "fixtures/providers/muse/exec/pong.jsonl");
+    expect(fs.existsSync(fixture)).toBe(true);
+    const state = createMuseIngestState();
+    const all: Array<[string, string]> = [];
+    for (const line of fs.readFileSync(fixture, "utf8").split("\n")) {
+      if (!line.trim()) continue;
+      all.push(...ingestMuseJsonLine(line, state));
+    }
+    expect(state.deltas.join("")).toContain("pong");
+    expect(state.resultText).toBe("pong");
+    expect(state.modelId).toMatch(/muse-spark/);
+    expect(state.spawnNames).toEqual(
+      expect.arrayContaining(["skill-reminder", "verify-reminder"]),
+    );
+    const metas = all.filter(([lane]) => lane === "meta").map(([, t]) => t);
+    expect(metas.some((t) => t.includes("spawn skill-reminder"))).toBe(true);
+    expect(metas.some((t) => t.includes("spawn verify-reminder"))).toBe(true);
+    expect(metas.some((t) => t.startsWith("■") && t.includes("spawns"))).toBe(true);
+    expect(metas.some((t) => t.includes("first answer"))).toBe(true);
+    // Reminder spawns stay meta-only; non-reminder tasks get a tool lane.
+    const tools = all.filter(([lane]) => lane === "tool").map(([, t]) => t);
+    expect(tools.some((t) => /reminder/i.test(t))).toBe(false);
+  });
+
+  it("emits tool lane for non-reminder task spawn", async () => {
+    const { ingestMuseJsonLine, createMuseIngestState } = await import(
+      "../src/providers/muse/inject.js"
+    );
+    const state = createMuseIngestState(1_000);
+    const taskId = "task-shell-1";
+    ingestMuseJsonLine(
+      JSON.stringify({
+        payload_type: "task.lifecycle.proposed",
+        payload: {
+          task_id: taskId,
+          event: { kind: "proposed", task_id: taskId, task_kind: "tool.shell" },
+        },
+      }),
+      state,
+    );
+    const logs = ingestMuseJsonLine(
+      JSON.stringify({
+        payload_type: "task.lifecycle.started",
+        payload: {
+          task_id: taskId,
+          event: { kind: "started", task_id: taskId },
+        },
+      }),
+      state,
+    );
+    expect(logs.some(([lane, t]) => lane === "meta" && t.includes("spawn"))).toBe(true);
+    expect(logs.some(([lane]) => lane === "tool")).toBe(true);
+    expect(logs.some(([lane, t]) => lane === "tool" && /reminder/i.test(t))).toBe(false);
+  });
+
+  it("accumulates tokens from runtime.session model_completed usage", async () => {
+    const { ingestMuseJsonLine, createMuseIngestState, museRunSummary } = await import(
+      "../src/providers/muse/inject.js"
+    );
+    const state = createMuseIngestState(1_000);
+    ingestMuseJsonLine(
+      JSON.stringify({
+        stream: { kind: "session", id: "sess-1" },
+        payload_type: "runtime.session",
+        payload: {
+          kind: "run",
+          event: {
+            kind: "model_completed",
+            usage: { input_tokens: 100, output_tokens: 12 },
+            model: "muse-spark-1.3",
+          },
+        },
+      }),
+      state,
+    );
+    expect(state.tokensIn).toBe(100);
+    expect(state.tokensOut).toBe(12);
+    expect(state.modelId).toBe("muse-spark-1.3");
+    expect(museRunSummary(state, 1_500)).toMatch(/100→12 tok/);
   });
 });

@@ -13,7 +13,11 @@ injectRoutes.post("/", async (c) => {
   const payload = await readPayload(req.payloadHash);
   if (!payload) return c.json({ error: "payload not found — materialize first" }, 404);
 
-  const { jobId } = jobs.create("inject", req.target.provider);
+  const { jobId } = jobs.create("inject", req.target.provider, undefined, {
+    sessionRef: req.target.sessionId
+      ? { provider: req.target.provider, sessionId: req.target.sessionId }
+      : undefined,
+  });
 
   void (async () => {
     try {

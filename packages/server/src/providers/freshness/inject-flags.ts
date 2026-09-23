@@ -98,10 +98,10 @@ export const INJECT_FLAG_PROBES: InjectFlagProbe[] = [
     why: "workspace-write inject",
   },
   {
-    id: "codex:ask-for-approval",
+    id: "codex:approve-for-me",
     bin: "codex",
-    match: ["--ask-for-approval"],
-    why: "never for headless",
+    match: ["--approve-for-me"],
+    why: "headless auto-approval (replaced --ask-for-approval)",
   },
   {
     id: "copilot:prompt",

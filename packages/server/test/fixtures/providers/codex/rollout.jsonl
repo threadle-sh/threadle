@@ -2,3 +2,4 @@
 {"timestamp":"2026-09-15T21:35:28.000Z","type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"hello codex fixture"}]}}
 {"timestamp":"2026-09-15T21:35:29.000Z","type":"response_item","payload":{"type":"message","role":"assistant","content":[{"type":"output_text","text":"hi from codex"}]}}
 {"timestamp":"2026-09-15T21:35:30.000Z","type":"unknown_future","payload":{"ignore":true}}
+{"timestamp":"2026-09-15T21:35:31.000Z","type":"token_usage_record","payload":{"session_id":"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee","usage":{"input_tokens":100,"output_tokens":12,"reasoning_output_tokens":0,"total_tokens":112}}}

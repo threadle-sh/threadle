@@ -187,3 +187,38 @@ describe("settings notifications", () => {
     expect(again.notifications?.handoff).toBe(false);
   });
 });
+
+describe("settings harnessExtras", () => {
+  it("defaults to false and round-trips true via PUT", async () => {
+    const { readSettings, settingsRoutes } = await import("../src/routes/settings.js");
+    expect((await readSettings()).harnessExtras).toBe(false);
+
+    const put = await settingsRoutes.request("/", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        editor: { mode: "vscode" },
+        harnessExtras: true,
+      }),
+    });
+    expect(put.status).toBe(200);
+    const body = (await put.json()) as { harnessExtras?: boolean };
+    expect(body.harnessExtras).toBe(true);
+    expect((await readSettings()).harnessExtras).toBe(true);
+  });
+
+  it("accepts legacy museReminders alias", async () => {
+    const { readSettings, settingsRoutes } = await import("../src/routes/settings.js");
+    const put = await settingsRoutes.request("/", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        editor: { mode: "vscode" },
+        museReminders: true,
+      }),
+    });
+    expect(put.status).toBe(200);
+    expect((await put.json() as { harnessExtras?: boolean }).harnessExtras).toBe(true);
+    expect((await readSettings()).harnessExtras).toBe(true);
+  });
+});

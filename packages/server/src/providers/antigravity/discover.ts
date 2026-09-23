@@ -300,7 +300,9 @@ export async function liveStatuses(): Promise<Map<string, SessionStatus>> {
   const map = new Map<string, SessionStatus>();
   const summaries = await loadSummaryIndex();
   for (const [id, sum] of summaries) {
-    if (sum.status && sum.status !== "unknown") map.set(id, sum.status);
+    if (sum.status === "running" || sum.status === "waiting") {
+      map.set(id, sum.status);
+    }
   }
   return map;
 }

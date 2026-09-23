@@ -64,6 +64,15 @@ export interface ThreadleSettings {
    * Empty array (default) = none. `null` = all saved workflows (opt-in).
    */
   mcpPublishAllowlist?: string[] | null;
+  /**
+   * Post-answer harness extras (Muse reminders, Claude hooks/slash skills,
+   * Grok subagents, Antigravity slash skills). When false, inject passes each
+   * provider's skip switches. Default false — workflows care about wall time.
+   * Legacy key `museReminders` is still read.
+   */
+  harnessExtras?: boolean;
+  /** @deprecated use harnessExtras */
+  museReminders?: boolean;
 }
 
 const DEFAULTS: ThreadleSettings = {
@@ -75,6 +84,7 @@ const DEFAULTS: ThreadleSettings = {
   mcpClientEnabled: true,
   mcpDisabledServers: [],
   mcpPublishAllowlist: [],
+  harnessExtras: false,
 };
 
 function settingsFile(): string {
@@ -177,6 +187,7 @@ export function normalizeSettings(raw: Partial<ThreadleSettings>): ThreadleSetti
     mcpClientEnabled: raw.mcpClientEnabled !== false,
     mcpDisabledServers: parseStringIds(raw.mcpDisabledServers),
     mcpPublishAllowlist: parsePublishAllowlist(raw.mcpPublishAllowlist),
+    harnessExtras: raw.harnessExtras === true || raw.museReminders === true,
   };
 }
 
@@ -192,6 +203,7 @@ export async function readSettings(): Promise<ThreadleSettings> {
       notifications: { ...DEFAULT_NOTIFY },
       mcpDisabledServers: [],
       mcpPublishAllowlist: [],
+      harnessExtras: false,
     };
   }
 }
@@ -282,6 +294,7 @@ settingsRoutes.put("/", async (c) => {
     mcpClientEnabled: body.mcpClientEnabled !== false,
     mcpDisabledServers: parseStringIds(body.mcpDisabledServers),
     mcpPublishAllowlist: parsePublishAllowlist(body.mcpPublishAllowlist),
+    harnessExtras: body.harnessExtras === true || body.museReminders === true,
   };
   await fs.promises.mkdir(threadleConfigDir(), { recursive: true });
   await fs.promises.writeFile(settingsFile(), JSON.stringify(next, null, 2), "utf8");

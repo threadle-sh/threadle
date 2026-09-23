@@ -142,7 +142,14 @@
                   <div class="sess-detail-titles">
                     <span class="lib-aside-title mono">{{ pickedRun.title ?? shortId(pickedRun.id) }}</span>
                     <div class="sess-detail-meta mono">
-                      <SessionLivePill :status="pickedRunLiveStatus" />
+                      <SessionLivePill
+                        :status="pickedRunLiveStatus"
+                        :phase="
+                          pickedRun
+                            ? phaseForSession(pickedRun.provider, pickedRun.id)
+                            : undefined
+                        "
+                      />
                       <span v-if="isSubRun(pickedRun)" class="inst-sub micro-label">sub</span>
                       <span v-if="pickedRun.agent" class="sess-detail-agent">⟨/⟩ {{ pickedRun.agent }}</span>
                     </div>
@@ -297,7 +304,14 @@
               <div class="sess-detail-titles">
                 <span class="lib-aside-title mono">{{ pickedRun.title ?? shortId(pickedRun.id) }}</span>
                 <div class="sess-detail-meta mono">
-                  <SessionLivePill :status="pickedRunLiveStatus" />
+                  <SessionLivePill
+                    :status="pickedRunLiveStatus"
+                    :phase="
+                      pickedRun
+                        ? phaseForSession(pickedRun.provider, pickedRun.id)
+                        : undefined
+                    "
+                  />
                   <span v-if="isSubRun(pickedRun)" class="inst-sub micro-label">sub</span>
                   <span v-if="pickedRun.agent" class="sess-detail-agent">⟨/⟩ {{ pickedRun.agent }}</span>
                 </div>
@@ -476,7 +490,14 @@
         <div class="sess-detail-titles">
           <span class="lib-aside-title mono">{{ pickedRun.title ?? shortId(pickedRun.id) }}</span>
           <div class="sess-detail-meta mono">
-            <SessionLivePill :status="pickedRunLiveStatus" />
+            <SessionLivePill
+              :status="pickedRunLiveStatus"
+              :phase="
+                pickedRun
+                  ? phaseForSession(pickedRun.provider, pickedRun.id)
+                  : undefined
+              "
+            />
             <span v-if="isSubRun(pickedRun)" class="inst-sub micro-label">sub</span>
             <span v-if="pickedRun.agent" class="sess-detail-agent">⟨/⟩ {{ pickedRun.agent }}</span>
           </div>
@@ -724,6 +745,7 @@ import PluginsBrowser from "@/panels/PluginsBrowser.vue";
 import AgentsGraph, { type GraphPick } from "@/panels/AgentsGraph.vue";
 import DetailExpandControls from "@/panels/DetailExpandControls.vue";
 import DetailExpandModal from "@/panels/DetailExpandModal.vue";
+import { useJobPhases } from "@/lib/useJobPhases";
 import "./chrome.css";
 
 const props = defineProps<{
@@ -746,6 +768,7 @@ const settings = useSettingsStore();
 const fileViewers = useFileViewersStore();
 const favorites = useFavoritesStore();
 void favorites.ensureLoaded();
+const { phaseForSession } = useJobPhases();
 
 const runCtx = ref<{ x: number; y: number; session: SessionRef }>();
 const defCtx = ref<{ x: number; y: number; agent: AgentDef }>();

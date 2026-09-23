@@ -31,6 +31,7 @@
         Run log
         <span v-if="entries.length" class="log-count">{{ entries.length }}</span>
         <span v-if="live" class="status-dot running" />
+        <span v-if="live && phase" class="log-phase mono">{{ phase }}</span>
       </button>
       <button
         class="log-tab"
@@ -121,7 +122,7 @@ import { useVerticalResize } from "@/lib/useVerticalResize";
 export interface LogEntry {
   jobId: string;
   label?: string;
-  lane: "text" | "thinking" | "tool" | "raw";
+  lane: "text" | "thinking" | "tool" | "raw" | "meta";
   line: string;
   ts: number;
 }
@@ -130,6 +131,8 @@ const props = defineProps<{
   entries: LogEntry[];
   open: boolean;
   live?: boolean;
+  /** Live deriveRunPhase label while a run is in flight */
+  phase?: string;
   looseEnds?: LooseEnd[];
   workflowIssues?: WorkflowIssue[];
 }>();
@@ -206,6 +209,8 @@ function laneIcon(lane: LogEntry["lane"]): string {
       return "⚙";
     case "thinking":
       return "…";
+    case "meta":
+      return "◷";
     case "raw":
       return "·";
     default:
@@ -313,6 +318,15 @@ defineExpose({ showIssues });
 .log-count.warn {
   color: var(--status-error);
 }
+.log-phase {
+  margin-left: 4px;
+  font-size: 10px;
+  color: var(--text-faint);
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .log-spacer {
   flex: 1;
   align-self: stretch;
@@ -401,6 +415,10 @@ defineExpose({ showIssues });
 }
 .log-line.raw .log-text {
   color: var(--text-dim);
+}
+.log-line.meta .log-text {
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
 }
 .loose-end-item {
   display: grid;

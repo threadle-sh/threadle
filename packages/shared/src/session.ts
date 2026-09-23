@@ -41,6 +41,13 @@ export interface SessionRef {
   meta?: Record<string, unknown>;
 }
 
+/** True when SessionRef was tagged by Settings → test pilot (or bare pilot cwd). */
+export function isPilotSession(s: {
+  meta?: Record<string, unknown>;
+}): boolean {
+  return s.meta?.pilot === true;
+}
+
 export type ContentPartType =
   | "text"
   | "thinking"

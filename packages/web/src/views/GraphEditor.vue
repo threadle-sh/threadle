@@ -207,6 +207,15 @@
           :server-project-dir="serverProjectDir"
           @dismiss="dismissRecipeSetup"
         />
+        <GraphRunHud
+          :live="canvasRunLive"
+          :started-at="canvasRunStartedAt"
+          :title="canvasRunTitle"
+          :detail="canvasRunDetail"
+          :harness-extras="settings.harnessExtras"
+          :saving="settings.saving"
+          @update:harness-extras="onHarnessExtrasToggle"
+        />
         <VueFlow
           :nodes="[]"
           :edges="[]"
@@ -395,6 +404,7 @@
           @open-in-code="ctxOpenInCode"
           @copy-path="ctxCopyPath"
           @copy-content="ctxCopyContent"
+          @open-details="openNodeDetails"
           @run-from="runFromNode(ctxMenu.nodeId)"
           @test-node="testSingleNode(ctxMenu.nodeId)"
           @clear-output="clearOutputNode(ctxMenu.nodeId)"
@@ -468,6 +478,7 @@
           :entries="logEntries"
           :open="logDockOpen"
           :live="graphRunning || runBusy"
+          :phase="canvasRunLive ? canvasRunDetail : undefined"
           :loose-ends="looseEnds"
           :workflow-issues="workflowIssues"
           @toggle="logDockOpen = !logDockOpen"
@@ -715,6 +726,7 @@ import {
   classifyUsageExhaustion,
   claudeExhaustedForModel,
   formatUsageExhaustionMessage,
+  deriveRunPhase,
   type DetachedIssue,
   type ExtractConfig,
   type Graph,
@@ -800,6 +812,7 @@ import {
   DetachedGateModal,
   ImportRunModal,
   RecipeSetupBanner,
+  GraphRunHud,
   NodeContextMenu,
   WireDropMenu,
   EditorTopbar,
@@ -4425,6 +4438,12 @@ function onServerEvent(event: ServerEvent): void {
   }
   if (event.type === "job.log") {
     pushLog(event.jobId, event.lane, event.line);
+    // Live phase for agent / context panels while the job is in flight.
+    const phase = deriveRunPhase(logsForJob(event.jobId)).label;
+    const pending = pendingRuns.get(event.jobId);
+    if (pending) runProgress[pending.agentNodeId] = phase;
+    const jobEntry = [...pendingJobs.entries()].find(([, jid]) => jid === event.jobId);
+    if (jobEntry) jobProgress[jobEntry[0]] = phase;
     return;
   }
   // Detached mid-run paint: active node border + status without waiting for job.done.
@@ -4475,7 +4494,8 @@ function onServerEvent(event: ServerEvent): void {
   const [nodeId] = entry;
   const node = store.nodeById(nodeId);
   if (event.type === "job.progress") {
-    jobProgress[nodeId] = event.message;
+    // Seed phase only — never clobber deriveRunPhase labels with the verbose message.
+    if (jobProgress[nodeId] === undefined) jobProgress[nodeId] = "starting";
   } else if (event.type === "job.done") {
     pendingJobs.delete(nodeId);
     delete jobProgress[nodeId];
@@ -4955,6 +4975,13 @@ function setJobLabel(jobId: string, label: string): void {
     if (!oldest.done) jobLabels.delete(oldest.value);
   }
 }
+
+function logsForJob(jobId: string): Array<{ lane: string; line: string }> {
+  return logEntries.value
+    .filter((e) => e.jobId === jobId)
+    .map((e) => ({ lane: e.lane, line: e.line }));
+}
+
 const LOG_CAP = 1000;
 
 /** the server-side job registered for the current client-driven workflow run */
@@ -5074,6 +5101,8 @@ async function runAgent(): Promise<void> {
       permissionMode: data.permissionMode,
       sandbox: data.sandbox,
       askForApproval: data.askForApproval,
+      harnessExtras: data.harnessExtras ?? data.museReminders,
+      ignoreLocalMarkdown: data.ignoreLocalMarkdown,
       projectDir:
         linkedLive?.projectDir ??
         linkedData?.snapshot?.projectDir ??
@@ -5095,7 +5124,8 @@ function onRunEvent(event: ServerEvent): boolean {
   const agentNode = store.nodeById(agentNodeId);
 
   if (event.type === "job.progress") {
-    runProgress[agentNodeId] = event.message;
+    // Seed phase only — never clobber deriveRunPhase labels with the verbose message.
+    if (runProgress[agentNodeId] === undefined) runProgress[agentNodeId] = "starting";
     return true;
   }
   pendingRuns.delete(event.jobId);
@@ -5259,6 +5289,73 @@ const detachedApprovals = computed(() => detachedIssues.value.filter((i) => !i.b
 const detachedJobs = new Map<string, string>();
 const detachedBusy = ref(false);
 let detachedPollTimer: ReturnType<typeof setInterval> | undefined;
+
+/** Top-right canvas HUD while any run path is live. */
+const canvasRunLive = computed(
+  () => graphRunning.value || detachedBusy.value || runBusy.value,
+);
+const canvasRunStartedAt = ref<number | undefined>();
+watch(
+  canvasRunLive,
+  (live) => {
+    if (live) {
+      if (canvasRunStartedAt.value === undefined) canvasRunStartedAt.value = Date.now();
+    } else {
+      canvasRunStartedAt.value = undefined;
+    }
+  },
+  { immediate: true },
+);
+const canvasRunTitle = computed(() => {
+  const running = activeRunningLabels.value;
+  if (running.length) return running.length === 1 ? running[0]! : `${running.length} nodes`;
+  if (runBusy.value) return "agent";
+  if (detachedBusy.value) return "≫ detached";
+  if (graphRunning.value) return "workflow";
+  return "running";
+});
+const canvasRunDetail = computed(() => {
+  // Prefer phase from the most recent agent/workflow job logs.
+  const latestJobId = (() => {
+    for (let i = logEntries.value.length - 1; i >= 0; i--) {
+      const id = logEntries.value[i]!.jobId;
+      if (id && id !== "run") return id;
+    }
+    return undefined;
+  })();
+  if (latestJobId && (runBusy.value || graphRunning.value || detachedBusy.value)) {
+    const { phase, label } = deriveRunPhase(logsForJob(latestJobId));
+    if (phase !== "starting" || logsForJob(latestJobId).length > 0) {
+      return label;
+    }
+  }
+  for (let i = logEntries.value.length - 1; i >= 0; i--) {
+    const e = logEntries.value[i]!;
+    if (e.lane !== "meta") continue;
+    const line = e.line.replace(/^[^:]+:\s*/, "");
+    if (
+      /first answer|spawn |extras |reminders |✓ |model |opening |completed meta/i.test(line)
+    ) {
+      return line.length > 72 ? `${line.slice(0, 72)}…` : line;
+    }
+  }
+  const queued = activeQueuedLabels.value;
+  if (queued.length) return `queued · ${queued.slice(0, 2).join(", ")}`;
+  return undefined;
+});
+
+async function onHarnessExtrasToggle(next: boolean): Promise<void> {
+  await settings.setHarnessExtras(next);
+  if (canvasRunLive.value) {
+    pushLog(
+      "run",
+      "meta",
+      next
+        ? "harness extras on — next agent spawn"
+        : "harness extras off — next agent spawn",
+    );
+  }
+}
 
 const {
   tabRuns,
@@ -6338,6 +6435,14 @@ function setCtxModel(m: string | undefined): void {
   n.data.model = m || undefined;
   modelOpen.value = false;
   ctxMenu.value = undefined;
+}
+
+function openNodeDetails(): void {
+  const id = ctxMenu.value?.nodeId;
+  ctxMenu.value = undefined;
+  modelOpen.value = false;
+  exchangeOpen.value = false;
+  if (id) inspected.value = id;
 }
 
 function nodeLabelOf(n: GraphNode): string {
@@ -7856,6 +7961,8 @@ async function runGraph(scope?: Set<string>): Promise<void> {
               permissionMode: agentData.permissionMode,
               sandbox: agentData.sandbox,
               askForApproval: agentData.askForApproval,
+              harnessExtras: agentData.harnessExtras ?? agentData.museReminders,
+              ignoreLocalMarkdown: agentData.ignoreLocalMarkdown,
             });
             setJobLabel(jobId, agentData.ref.name);
             node.lastRunId = jobId;

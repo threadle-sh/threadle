@@ -9,3 +9,4 @@
 # muse/ — `MUSE_DATA_DIR` share layout:
 #   sessions/<uuid>/session.jsonl  (MSP; unknown payload types must skip)
 #   sessions/<uuid>/subagent/<child-uuid>/session.jsonl  (parent→child lineage)
+#   exec/pong.jsonl — sample `muse exec --json` stdout (task lifecycle + deltas)

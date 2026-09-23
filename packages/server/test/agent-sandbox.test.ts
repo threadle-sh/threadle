@@ -24,20 +24,16 @@ describe("agent permission / sandbox argv", () => {
   });
 
   it("codex: safetyArgs defaults and overrides", () => {
-    expect(safetyArgs()).toEqual([
-      "--sandbox",
-      "workspace-write",
-      "--ask-for-approval",
-      "never",
-    ]);
+    expect(safetyArgs()).toEqual(["--approve-for-me"]);
     expect(
       safetyArgs({ sandbox: "read-only", askForApproval: "on-request" }),
-    ).toEqual([
-      "--sandbox",
-      "read-only",
-      "--ask-for-approval",
-      "on-request",
-    ]);
+    ).toEqual(["--sandbox", "read-only"]);
+    expect(
+      safetyArgs({ sandbox: "workspace-write", askForApproval: "on-request" }),
+    ).toEqual(["--sandbox", "workspace-write"]);
+    expect(
+      safetyArgs({ sandbox: "read-only", askForApproval: "never" }),
+    ).toEqual(["--sandbox", "read-only"]);
   });
 
   it("codex: execArgs includes sandbox from opts", () => {
@@ -48,6 +44,7 @@ describe("agent permission / sandbox argv", () => {
     });
     expect(args).toContain("--sandbox");
     expect(args[args.indexOf("--sandbox") + 1]).toBe("danger-full-access");
-    expect(args[args.indexOf("--ask-for-approval") + 1]).toBe("on-failure");
+    expect(args).not.toContain("--approve-for-me");
+    expect(args).not.toContain("--ask-for-approval");
   });
 });

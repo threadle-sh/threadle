@@ -1,7 +1,7 @@
 {
   "name": "threadle",
-  "version": "1.1.0",
-  "description": "Local-first node-graph patchbay for Claude Code, opencode, Cursor Agent, Antigravity, Codex, Copilot, and Grok Build sessions.",
+  "version": "1.1.1",
+  "description": "Local-first node-graph patchbay for Claude Code, opencode, Cursor Agent, Antigravity, Codex, Copilot, Grok Build and Muse sessions.",
   "type": "module",
   "license": "MIT",
   "author": "Fabian Bienk (https://github.com/zFarbp)",
@@ -22,6 +22,7 @@
     "codex",
     "copilot",
     "grok",
+    "muse",
     "agent",
     "workflow",
     "patchbay"

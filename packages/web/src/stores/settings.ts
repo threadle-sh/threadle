@@ -71,6 +71,8 @@ export const useSettingsStore = defineStore("settings", () => {
   const mcpClientEnabled = ref(true);
   const mcpDisabledServers = ref<string[]>([]);
   const mcpPublishAllowlist = ref<string[] | null>([]);
+  /** Post-answer harness extras; default off for workflow wall time. */
+  const harnessExtras = ref(false);
   const notifications = reactive<NotifySettings>({ ...DEFAULT_NOTIFY });
   const appearance = ref<Appearance>(readStoredAppearance());
   /** Only non-default overrides are stored. */
@@ -114,6 +116,8 @@ export const useSettingsStore = defineStore("settings", () => {
         mcpClientEnabled?: boolean;
         mcpDisabledServers?: string[];
         mcpPublishAllowlist?: string[] | null;
+        harnessExtras?: boolean;
+        museReminders?: boolean;
       };
       if (s.editor?.mode) mode.value = s.editor.mode;
       command.value = s.editor?.command ?? "";
@@ -127,6 +131,7 @@ export const useSettingsStore = defineStore("settings", () => {
           : Array.isArray(s.mcpPublishAllowlist)
             ? s.mcpPublishAllowlist
             : [];
+      harnessExtras.value = s.harnessExtras === true || s.museReminders === true;
       Object.assign(notifications, parseNotify(s));
       if (isAppearance(s.appearance)) {
         appearance.value = s.appearance;
@@ -155,6 +160,7 @@ export const useSettingsStore = defineStore("settings", () => {
           mcpClientEnabled: mcpClientEnabled.value,
           mcpDisabledServers: mcpDisabledServers.value,
           mcpPublishAllowlist: mcpPublishAllowlist.value,
+          harnessExtras: harnessExtras.value,
           notifications: { ...notifications },
           appearance: appearance.value,
           providerColors: Object.keys(providerColors.value).length
@@ -192,6 +198,12 @@ export const useSettingsStore = defineStore("settings", () => {
     await save();
   }
 
+  async function setHarnessExtras(next: boolean): Promise<void> {
+    if (harnessExtras.value === next) return;
+    harnessExtras.value = next;
+    await save();
+  }
+
   const editorLabel = computed(() =>
     mode.value === "command"
       ? (command.value.split(/\s+/)[0]?.split("/").pop() ?? "open")
@@ -218,6 +230,8 @@ export const useSettingsStore = defineStore("settings", () => {
     mcpClientEnabled,
     mcpDisabledServers,
     mcpPublishAllowlist,
+    harnessExtras,
+    setHarnessExtras,
     notifications,
     notifyAny,
     notifyAllows,

@@ -207,6 +207,44 @@
     </p>
   </div>
 
+  <div class="micro-label stat-section">providers</div>
+
+  <div class="settings-card">
+    <div class="micro-label">harness extras</div>
+    <div class="settings-row">
+      <span class="settings-opt-label">post-answer extras</span>
+      <div class="settings-seg" role="group" aria-label="harness extras">
+        <button
+          type="button"
+          class="settings-seg-btn"
+          :class="{ active: !settings.harnessExtras }"
+          :disabled="settings.saving"
+          @click="setHarnessExtras(false)"
+        >
+          off
+        </button>
+        <button
+          type="button"
+          class="settings-seg-btn"
+          :class="{ active: settings.harnessExtras }"
+          :disabled="settings.saving"
+          @click="setHarnessExtras(true)"
+        >
+          on
+        </button>
+      </div>
+    </div>
+    <p class="stat-note">
+      Provider post-answer work that holds the CLI open: Muse reminder subagents,
+      Claude slash skills, Grok subagents, Antigravity slash skills.
+      <b>off</b> (default) skips them for faster workflow nodes. Flipable on the
+      canvas HUD while a run is live, or per agent node. Stored as
+      <span class="mono">harnessExtras</span> in settings.json.
+    </p>
+  </div>
+
+  <SettingsPilot />
+
   <div class="micro-label stat-section">costs</div>
 
   <div class="settings-card">
@@ -341,6 +379,7 @@ import { vColResize } from "@/lib/colResize";
 import { useSettingsStore } from "@/stores/settings";
 import SettingsCustomNodes from "./settings/SettingsCustomNodes.vue";
 import SettingsMcp from "./settings/SettingsMcp.vue";
+import SettingsPilot from "./settings/SettingsPilot.vue";
 import "./chrome.css";
 
 interface InternalItem {
@@ -422,6 +461,10 @@ async function setShowExamples(on: boolean): Promise<void> {
   if (settings.showExamples === on) return;
   settings.showExamples = on;
   await saveSettings();
+}
+
+async function setHarnessExtras(on: boolean): Promise<void> {
+  await settings.setHarnessExtras(on);
 }
 
 async function setNotifyEnabled(on: boolean): Promise<void> {
