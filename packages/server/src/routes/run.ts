@@ -24,6 +24,7 @@ import {
 import { listCodexModels, runCodexAgent } from "../providers/codex/inject.js";
 import { listCopilotModels, runCopilotAgent } from "../providers/copilot/inject.js";
 import { listGrokModels, runGrokAgent } from "../providers/grok/inject.js";
+import { listMuseModels, runMuseAgent } from "../providers/muse/inject.js";
 import { registry } from "../providers/registry.js";
 import { executeWorkflow } from "../workflows/executor.js";
 import { readGraph } from "../graphs/store.js";
@@ -39,6 +40,7 @@ const KNOWN_PROVIDERS = new Set([
   "codex",
   "copilot",
   "grok",
+  "muse",
 ]);
 
 function logSinkFor(jobId: string): LogSink {
@@ -77,6 +79,9 @@ modelRoutes.get("/", async (c) => {
   }
   for (const id of await listGrokModels()) {
     models.push({ provider: "grok", id });
+  }
+  for (const id of await listMuseModels()) {
+    models.push({ provider: "muse", id });
   }
   return c.json(models);
 });
@@ -188,6 +193,16 @@ runRoutes.post("/agent", async (c) => {
           onLog,
           signal,
         });
+      } else if (req.provider === "muse") {
+        result = await runMuseAgent({
+          agent: req.agent,
+          model: req.model,
+          prompt: req.prompt,
+          projectDir,
+          sessionId: req.sessionId,
+          onLog,
+          signal,
+        });
       } else {
         // .md-defined agents run with their body as appended system prompt
         const defs = await registry
@@ -265,7 +280,9 @@ runRoutes.post("/session", async (c) => {
                   ? await runCopilotAgent(runArgs)
                   : req.provider === "grok"
                     ? await runGrokAgent(runArgs)
-                    : await runClaudeAgent(runArgs);
+                    : req.provider === "muse"
+                      ? await runMuseAgent(runArgs)
+                      : await runClaudeAgent(runArgs);
       const done = { type: "job.done", jobId, inject: result } as const;
       jobs.finish(jobId, { status: "done", result: done });
       bus.publish(done);

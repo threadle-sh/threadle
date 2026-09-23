@@ -46,13 +46,7 @@
           @change="onProvider"
         >
           <option value="">—</option>
-          <option value="claude-code">claude-code</option>
-          <option value="opencode">opencode</option>
-          <option value="cursor">cursor</option>
-          <option value="antigravity">antigravity</option>
-          <option value="codex">codex</option>
-          <option value="copilot">copilot</option>
-          <option value="grok">grok</option>
+          <option v-for="id in PROVIDER_IDS" :key="id" :value="id">{{ id }}</option>
         </select>
       </label>
       <label class="cfg-row">
@@ -82,7 +76,9 @@
                   ? 'copilot'
                   : data.provider === 'grok'
                     ? 'grok'
-                    : 'build'
+                    : data.provider === 'muse'
+                      ? 'muse'
+                      : 'build'
           "
           spellcheck="false"
           @input="onAgent"
@@ -98,6 +94,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { KnotNodeData, KnotStrategy, ProviderId } from "@threadle/shared";
+import { PROVIDER_IDS } from "@/lib/providers";
 
 const props = defineProps<{
   data: KnotNodeData;

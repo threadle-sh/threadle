@@ -6,6 +6,7 @@ const runOpencodeAgent = vi.fn();
 const runCodexAgent = vi.fn();
 const runCopilotAgent = vi.fn();
 const runGrokAgent = vi.fn();
+const runMuseAgent = vi.fn();
 const runAntigravityAgent = vi.fn();
 
 vi.mock("../src/providers/claude-code/inject.js", () => ({
@@ -26,6 +27,9 @@ vi.mock("../src/providers/copilot/inject.js", () => ({
 vi.mock("../src/providers/grok/inject.js", () => ({
   runGrokAgent: (...a: unknown[]) => runGrokAgent(...a),
 }));
+vi.mock("../src/providers/muse/inject.js", () => ({
+  runMuseAgent: (...a: unknown[]) => runMuseAgent(...a),
+}));
 vi.mock("../src/providers/antigravity/inject.js", () => ({
   runAntigravityAgent: (...a: unknown[]) => runAntigravityAgent(...a),
 }));
@@ -43,6 +47,7 @@ beforeEach(() => {
     runCodexAgent,
     runCopilotAgent,
     runGrokAgent,
+    runMuseAgent,
     runAntigravityAgent,
   ]) {
     fn.mockReset();
@@ -74,6 +79,7 @@ describe("runSkillInvoke providers", () => {
     ["codex", runCodexAgent],
     ["copilot", runCopilotAgent],
     ["grok", runGrokAgent],
+    ["muse", runMuseAgent],
     ["antigravity", runAntigravityAgent],
   ] as const)("dispatches %s", async (provider, fn) => {
     await runSkillInvoke({ ...base, provider, extra: "ctx" });

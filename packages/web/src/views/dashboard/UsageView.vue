@@ -565,6 +565,54 @@
           </div>
         </template>
 
+        <template v-if="showProviderSection('muse') && museUsage">
+          <div class="micro-label stat-section">
+            <span class="prov-dot" :style="{ background: providerColor('muse') }" />
+            muse
+          </div>
+          <div class="stat-tiles">
+            <div class="stat-tile">
+              <div class="micro-label">sessions</div>
+              <div class="stat-num">{{ museUsage.sessions }}</div>
+            </div>
+            <div
+              class="stat-tile"
+              title="MSP model_completed.usage in ~/.local/share/muse/sessions/*/session.jsonl"
+            >
+              <div class="micro-label">tokens in</div>
+              <div class="stat-num">{{ fmtEstTok("muse", museUsage.in) }}</div>
+            </div>
+            <div
+              class="stat-tile"
+              title="MSP model_completed.usage in ~/.local/share/muse/sessions/*/session.jsonl"
+            >
+              <div class="micro-label">tokens out</div>
+              <div class="stat-num">{{ fmtEstTok("muse", museUsage.out) }}</div>
+            </div>
+            <div
+              v-if="museUsage.reasoning !== undefined"
+              class="stat-tile"
+              title="Reasoning tokens from Muse MSP model_completed.usage"
+            >
+              <div class="micro-label">reasoning</div>
+              <div class="stat-num">{{ fmtEstTok("muse", museUsage.reasoning) }}</div>
+            </div>
+            <div
+              class="stat-tile"
+              title="Muse Code / Meta Spark — subscription-shaped; actual spend is $0 (no list-price table)"
+            >
+              <div class="micro-label">actual spend</div>
+              <div class="stat-num">${{ (museUsage.actual ?? 0).toFixed(2) }}</div>
+              <div class="stat-tile-sub mono">subscription · $0</div>
+            </div>
+            <div v-if="topMuseModel" class="stat-tile">
+              <div class="micro-label">top model</div>
+              <div class="stat-num stat-num-sm">{{ shortModel(topMuseModel.key) }}</div>
+              <div class="stat-tile-sub mono">{{ fmtEstTok("muse", topMuseModel.out) }} out total</div>
+            </div>
+          </div>
+        </template>
+
         <StatsCharts :sessions="scopedSessions" />
 
         <div class="micro-label stat-section">by model</div>
@@ -622,12 +670,12 @@
             </span>
             <span class="stat-val">{{ r.sessions }}</span>
             <span class="stat-val">{{
-              r.key === "cursor" || r.key === "antigravity" || r.key === "codex" || r.key === "copilot" || r.key === "grok"
+              r.key === "cursor" || r.key === "antigravity" || r.key === "codex" || r.key === "copilot" || r.key === "grok" || r.key === "muse"
                 ? fmtEstTok(r.key, r.in)
                 : fmtTokens(r.in)
             }}</span>
             <span class="stat-val">{{
-              r.key === "cursor" || r.key === "antigravity" || r.key === "codex" || r.key === "copilot" || r.key === "grok"
+              r.key === "cursor" || r.key === "antigravity" || r.key === "codex" || r.key === "copilot" || r.key === "grok" || r.key === "muse"
                 ? fmtEstTok(r.key, r.out)
                 : fmtTokens(r.out)
             }}</span>
@@ -906,6 +954,7 @@ const antigravityUsage = computed(() => usageByProvider.value.find((r) => r.key 
 const codexUsage = computed(() => usageByProvider.value.find((r) => r.key === "codex"));
 const copilotUsage = computed(() => usageByProvider.value.find((r) => r.key === "copilot"));
 const grokUsage = computed(() => usageByProvider.value.find((r) => r.key === "grok"));
+const museUsage = computed(() => usageByProvider.value.find((r) => r.key === "muse"));
 
 function providerTokensEstimated(provider: string): boolean {
   return scopedSessions.value.some((s) => s.provider === provider && isTokenEstimate(s.meta));
@@ -950,6 +999,7 @@ const topAntigravityModel = computed(() => topModelOf("antigravity"));
 const topCodexModel = computed(() => topModelOf("codex"));
 const topCopilotModel = computed(() => topModelOf("copilot"));
 const topGrokModel = computed(() => topModelOf("grok"));
+const topMuseModel = computed(() => topModelOf("muse"));
 
 function priceGroupColor(p: string): string {
   if (p === "anthropic") return "var(--claude)";
@@ -959,6 +1009,7 @@ function priceGroupColor(p: string): string {
   if (p === "codex" || p === "openai") return "var(--codex)";
   if (p === "copilot" || p === "github") return "var(--copilot)";
   if (p === "grok" || p === "xai") return "var(--grok)";
+  if (p === "muse" || p === "meta") return "var(--muse)";
   return providerColor(p);
 }
 
@@ -1106,11 +1157,13 @@ function modelProvider(id: string): string {
     if (prefix === "codex" || prefix === "openai") return "codex";
     if (prefix === "copilot" || prefix === "github") return "copilot";
     if (prefix === "grok" || prefix === "xai") return "grok";
+    if (prefix === "muse" || prefix === "meta") return "muse";
     return prefix;
   }
   // bare ids: Claude Code uses claude-*; Cursor-native looks like composer / auto / gpt-…
   if (/^claude/i.test(id)) return "claude-code";
   if (/^grok/i.test(id)) return "grok";
+  if (/^muse-spark/i.test(id)) return "muse";
   if (/^gemini-3\.|gpt-oss/i.test(id)) return "antigravity";
   if (/^(gpt-5|o3|o4)/i.test(id)) return "codex";
   if (/^(composer|auto$|cursor|gpt-|o[1-9])/i.test(id)) return "cursor";
@@ -1331,6 +1384,7 @@ const PRICE_PROVS_FOR_FILTER: Record<string, readonly string[]> = {
   codex: ["openai", "codex"],
   copilot: ["github", "copilot"],
   grok: ["grok", "xai"],
+  muse: ["muse", "meta"],
 };
 
 const filteredPrices = computed(() => {
@@ -1376,7 +1430,9 @@ const priceGroups = computed(() => {
                 ? 5
                 : p === "grok" || p === "xai"
                   ? 6
-                  : 7;
+                  : p === "muse" || p === "meta"
+                    ? 7
+                    : 8;
   return [...byProv.entries()]
     .sort((a, b) => order(a[0]) - order(b[0]) || a[0].localeCompare(b[0]))
     .map(([provider, rows]) => ({

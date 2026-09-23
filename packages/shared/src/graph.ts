@@ -965,6 +965,7 @@ const nodeDataSchema = z.union([
         "codex",
         "copilot",
         "grok",
+        "muse",
       ])
       .optional(),
     model: z.string().optional(),

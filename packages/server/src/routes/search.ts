@@ -11,6 +11,7 @@ const PROVIDERS = new Set([
   "codex",
   "copilot",
   "grok",
+  "muse",
   "payload",
 ]);
 const ROLES = new Set(["user", "assistant"]);

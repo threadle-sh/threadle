@@ -416,6 +416,7 @@ const emit = defineEmits<{
 .prov-dot[data-p="codex"] { background: var(--codex); }
 .prov-dot[data-p="copilot"] { background: var(--copilot); }
 .prov-dot[data-p="grok"] { background: var(--grok); }
+.prov-dot[data-p="muse"] { background: var(--muse); }
 .wire-sect {
   padding: 7px 9px 3px;
   border-top: 1px solid var(--border);

@@ -6,6 +6,7 @@ import { CodexProvider } from "./codex/index.js";
 import { CopilotProvider } from "./copilot/index.js";
 import { CursorProvider } from "./cursor/index.js";
 import { GrokProvider } from "./grok/index.js";
+import { MuseProvider } from "./muse/index.js";
 import { OpencodeProvider } from "./opencode/index.js";
 
 export class ProviderRegistry {
@@ -20,6 +21,7 @@ export class ProviderRegistry {
       ["codex", new CodexProvider()],
       ["copilot", new CopilotProvider()],
       ["grok", new GrokProvider()],
+      ["muse", new MuseProvider()],
     ]);
   }
 

@@ -31,6 +31,10 @@ vi.mock("../src/providers/grok/inject.js", () => ({
   runGrokAgent: vi.fn(),
   listGrokModels: async () => ["grok-mock"],
 }));
+vi.mock("../src/providers/muse/inject.js", () => ({
+  runMuseAgent: vi.fn(),
+  listMuseModels: async () => ["muse-mock"],
+}));
 vi.mock("../src/providers/claude-code/inject.js", () => ({
   runClaudeAgent: vi.fn(),
 }));

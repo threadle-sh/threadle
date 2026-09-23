@@ -18,6 +18,8 @@
         :placeholder="
           agentBrowse === 'defs'
             ? 'Filter agents…'
+            : agentBrowse === 'skills'
+              ? 'Filter skills…'
             : agentBrowse === 'memory'
               ? 'Filter memory…'
               : agentBrowse === 'plugins'
@@ -84,6 +86,14 @@
           @click="setAgentBrowse('plugins')"
         >
           plugins{{ pluginsCount != null ? ` · ${pluginsCount}` : "" }}
+        </button>
+        <button
+          class="filter-chip"
+          :class="{ active: agentBrowse === 'skills' }"
+          title="Skill definitions surfaced as agents (SKILL.md / muse skills)"
+          @click="setAgentBrowse('skills')"
+        >
+          skills{{ skillDefCount ? ` · ${skillDefCount}` : "" }}
         </button>
       </div>
     </div>
@@ -337,6 +347,17 @@
 
         <div v-else class="lib-flex">
           <div class="agent-main">
+            <p v-if="!agentGroups.length" class="stat-note">
+              {{
+                agentBrowse === "skills"
+                  ? agentFilter.trim()
+                    ? "no skills match these filters"
+                    : "no skill defs found — providers that expose SKILL.md as agents will appear here"
+                  : agentFilter.trim()
+                    ? "no agents match these filters"
+                    : "no agent defs found"
+              }}
+            </p>
             <div v-for="pg in agentGroups" :key="pg.provider" class="agent-provider">
               <div class="agent-provider-head">
                 <span class="prov-dot" :style="{ background: providerColor(pg.provider) }" />
@@ -708,7 +729,7 @@ import "./chrome.css";
 const props = defineProps<{
   /** Deep-link: agent name (+ optional provider) from `?agent=` / `?provider=`. */
   focus?: { name: string; provider?: string };
-  /** Deep-link: `?browse=memory` / `?browse=plugins` etc. */
+  /** Deep-link: `?browse=memory` / `?browse=plugins` / `?browse=skills` etc. */
   browse?: string;
   /** Deep-link: `?plugin=provider:id` when browsing plugins. */
   pluginFocus?: string;
@@ -832,12 +853,24 @@ const agentInstances = computed(() => ({
 }));
 
 /** Exclusive Agents browse modes — tiles are radios, not toggles. */
-type AgentBrowse = "defs" | "runs" | "subs" | "live" | "graph" | "memory" | "plugins";
+type AgentBrowse =
+  | "defs"
+  | "runs"
+  | "subs"
+  | "live"
+  | "graph"
+  | "memory"
+  | "plugins"
+  | "skills";
 const agentBrowse = ref<AgentBrowse>("defs");
 const pickedRun = ref<SessionRef>();
 const runDetailExpanded = ref(false);
 const memoryCount = ref<number | null>(null);
 const pluginsCount = ref<number | null>(null);
+
+const skillDefCount = computed(
+  () => sessions.agents.filter((a) => a.kind === "skill").length,
+);
 
 function closePickedRun(): void {
   pickedRun.value = undefined;
@@ -852,6 +885,7 @@ const BROWSE_MODES: AgentBrowse[] = [
   "graph",
   "memory",
   "plugins",
+  "skills",
 ];
 
 function browseFromProp(raw?: string): AgentBrowse | undefined {
@@ -879,7 +913,7 @@ function isSubRun(s: SessionRef): boolean {
 
 function setAgentBrowse(mode: AgentBrowse): void {
   agentBrowse.value = mode;
-  if (mode === "defs") {
+  if (mode === "defs" || mode === "skills") {
     pickedRun.value = undefined;
   } else if (mode === "memory" || mode === "plugins") {
     pickedRun.value = undefined;
@@ -1195,7 +1229,9 @@ watch(agentProviders, (chips) => {
 const agentGroups = computed(() => {
   const providers = new Map<string, Map<string, AgentDef[]>>();
   const q = agentFilter.value.toLowerCase();
+  const skillsOnly = agentBrowse.value === "skills";
   for (const a of sessions.agents) {
+    if (skillsOnly ? a.kind !== "skill" : a.kind === "skill") continue;
     if (agentProviderF.value !== "all" && a.provider !== agentProviderF.value) continue;
     if (q && !a.name.toLowerCase().includes(q) && !a.description?.toLowerCase().includes(q)) {
       continue;

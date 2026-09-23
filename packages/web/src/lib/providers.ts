@@ -1,13 +1,14 @@
 import type { ProviderId } from "@threadle/shared";
 
 export const PROVIDER_IDS: ProviderId[] = [
-  "claude-code",
-  "opencode",
-  "cursor",
   "antigravity",
+  "claude-code",
   "codex",
   "copilot",
+  "cursor",
   "grok",
+  "muse",
+  "opencode",
 ];
 
 export const SESSION_FILTERS = ["all", ...PROVIDER_IDS] as const;
@@ -34,13 +35,13 @@ export function knownProviderIds(
   return [...set];
 }
 
-/** Catalog-ordered session filters limited to providers that are present. */
+/** Alpha-ordered session filters limited to providers that are present. */
 export function sessionFiltersFor(present: Iterable<string>): SessionFilter[] {
   const set = new Set(present);
   return SESSION_FILTERS.filter((f) => f === "all" || set.has(f));
 }
 
-/** Search filters: present providers + always-on "payloads". */
+/** Search filters: present providers (alpha) + always-on "payloads". */
 export function searchFiltersFor(present: Iterable<string>): SearchFilter[] {
   const set = new Set(present);
   return SEARCH_FILTERS.filter((f) => f === "all" || f === "payload" || set.has(f));
@@ -54,6 +55,7 @@ const LABELS: Record<ProviderId, string> = {
   codex: "Codex",
   copilot: "Copilot",
   grok: "Grok Build",
+  muse: "Muse Code",
 };
 
 const SHORT: Record<ProviderId, string> = {
@@ -64,6 +66,7 @@ const SHORT: Record<ProviderId, string> = {
   codex: "codex",
   copilot: "copilot",
   grok: "grok",
+  muse: "muse",
 };
 
 /** CSS custom property names under :root / theme.css */
@@ -75,6 +78,7 @@ export const PROVIDER_CSS_VAR: Record<ProviderId, string> = {
   codex: "--codex",
   copilot: "--copilot",
   grok: "--grok",
+  muse: "--muse",
 };
 
 /** Built-in hex colors (match theme.css provider chips). */
@@ -86,6 +90,7 @@ export const DEFAULT_PROVIDER_HEX: Record<ProviderId, string> = {
   codex: "#5faf82",
   copilot: "#d489a8",
   grok: "#9b87c9",
+  muse: "#568ab8",
 };
 
 const HEX_RE = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
@@ -161,6 +166,7 @@ export function providerServiceName(id: string): string {
   if (id === "codex") return "codex (openai)";
   if (id === "copilot") return "github copilot";
   if (id === "grok") return "grok build";
+  if (id === "muse") return "muse code";
   return id;
 }
 
@@ -188,6 +194,7 @@ export function defaultHandoffTarget(from: string): ProviderId {
   if (from === "antigravity") return "codex";
   if (from === "codex") return "copilot";
   if (from === "copilot") return "grok";
-  if (from === "grok") return "claude-code";
+  if (from === "grok") return "muse";
+  if (from === "muse") return "claude-code";
   return "claude-code";
 }
