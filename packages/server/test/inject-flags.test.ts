@@ -6,7 +6,7 @@ describe("inject flag probes", () => {
   it("lists a probe for every provider inject surface", () => {
     const bins = new Set(INJECT_FLAG_PROBES.map((p) => p.bin));
     expect(bins).toEqual(
-      new Set(["claude", "opencode", "cursor-agent", "agy", "codex", "copilot", "grok"]),
+      new Set(["claude", "opencode", "cursor-agent", "agy", "codex", "copilot", "grok", "muse"]),
     );
     expect(
       INJECT_FLAG_PROBES.every((p) => p.match.length > 0 && p.why.length > 0),

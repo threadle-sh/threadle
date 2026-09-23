@@ -76,6 +76,19 @@ const rolloutLines = [
     type: "unknown_future",
     payload: { ignore: true },
   },
+  {
+    timestamp: "2026-09-15T21:35:33.000Z",
+    type: "token_usage_record",
+    payload: {
+      session_id: sessionId,
+      usage: {
+        input_tokens: 100,
+        output_tokens: 12,
+        reasoning_output_tokens: 0,
+        total_tokens: 112,
+      },
+    },
+  },
 ];
 
 function writeFixture(): void {
@@ -185,9 +198,39 @@ describe("codex discover", () => {
     expect(hit!.ref.title).toBe("Fixture Codex");
     expect(hit!.ref.projectDir).toBe(projectDir);
     expect(hit!.ref.model).toBe("gpt-5");
-    expect(hit!.ref.tokensIn).toBeGreaterThan(0);
-    expect(hit!.ref.tokensOut).toBeGreaterThan(0);
-    expect(hit!.ref.meta?.tokenSource).toBe("estimate");
+    expect(hit!.ref.tokensIn).toBe(100);
+    expect(hit!.ref.tokensOut).toBe(12);
+    expect(hit!.ref.meta?.tokenSource).toBe("cli");
+  });
+
+  it("parses token_usage_record and token_count events", async () => {
+    const { parseCodexUsageFromEvent, findCodexUsageInJsonl } = await import(
+      "../src/providers/codex/usage.js"
+    );
+    const fromRecord = parseCodexUsageFromEvent({
+      type: "token_usage_record",
+      payload: { usage: { input_tokens: 50, output_tokens: 3 } },
+    });
+    expect(fromRecord).toEqual({
+      tokensIn: 50,
+      tokensOut: 3,
+      tokensReasoning: undefined,
+      source: "cli",
+    });
+    const fromCount = findCodexUsageInJsonl(
+      JSON.stringify({
+        type: "event_msg",
+        payload: {
+          type: "token_count",
+          info: {
+            last_token_usage: { input_tokens: 80, output_tokens: 4 },
+          },
+        },
+      }),
+    );
+    expect(fromCount?.tokensIn).toBe(80);
+    expect(fromCount?.tokensOut).toBe(4);
+    expect(fromCount?.source).toBe("cli");
   });
 
   it("estimates usage from transcript chars", async () => {

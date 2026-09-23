@@ -10,6 +10,7 @@ import { brainDir as antigravityBrainDir, summariesDbPath } from "./providers/an
 import { sessionsDir as codexSessionsDir } from "./providers/codex/paths.js";
 import { sessionStoreDbPath as copilotSessionStoreDb } from "./providers/copilot/paths.js";
 import { sessionsRoot as grokSessionsRoot } from "./providers/grok/paths.js";
+import { sessionsRoot as museSessionsRoot } from "./providers/muse/paths.js";
 import { registry } from "./providers/registry.js";
 import { opencodeDbPath } from "./providers/opencode/db.js";
 
@@ -240,6 +241,27 @@ export function startWatchers(): void {
         .on("unlink", emitGrok)
         .on("error", (err) => {
           console.warn(`threadle: grok session watch error: ${String(err)}`);
+        }),
+    );
+  }
+
+  // Muse Code: watch session.jsonl under ~/.local/share/muse/sessions
+  const museRoot = museSessionsRoot();
+  if (fs.existsSync(museRoot)) {
+    const emitMuse = debounced(() => {
+      bus.publish({ type: "sessions.changed", provider: "muse" });
+    }, 400);
+    watchers.push(
+      chokidar
+        .watch(path.join(museRoot, "**/session.jsonl"), {
+          ignoreInitial: true,
+          awaitWriteFinish: { stabilityThreshold: 300, pollInterval: 100 },
+        })
+        .on("add", emitMuse)
+        .on("change", emitMuse)
+        .on("unlink", emitMuse)
+        .on("error", (err) => {
+          console.warn(`threadle: muse session watch error: ${String(err)}`);
         }),
     );
   }

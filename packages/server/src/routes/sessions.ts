@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import fs from "node:fs";
 import path from "node:path";
 import type { SessionRef } from "@threadle/shared";
+import { formatTokCompact } from "@threadle/shared";
 import { registry } from "../providers/registry.js";
 import { toolInvocationBody, toolSummary } from "../providers/stream.js";
 import { renderTranscript } from "../context/extract.js";
@@ -10,12 +11,51 @@ import { buildSessionBundle } from "./bundle.js";
 import { FILE_PREVIEW_MAX_BYTES } from "./files.js";
 import { globalArtifacts, projectArtifacts } from "./rules.js";
 import { readInjects, readPayloadMetas } from "./lineage.js";
-import { threadleConfigDir } from "../paths.js";
+import { threadleConfigDir, sameProjectDir } from "../paths.js";
+import { readPilotSessionMap, type PilotSessionEntry } from "../pilot-sessions/store.js";
+import { ensureBareWorkspace } from "../providers/bare-workspace.js";
 import { SESSION_CONTEXT_CONFIG } from "../context/session-context.js";
 import {
   renderInvocationsMarkdown,
   type InvocationKind,
 } from "../context/invocations.js";
+
+async function enrichPilotMeta(ref: SessionRef): Promise<SessionRef> {
+  try {
+    const [pilotMap, bareDir] = await Promise.all([
+      readPilotSessionMap(),
+      ensureBareWorkspace(),
+    ]);
+    return applyPilotEntry(ref, pilotMap.get(`${ref.provider}:${ref.id}`), bareDir);
+  } catch {
+    return ref;
+  }
+}
+
+function applyPilotEntry(
+  r: SessionRef,
+  entry: PilotSessionEntry | undefined,
+  bareDir: string,
+): SessionRef {
+  const marked = Boolean(entry) || sameProjectDir(r.projectDir, bareDir);
+  if (!marked) return r;
+  const meta: Record<string, unknown> = { ...r.meta, pilot: true };
+  if (entry?.caseId) meta.pilotCaseId = entry.caseId;
+  if (entry?.ignoreLocalMarkdown != null) {
+    meta.ignoreLocalMarkdown = entry.ignoreLocalMarkdown;
+  }
+  if (entry?.baselineEst != null) {
+    meta.tokenBaselineEst = entry.baselineEst;
+    meta.tokenPromptEst = entry.promptEst;
+    meta.tokenBaselineNote = entry.baselineNote;
+    if (entry.tokensIn != null) meta.pilotTokensIn = entry.tokensIn;
+    if (entry.tokensOut != null) meta.pilotTokensOut = entry.tokensOut;
+    meta.tokenBaselineLabel = `~${formatTokCompact(entry.baselineEst)}${
+      entry.baselineNote ? ` · ${entry.baselineNote}` : ""
+    }`;
+  }
+  return { ...r, meta };
+}
 
 export const sessionRoutes = new Hono();
 
@@ -67,6 +107,20 @@ sessionRoutes.get("/", async (c) => {
     );
   }
   refs.sort((a, b) => b.updatedAt - a.updatedAt);
+
+  // Tag Settings → test pilot smokes (sidecar mark and/or bare pilot cwd).
+  try {
+    const [pilotMap, bareDir] = await Promise.all([
+      readPilotSessionMap(),
+      ensureBareWorkspace(),
+    ]);
+    refs = refs.map((r) =>
+      applyPilotEntry(r, pilotMap.get(`${r.provider}:${r.id}`), bareDir),
+    );
+  } catch {
+    // best-effort — list still works without marks
+  }
+
   return c.json(refs);
 });
 
@@ -178,7 +232,7 @@ sessionRoutes.get("/:provider/detail/:id{.+}", async (c) => {
   const p = registry.get(c.req.param("provider"));
   const ref = await p.getSession(c.req.param("id"));
   if (!ref) return c.json({ error: "session not found" }, 404);
-  return c.json(ref);
+  return c.json(await enrichPilotMeta(ref));
 });
 
 /** Auto-assembled "blueprint" of everything a session used. */

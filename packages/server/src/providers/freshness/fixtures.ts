@@ -17,6 +17,10 @@ import { _resetDbForTests } from "../opencode/db.js";
 import { readOpencodeTranscript } from "../opencode/normalize.js";
 import { discoverSessions } from "../grok/discover.js";
 import { readGrokTranscript } from "../grok/transcript.js";
+import {
+  discoverSessions as discoverMuseSessions,
+} from "../muse/discover.js";
+import { readMuseTranscript } from "../muse/transcript.js";
 
 export interface FixtureProbeResult {
   id: string;
@@ -251,6 +255,42 @@ async function probeGrok(root: string): Promise<FixtureProbeResult> {
   }
 }
 
+async function probeMuse(root: string): Promise<FixtureProbeResult> {
+  const museShare = fixture(root, "muse");
+  const sessionId = "01a0ce3e-daea-76f0-99fc-d53076374955";
+  const prev = process.env.MUSE_DATA_DIR;
+  try {
+    process.env.MUSE_DATA_DIR = museShare;
+    const refs = await discoverMuseSessions();
+    if (refs.length < 1) {
+      return {
+        id: "fixture:muse",
+        ok: false,
+        skipped: false,
+        detail: `${museShare} — expected ≥1 session, got ${refs.length}`,
+      };
+    }
+    const msgs = await readMuseTranscript(sessionId);
+    if (msgs.length < 2) {
+      return {
+        id: "fixture:muse",
+        ok: false,
+        skipped: false,
+        detail: `${museShare} — expected ≥2 transcript msgs, got ${msgs.length}`,
+      };
+    }
+    return {
+      id: "fixture:muse",
+      ok: true,
+      skipped: false,
+      detail: `${museShare} · ${refs.length} sessions · ${msgs.length} msgs`,
+    };
+  } finally {
+    if (prev === undefined) delete process.env.MUSE_DATA_DIR;
+    else process.env.MUSE_DATA_DIR = prev;
+  }
+}
+
 /**
  * Parse every golden provider fixture. Missing fixture tree → all skipped.
  * Failures (parse/shape) set ok=false (not skipped).
@@ -275,6 +315,7 @@ export async function probeGoldenFixtures(): Promise<FixtureProbeResult[]> {
     () => probeAntigravity(root),
     () => probeOpencode(root),
     () => probeGrok(root),
+    () => probeMuse(root),
   ];
 
   const out: FixtureProbeResult[] = [];

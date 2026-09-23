@@ -1,6 +1,7 @@
 import { computed, onMounted, ref, type ComputedRef, type Ref } from "vue";
 import { api } from "@/api/client";
 import { useSessionsStore } from "@/stores/sessions";
+import { isPilotSession } from "@threadle/shared";
 import { DEFAULT_NAV_ITEMS, type NavItem } from "./nav-items";
 
 type Count = number | "";
@@ -179,7 +180,8 @@ export function useNavItems(opts?: {
   const baseCounts: Record<string, () => string | number> = {
     workflows: () => workflowCount.value,
     runs: () => runsRunning.value,
-    sessions: () => sessions.sessions.length || blank(),
+    sessions: () =>
+      sessions.sessions.filter((s) => !isPilotSession(s)).length || blank(),
     map: () => projectCount.value,
     lineage: () => lineageCount.value,
     activity: () => activityCount.value,

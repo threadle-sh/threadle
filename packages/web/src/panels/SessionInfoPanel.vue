@@ -291,6 +291,11 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import type { SessionRef } from "@threadle/shared";
+import {
+  estimateTokenBaseline,
+  formatTokCompact,
+  isPilotSession,
+} from "@threadle/shared";
 import { api } from "@/api/client";
 import { relativeTime, shortId, fmtTokens, isTokenEstimate } from "@/lib/format";
 import { estimateContextWindow } from "@/lib/contextWindow";
@@ -675,6 +680,48 @@ const rows = computed<Array<[string, string]>>(() => {
     ],
     ["permission", metaStr("permissionMode") ?? "default"],
   ];
+
+  if (isPilotSession(r)) {
+    out.splice(
+      out.findIndex(([k]) => k === "kind") + 1,
+      0,
+      ["test pilot", "yes · Settings smoke"],
+    );
+  }
+  const ignoreMd = r.meta?.ignoreLocalMarkdown;
+  if (ignoreMd === true) {
+    out.push(["ignore local md", "on (bare workspace)"]);
+  } else if (ignoreMd === false) {
+    out.push(["ignore local md", "off"]);
+  }
+
+  // Baseline ≈ tokensIn − prompt (CLIs rarely split system/tools/rules).
+  const storedBaseline = metaNum("tokenBaselineEst");
+  const storedPrompt = metaNum("tokenPromptEst");
+  const storedNote = metaStr("tokenBaselineNote");
+  if (storedBaseline != null) {
+    const at = out.findIndex(([k]) => k === "tokens out") + 1;
+    out.splice(at, 0, [
+      "prompt (est)",
+      storedPrompt != null ? `~${formatTokCompact(storedPrompt)} tok` : "—",
+    ]);
+    out.splice(at + 1, 0, [
+      "baseline (est)",
+      `~${formatTokCompact(storedBaseline)}${storedNote ? ` · ${storedNote}` : ""}`,
+    ]);
+  } else if (r.tokensIn && (r.messageCount ?? 0) <= 3) {
+    // Short session heuristic — assume a tiny user prompt when unknown.
+    const b = estimateTokenBaseline(r.tokensIn, "ok", {
+      ignoreLocalMarkdown: ignoreMd === true,
+    });
+    if (b && b.baselineEst > 100) {
+      const at = out.findIndex(([k]) => k === "tokens out") + 1;
+      out.splice(at, 0, [
+        "baseline (est)",
+        `~${formatTokCompact(b.baselineEst)} · ${b.baselineNote}`,
+      ]);
+    }
+  }
   const planMode = metaStr("planMode");
   if (planMode || planPath.value) {
     const awaiting = ref_.value?.meta?.planAwaitingApproval === true;
@@ -692,7 +739,11 @@ const rows = computed<Array<[string, string]>>(() => {
       0,
       ["token source", "estimate (chars/4)"],
     );
-  } else if (tokenSource === "cli" || tokenSource === "turn_ended") {
+  } else if (
+    tokenSource === "cli" ||
+    tokenSource === "turn_ended" ||
+    tokenSource === "transcript"
+  ) {
     out.splice(
       out.findIndex(([k]) => k === "tokens out") + 1,
       0,
@@ -770,6 +821,7 @@ const resumeCmd = computed(() => {
   if (r.provider === "codex") return `${cd}codex exec resume ${r.id}`;
   if (r.provider === "copilot") return `${cd}copilot --resume ${r.id}`;
   if (r.provider === "grok") return `${cd}grok --resume ${r.id}`;
+  if (r.provider === "muse") return `${cd}muse resume ${r.id}`;
   return `${cd}claude --resume ${r.id}`;
 });
 

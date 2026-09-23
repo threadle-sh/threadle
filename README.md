@@ -12,7 +12,7 @@
   <a href="https://github.com/threadle-sh/threadle/releases"><img src="https://img.shields.io/github/v/release/threadle-sh/threadle?style=flat-square&labelColor=0a0a0c&color=white" alt="release" /></a>
 </p>
 
-Your agents write everything down: transcripts, tool calls, files touched, spend. Then nobody reads it, and the context dies at each tool boundary. threadle reads it, draws it, and lets you wire it into the next run. Every [Claude Code](https://claude.com/claude-code), [opencode](https://opencode.ai), [Cursor](https://cursor.com) `agent`, [Antigravity](https://antigravity.google) `agy`, [Codex](https://github.com/openai/codex), [GitHub Copilot](https://github.com/features/copilot) CLI, and [Grok Build](https://x.ai/cli) session becomes a wireable node. Inspect what happened. Hand context across tools. Run the pipeline.
+Your agents write everything down: transcripts, tool calls, files touched, spend. Then nobody reads it, and the context dies at each tool boundary. threadle reads it, draws it, and lets you wire it into the next run. Every [Claude Code](https://claude.com/claude-code), [opencode](https://opencode.ai), [Cursor](https://cursor.com) `agent`, [Antigravity](https://antigravity.google) `agy`, [Codex](https://github.com/openai/codex), [GitHub Copilot](https://github.com/features/copilot) CLI, [Grok Build](https://x.ai/cli), and [Muse Code](https://dev.meta.ai) session becomes a wireable node. Inspect what happened. Hand context across tools. Run the pipeline.
 
 **Yours, with no catch.** Discovery is read-only against storage you already have. threadle binds `127.0.0.1`, has no account and no telemetry, and does not upload transcripts. Pressing ▶ drives each tool’s own CLI under your credentials. If threadle disappears tomorrow, your sessions are exactly where they always were.
 
@@ -118,7 +118,7 @@ The full set lives in [`docs/screenshots/`](https://github.com/threadle-sh/threa
 
 ## Trust
 
-Parsers never mutate `~/.claude`, opencode’s SQLite, `~/.cursor`, `~/.gemini/antigravity-cli`, `~/.codex`, `~/.copilot`, or `~/.grok`. Runs spawn the official CLI, and *it* writes new sessions.
+Parsers never mutate `~/.claude`, opencode’s SQLite, `~/.cursor`, `~/.gemini/antigravity-cli`, `~/.codex`, `~/.copilot`, or `~/.grok`, `~/.muse`, or `~/.local/share/muse`. Runs spawn the official CLI, and *it* writes new sessions.
 
 The server rejects foreign `Host` (DNS rebinding) and cross-site write `Origin` (CSRF). There is no remote mode and no auth token. List prices ship bundled (CI-refreshed from [models.dev](https://models.dev)). The process does not fetch them at runtime. Everything threadle persists is under `~/.config/threadle/`.
 

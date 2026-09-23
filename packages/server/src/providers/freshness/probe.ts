@@ -5,6 +5,7 @@ import { agyBin } from "../antigravity/agy-bin.js";
 import { codexBin } from "../codex/paths.js";
 import { copilotBin } from "../copilot/paths.js";
 import { grokBin } from "../grok/paths.js";
+import { museBin } from "../muse/paths.js";
 import { INJECT_FLAG_PROBES, type InjectFlagProbe } from "./inject-flags.js";
 
 export interface FlagProbeResult {
@@ -79,6 +80,15 @@ async function resolveBin(kind: InjectFlagProbe["bin"]): Promise<string | undefi
         return preferred;
       } catch {
         return which("grok");
+      }
+    }
+    case "muse": {
+      try {
+        const preferred = museBin();
+        await fs.promises.access(preferred, fs.constants.F_OK);
+        return preferred;
+      } catch {
+        return which("muse");
       }
     }
     default:

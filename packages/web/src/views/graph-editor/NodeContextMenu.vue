@@ -6,6 +6,13 @@
     @contextmenu.prevent
   >
     <div class="node-ctx-title mono">{{ label }}</div>
+    <button
+      class="node-ctx-item"
+      title="Open node details in the sidebar"
+      @click="emit('open-details')"
+    >
+      ▤ details
+    </button>
     <template v-if="path">
       <button
         v-if="pathIsText"
@@ -275,6 +282,7 @@ const emit = defineEmits<{
   "open-in-code": [];
   "copy-path": [];
   "copy-content": [];
+  "open-details": [];
   "run-from": [];
   "test-node": [];
   "clear-output": [];
@@ -416,6 +424,7 @@ const emit = defineEmits<{
 .prov-dot[data-p="codex"] { background: var(--codex); }
 .prov-dot[data-p="copilot"] { background: var(--copilot); }
 .prov-dot[data-p="grok"] { background: var(--grok); }
+.prov-dot[data-p="muse"] { background: var(--muse); }
 .wire-sect {
   padding: 7px 9px 3px;
   border-top: 1px solid var(--border);

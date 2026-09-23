@@ -764,6 +764,18 @@ const STORAGE_PATHS = [
     access: "read-only",
     owner: "grok",
   },
+  {
+    path: "~/.local/share/muse/sessions",
+    desc: "Muse Code sessions.",
+    access: "read-only",
+    owner: "muse",
+  },
+  {
+    path: "~/.muse",
+    desc: "Muse Code config.",
+    access: "read-only",
+    owner: "muse",
+  },
 ] as const;
 
 type StoragePath = (typeof STORAGE_PATHS)[number];

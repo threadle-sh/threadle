@@ -112,6 +112,7 @@ html[data-theme="dark"] {
   --codex: #5faf82;
   --copilot: #d489a8;
   --grok: #9b87c9;
+  --muse: #568ab8;
   --threadle: #8a91a8;
   --context: #cfa93c;
   --lane-session: #5f9fe8;
@@ -513,6 +514,9 @@ body {
 .vue-flow__edge.prov-grok .vue-flow__edge-path {
   stroke: var(--grok);
 }
+.vue-flow__edge.prov-muse .vue-flow__edge-path {
+  stroke: var(--muse);
+}
 /* agent out:err — after provider color so the fuse arm stays red */
 .vue-flow__edge.edge-err .vue-flow__edge-path {
   stroke: var(--status-error);
@@ -670,6 +674,7 @@ body {
 .filter-chip[data-provider="codex"] { --chip-prov: var(--codex); }
 .filter-chip[data-provider="copilot"] { --chip-prov: var(--copilot); }
 .filter-chip[data-provider="grok"] { --chip-prov: var(--grok); }
+.filter-chip[data-provider="muse"] { --chip-prov: var(--muse); }
 .filter-chip[data-provider="threadle"] { --chip-prov: var(--threadle); }
 .filter-chip:disabled {
   opacity: 0.4;

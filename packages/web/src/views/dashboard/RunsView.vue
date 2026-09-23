@@ -72,7 +72,7 @@
         <span class="run-kind mono" :class="'kind-' + j.kind">{{
           RUN_KIND_LABELS[j.kind] ?? j.kind
         }}</span>
-        <span class="run-status mono" :class="j.status">{{ j.status }}</span>
+        <span class="run-status mono" :class="j.status">{{ runStatusLabel(j) }}</span>
         <span class="stat-val">{{ relativeTime(j.createdAt) }}</span>
         <span class="stat-val">{{ runDuration(j) }}</span>
         <span class="stat-val run-acts" @click.stop>
@@ -219,9 +219,10 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import type { GraphSummary, SessionRef } from "@threadle/shared";
+import type { GraphSummary, ProviderId, SessionRef } from "@threadle/shared";
 import { api, subscribeEvents } from "@/api/client";
 import { relativeTime, shortId, fmtTokens, isTokenEstimate } from "@/lib/format";
+import { useJobPhases } from "@/lib/useJobPhases";
 import { useSessionsStore } from "@/stores/sessions";
 import { useFileViewersStore } from "@/stores/fileViewers";
 import { vColResize } from "@/lib/colResize";
@@ -233,12 +234,13 @@ interface RunRecord {
   kind: string;
   label?: string;
   graphId?: string;
+  sessionRef?: { provider: string; sessionId: string };
   status: "running" | "done" | "error" | "cancelled";
   createdAt: number;
   finishedAt?: number;
   result?: {
     inject?: {
-      provider: "claude-code" | "opencode" | "cursor" | "antigravity" | "codex" | "copilot" | "grok";
+      provider: ProviderId;
       newSessionId: string;
     };
   };
@@ -258,6 +260,12 @@ const router = useRouter();
 const route = useRoute();
 const sessions = useSessionsStore();
 const fileViewers = useFileViewersStore();
+const { phaseForJob } = useJobPhases();
+
+function runStatusLabel(j: RunRecord): string {
+  if (j.status === "running") return phaseForJob(j.id);
+  return j.status;
+}
 
 const RUN_KINDS = [
   "all",
@@ -493,14 +501,13 @@ onMounted(() => {
   maybeOpenJobFromQuery();
   unsub = subscribeEvents((ev) => {
     if (ev.type === "job.log") {
+      // useJobPhases already buffers for status; also feed the detail tab.
       if (runPickedId.value === ev.jobId && runTab.value === "logs") {
         runLogs.value.push({
           ts: Date.now(),
           lane: ev.lane,
           line: ev.line,
         });
-        // cap like GraphEditor's LOG_CAP — a multi-hour run watched live
-        // would otherwise grow this without bound
         if (runLogs.value.length > 1000) {
           runLogs.value.splice(0, runLogs.value.length - 1000);
         }

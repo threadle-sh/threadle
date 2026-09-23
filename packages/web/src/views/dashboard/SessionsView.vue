@@ -34,6 +34,19 @@
           >
             ● active{{ liveSessionCount ? ` ${liveSessionCount}` : "" }}
           </button>
+          <button
+            type="button"
+            class="filter-chip"
+            :class="{ active: showPilot }"
+            :title="
+              showPilot
+                ? `only test pilot sessions (${pilotSessionCount}) — click to hide`
+                : `test pilot sessions hidden (${pilotSessionCount}) — click to show only those`
+            "
+            @click="showPilot = !showPilot"
+          >
+            ✦ test{{ pilotSessionCount ? ` ${pilotSessionCount}` : "" }}
+          </button>
         </div>
   </div>
 
@@ -176,7 +189,14 @@
               @mousedown="onSessionRowMouseDown($event, s)"
             >
               <span class="prov-dot" :style="{ background: providerColor(s.provider) }" />
-              <span class="sess-title">{{ s.title ?? shortId(s.id) }}</span>
+              <span class="sess-title">
+                <span
+                  v-if="isPilotSession(s)"
+                  class="sess-pilot-mark"
+                  title="Settings test pilot session"
+                  >✦</span
+                >{{ s.title ?? shortId(s.id) }}
+              </span>
               <span class="sess-meta sess-agent mono">{{ s.agent ?? "—" }}</span>
               <span class="sess-meta sess-model mono" :title="s.model">{{
                 s.model?.split("/").pop() ?? "—"
@@ -288,7 +308,14 @@
                   {{ pickedSession.title ?? shortId(pickedSession.id) }}
                 </div>
                 <div class="sess-detail-meta mono">
-                  <SessionLivePill :status="pickedLiveStatus" />
+                  <SessionLivePill
+                    :status="pickedLiveStatus"
+                    :phase="
+                      pickedSession
+                        ? phaseForSession(pickedSession.provider, pickedSession.id)
+                        : undefined
+                    "
+                  />
                   <span
                     v-if="pickedSession.kind === 'subagent-run' || pickedSession.parentId"
                     class="inst-sub micro-label"
@@ -396,7 +423,14 @@
                     {{ pickedSession.title ?? shortId(pickedSession.id) }}
                   </div>
                   <div class="sess-detail-meta mono">
-                    <SessionLivePill :status="pickedLiveStatus" />
+                    <SessionLivePill
+                    :status="pickedLiveStatus"
+                    :phase="
+                      pickedSession
+                        ? phaseForSession(pickedSession.provider, pickedSession.id)
+                        : undefined
+                    "
+                  />
                     <span
                       v-if="pickedSession.kind === 'subagent-run' || pickedSession.parentId"
                       class="inst-sub micro-label"
@@ -511,7 +545,7 @@
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import type { SessionRef } from "@threadle/shared";
-import { isSessionLive } from "@threadle/shared";
+import { isPilotSession, isSessionLive } from "@threadle/shared";
 import { api } from "@/api/client";
 import { relativeTime, shortId, fmtTokens } from "@/lib/format";
 import {
@@ -530,6 +564,7 @@ import SessionLivePill from "@/panels/SessionLivePill.vue";
 import GrowthMark from "@/panels/GrowthMark.vue";
 import DetailExpandControls from "@/panels/DetailExpandControls.vue";
 import DetailExpandModal from "@/panels/DetailExpandModal.vue";
+import { useJobPhases } from "@/lib/useJobPhases";
 import "./chrome.css";
 
 export type SessionOpenRequest = {
@@ -556,6 +591,7 @@ const settings = useSettingsStore();
 const fileViewers = useFileViewersStore();
 const favorites = useFavoritesStore();
 void favorites.ensureLoaded();
+const { phaseForSession } = useJobPhases();
 
 function sessionFavoriteInput(s: SessionRef) {
   return {
@@ -620,11 +656,31 @@ const SESSION_SORTERS: Record<string, (a: SessionRef, b: SessionRef) => number> 
 };
 
 const activeOnly = ref(false);
+/** When false (default), hide Settings test-pilot smokes. When true, only those. */
+const showPilot = ref(false);
 const liveSessionCount = computed(
   () => sessions.sessions.filter((s) => isSessionLive(s.status)).length,
 );
+const pilotSessionCount = computed(
+  () => sessions.sessions.filter((s) => isPilotSession(s)).length,
+);
 
 const filteredSessions = computed((): SessionRef[] => {
+  const q = sessionFilter.value.toLowerCase();
+  return sessions.sessions.filter(
+    (s) =>
+      (!activeOnly.value || isSessionLive(s.status)) &&
+      (showPilot.value ? isPilotSession(s) : !isPilotSession(s)) &&
+      (providerFilter.value === "all" || s.provider === providerFilter.value) &&
+      (!q ||
+        s.title?.toLowerCase().includes(q) ||
+        s.projectDir.toLowerCase().includes(q) ||
+        s.agent?.toLowerCase().includes(q)),
+  );
+});
+
+/** Year chart: same filters as the list, but always includes both actual + test. */
+const heatBaseSessions = computed((): SessionRef[] => {
   const q = sessionFilter.value.toLowerCase();
   return sessions.sessions.filter(
     (s) =>
@@ -767,13 +823,20 @@ const sessionHeat = computed(() => {
   const year = heatYear.value;
   const yearPrefix = `${year}-`;
   const today = startOfLocalDay(Date.now());
-  const sessCounts = new Map<string, number>();
+  const testMode = showPilot.value;
+  const actualCounts = new Map<string, number>();
+  const testCounts = new Map<string, number>();
   const weights = new Map<string, number>();
   let sessInYear = 0;
 
-  for (const s of filteredSessions.value) {
+  for (const s of heatBaseSessions.value) {
     if (!s.updatedAt) continue;
-    const w = Math.max(1, Math.min(20, Math.ceil((s.messageCount ?? 0) / 50) || 1));
+    const isTest = isPilotSession(s);
+    // Heat / year totals follow the list filter: actual by default, tests when ✦ test is on.
+    const contributesHeat = testMode ? isTest : !isTest;
+    const w = contributesHeat
+      ? Math.max(1, Math.min(20, Math.ceil((s.messageCount ?? 0) / 50) || 1))
+      : 0;
     let touchesYear = false;
     const days: string[] = [];
     forEachSessionDay(s, (k) => {
@@ -781,13 +844,14 @@ const sessionHeat = computed(() => {
       if (k.startsWith(yearPrefix)) touchesYear = true;
     });
     if (!touchesYear) continue;
-    sessInYear += 1;
+    if (contributesHeat) sessInYear += 1;
     const dayN = days.length || 1;
-    const perDay = Math.max(1, Math.round(w / dayN));
+    const perDay = w > 0 ? Math.max(1, Math.round(w / dayN)) : 0;
     for (const k of days) {
       if (!k.startsWith(yearPrefix)) continue;
-      sessCounts.set(k, (sessCounts.get(k) ?? 0) + 1);
-      weights.set(k, (weights.get(k) ?? 0) + perDay);
+      if (isTest) testCounts.set(k, (testCounts.get(k) ?? 0) + 1);
+      else actualCounts.set(k, (actualCounts.get(k) ?? 0) + 1);
+      if (perDay > 0) weights.set(k, (weights.get(k) ?? 0) + perDay);
     }
   }
 
@@ -806,6 +870,7 @@ const sessionHeat = computed(() => {
     key: string;
     weight: number;
     sessions: number;
+    tests: number;
     ts: number;
     inRange: boolean;
     inYear: boolean;
@@ -818,9 +883,18 @@ const sessionHeat = computed(() => {
     const inYear = cur.getFullYear() === year;
     const inRange = inYear && key <= todayKey;
     const weight = inYear ? (weights.get(key) ?? 0) : 0;
-    const sessionsN = inYear ? (sessCounts.get(key) ?? 0) : 0;
+    const sessionsN = inYear ? (actualCounts.get(key) ?? 0) : 0;
+    const testsN = inYear ? (testCounts.get(key) ?? 0) : 0;
     if (inRange && weight > max) max = weight;
-    raw.push({ key, weight, sessions: sessionsN, ts, inRange, inYear });
+    raw.push({
+      key,
+      weight,
+      sessions: sessionsN,
+      tests: testsN,
+      ts,
+      inRange,
+      inYear,
+    });
     cur.setDate(cur.getDate() + 1);
   }
 
@@ -835,6 +909,23 @@ const sessionHeat = computed(() => {
     return 4;
   };
 
+  function heatTitle(actual: number, tests: number, date: string): string {
+    if (testMode) {
+      const testPart =
+        tests === 0
+          ? "No test sessions"
+          : `${tests} test session${tests === 1 ? "" : "s"}`;
+      if (actual <= 0) return `${testPart} · ${date}`;
+      return `${testPart} (${actual} session${actual === 1 ? "" : "s"}) · ${date}`;
+    }
+    const actualPart =
+      actual === 0
+        ? "No sessions"
+        : `${actual} session${actual === 1 ? "" : "s"}`;
+    if (tests <= 0) return `${actualPart} · ${date}`;
+    return `${actualPart} (${tests} test session${tests === 1 ? "" : "s"}) · ${date}`;
+  }
+
   for (let w = 0; w < weekCount; w++) {
     const week: HeatCell[] = [];
     for (let d = 0; d < 7; d++) {
@@ -846,11 +937,9 @@ const sessionHeat = computed(() => {
         day: "numeric",
         year: "numeric",
       });
-      const n = cell.sessions;
       let title = "";
       if (cell.inRange) {
-        title =
-          n === 0 ? `No sessions · ${date}` : `${n} session${n === 1 ? "" : "s"} · ${date}`;
+        title = heatTitle(cell.sessions, cell.tests, date);
       } else if (cell.inYear) {
         title = date;
       }
@@ -859,7 +948,7 @@ const sessionHeat = computed(() => {
         level,
         inRange: cell.inRange,
         inYear: cell.inYear,
-        count: n,
+        count: testMode ? cell.tests : cell.sessions,
         title,
       });
     }
@@ -876,15 +965,18 @@ const sessionHeat = computed(() => {
   }
 
   const inYearCells = raw.filter((c) => c.inYear && c.inRange);
-  const activeDays = inYearCells.filter((c) => c.sessions > 0).length;
+  const activeDays = inYearCells.filter((c) =>
+    testMode ? c.tests > 0 : c.sessions > 0,
+  ).length;
 
-  // Year totals for the header — stable on day click (list filters separately)
+  // Year totals for the header — match the active list filter (actual vs test).
   let msgs = 0;
   let tokensIn = 0;
   let out = 0;
   const yearStart = `${year}-01-01`;
   const yearEnd = `${year}-12-31`;
-  for (const s of filteredSessions.value) {
+  for (const s of heatBaseSessions.value) {
+    if (testMode ? !isPilotSession(s) : isPilotSession(s)) continue;
     const r = sessionDayRange(s);
     if (!r || r.end < yearStart || r.start > yearEnd) continue;
     msgs += s.messageCount ?? 0;
@@ -1232,6 +1324,16 @@ async function focusSession(s: SessionRef): Promise<void> {
 }
 .sess-time {
   width: 64px;
+}
+.sess-pilot-mark {
+  display: inline-block;
+  margin-right: 6px;
+  color: var(--text-faint);
+  font-size: var(--fs-2xs);
+}
+.sess-row:hover .sess-pilot-mark,
+.sess-row.picked .sess-pilot-mark {
+  color: var(--text-dim);
 }
 .compare-hint {
   margin: 6px 0 0;

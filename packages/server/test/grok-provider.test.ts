@@ -165,4 +165,19 @@ describe("grok fixture files exist", () => {
       expect(text).not.toContain("/Users/");
     }
   });
+
+  it("reads inject usage from usage.json", async () => {
+    const { readGrokUsageFile } = await import("../src/providers/grok/usage.js");
+    const usagePath = path.join(
+      fixtureRoot,
+      "sessions",
+      "project",
+      noPlanSessionId,
+      "usage.json",
+    );
+    expect(readGrokUsageFile(usagePath)).toEqual({
+      inputTokens: 100,
+      outputTokens: 20,
+    });
+  });
 });

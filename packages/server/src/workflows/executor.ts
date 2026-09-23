@@ -28,6 +28,7 @@ import {
   clampWaitIdleTimeoutMs,
   isSessionBusy,
   WAIT_IDLE_POLL_MS,
+  nodeHarnessExtrasField,
   decideWaitIdle,
   splitIteratorItems,
   iteratorIsParallel,
@@ -55,7 +56,10 @@ import { runAntigravityAgent } from "../providers/antigravity/inject.js";
 import { runCodexAgent } from "../providers/codex/inject.js";
 import { runCopilotAgent } from "../providers/copilot/inject.js";
 import { runGrokAgent } from "../providers/grok/inject.js";
+import { runMuseAgent } from "../providers/muse/inject.js";
 import { runOpencodeAgent } from "../providers/opencode/inject.js";
+import { formatDuration, shortId } from "../providers/run-metrics.js";
+import { ensureBareWorkspace } from "../providers/bare-workspace.js";
 import { getCustomDef, runCustomDef, LEGACY_PORT } from "../routes/custom-nodes.js";
 import { callMcpTool } from "../mcp/client.js";
 import { coerceParamsToMcpArgs } from "../mcp/schema.js";
@@ -128,6 +132,31 @@ function fromCached(c: CachedNodeOutput): NodeOutput {
     session: c.session as NodeOutput["session"],
     ports: c.ports,
   };
+}
+
+/** Wall-clock ▶/■ around any provider agent call (all providers). */
+async function timedProviderRun<T extends InjectResult>(
+  log: ExecuteOptions["log"],
+  label: string,
+  provider: string,
+  model: string | undefined,
+  run: () => Promise<T>,
+): Promise<T> {
+  const t0 = Date.now();
+  const head = [provider, model].filter(Boolean).join("/");
+  log("meta", `▶ ${label}${head ? ` (${head})` : ""}`);
+  try {
+    const result = await run();
+    const sid = shortId(result.newSessionId);
+    log(
+      "meta",
+      `■ ${label} ${formatDuration(Date.now() - t0)}${sid ? ` · session ${sid}` : ""}`,
+    );
+    return result;
+  } catch (err) {
+    log("meta", `■ ${label} failed after ${formatDuration(Date.now() - t0)}`);
+    throw err;
+  }
 }
 
 /** the value an edge actually carries: a named source port when wired, else the primary text */
@@ -700,72 +729,95 @@ export async function executeWorkflow(opts: ExecuteOptions): Promise<{
             log("meta", `⋈ merge synthesize via ${node.data.provider}/${node.data.model}`);
             const onLog = (lane: string, line: string): void => log(lane, `merge: ${line}`);
             const provider = node.data.provider;
+            const model = node.data.model;
+            const agent = node.data.agent;
             const prompt = text;
-            let result: InjectResult;
-            if (provider === "opencode") {
-              result = await runOpencodeAgent({
-                agent: node.data.agent || "build",
-                model: node.data.model,
-                prompt,
-                projectDir: opts.projectDir,
-                onLog,
-                signal: opts.signal,
-              });
-            } else if (provider === "cursor") {
-              result = await runCursorAgent({
-                agent: node.data.agent || "agent",
-                model: node.data.model,
-                prompt,
-                projectDir: opts.projectDir,
-                onLog,
-                signal: opts.signal,
-              });
-            } else if (provider === "antigravity") {
-              result = await runAntigravityAgent({
-                agent: node.data.agent || "agent",
-                model: node.data.model,
-                prompt,
-                projectDir: opts.projectDir,
-                onLog,
-                signal: opts.signal,
-              });
-            } else if (provider === "codex") {
-              result = await runCodexAgent({
-                agent: node.data.agent || "codex",
-                model: node.data.model,
-                prompt,
-                projectDir: opts.projectDir,
-                onLog,
-                signal: opts.signal,
-              });
-            } else if (provider === "copilot") {
-              result = await runCopilotAgent({
-                agent: node.data.agent || "copilot",
-                model: node.data.model,
-                prompt,
-                projectDir: opts.projectDir,
-                onLog,
-                signal: opts.signal,
-              });
-            } else if (provider === "grok") {
-              result = await runGrokAgent({
-                agent: node.data.agent || "grok",
-                model: node.data.model,
-                prompt,
-                projectDir: opts.projectDir,
-                onLog,
-                signal: opts.signal,
-              });
-            } else {
-              result = await runClaudeAgent({
-                agent: node.data.agent,
-                model: node.data.model,
-                prompt,
-                projectDir: opts.projectDir,
-                onLog,
-                signal: opts.signal,
-              });
-            }
+            const result = await timedProviderRun(
+              log,
+              "merge",
+              provider,
+              model,
+              async () => {
+                if (provider === "opencode") {
+                  return runOpencodeAgent({
+                    agent: agent || "build",
+                    model,
+                    prompt,
+                    projectDir: opts.projectDir,
+                    onLog,
+                    signal: opts.signal,
+                  });
+                }
+                if (provider === "cursor") {
+                  return runCursorAgent({
+                    agent: agent || "agent",
+                    model,
+                    prompt,
+                    projectDir: opts.projectDir,
+                    onLog,
+                    signal: opts.signal,
+                  });
+                }
+                if (provider === "antigravity") {
+                  return runAntigravityAgent({
+                    agent: agent || "agent",
+                    model,
+                    prompt,
+                    projectDir: opts.projectDir,
+                    onLog,
+                    signal: opts.signal,
+                  });
+                }
+                if (provider === "codex") {
+                  return runCodexAgent({
+                    agent: agent || "codex",
+                    model,
+                    prompt,
+                    projectDir: opts.projectDir,
+                    onLog,
+                    signal: opts.signal,
+                  });
+                }
+                if (provider === "copilot") {
+                  return runCopilotAgent({
+                    agent: agent || "copilot",
+                    model,
+                    prompt,
+                    projectDir: opts.projectDir,
+                    onLog,
+                    signal: opts.signal,
+                  });
+                }
+                if (provider === "grok") {
+                  return runGrokAgent({
+                    agent: agent || "grok",
+                    model,
+                    prompt,
+                    projectDir: opts.projectDir,
+                    onLog,
+                    signal: opts.signal,
+                  });
+                }
+                if (provider === "muse") {
+                  return runMuseAgent({
+                    agent: agent || "muse",
+                    model,
+                    prompt,
+                    projectDir: opts.projectDir,
+                    onLog,
+                    signal: opts.signal,
+                  });
+                }
+                return runClaudeAgent({
+                  agent,
+                  model,
+                  prompt,
+                  projectDir: opts.projectDir,
+                  onLog,
+                  signal: opts.signal,
+                });
+              },
+            );
             text =
               result.resultText ??
               (await lastAssistantText(result.provider, result.newSessionId)) ??
@@ -1141,10 +1193,17 @@ export async function executeWorkflow(opts: ExecuteOptions): Promise<{
               });
           const linkedNode = linkedEdge ? nodeById(linkedEdge.target) : undefined;
           const linkedData = linkedNode?.data.type === "session" ? linkedNode.data : undefined;
-          const projectDir = await resolveNodeProjectDir(
+          const resolvedProjectDir = await resolveNodeProjectDir(
             linkedData?.snapshot?.projectDir,
             `agent "${label(node)}"`,
           );
+          const ignoreLocalMarkdown = data.ignoreLocalMarkdown === true;
+          const projectDir = ignoreLocalMarkdown
+            ? await ensureBareWorkspace()
+            : resolvedProjectDir;
+          if (ignoreLocalMarkdown) {
+            log("meta", `${data.ref.name}: bare workspace · ignore local md`);
+          }
           const collected: string[] = new Array(prompts.length);
           let last: InjectResult | undefined;
           const provider = data.ref.provider;
@@ -1163,84 +1222,116 @@ export async function executeWorkflow(opts: ExecuteOptions): Promise<{
             const onLog = (lane: string, line: string): void =>
               log(lane, `${data.ref.name}: ${line}`);
             const prompt = prompts[i]!;
-            let result: InjectResult;
-            if (provider === "opencode") {
-              result = await runOpencodeAgent({
-                agent: data.ref.name,
-                model: data.model,
-                prompt,
-                projectDir,
-                sessionId,
-                onLog,
-                signal: opts.signal,
-              });
-            } else if (provider === "cursor") {
-              result = await runCursorAgent({
-                agent: data.ref.name,
-                model: data.model,
-                prompt,
-                projectDir,
-                sessionId,
-                onLog,
-                signal: opts.signal,
-              });
-            } else if (provider === "antigravity") {
-              result = await runAntigravityAgent({
-                agent: data.ref.name,
-                model: data.model,
-                prompt,
-                projectDir,
-                sessionId,
-                onLog,
-                signal: opts.signal,
-              });
-            } else if (provider === "codex") {
-              result = await runCodexAgent({
-                agent: data.ref.name,
-                model: data.model,
-                prompt,
-                projectDir,
-                sessionId,
-                sandbox: data.sandbox,
-                askForApproval: data.askForApproval,
-                onLog,
-                signal: opts.signal,
-              });
-            } else if (provider === "copilot") {
-              result = await runCopilotAgent({
-                agent: data.ref.name,
-                model: data.model,
-                prompt,
-                projectDir,
-                sessionId,
-                onLog,
-                signal: opts.signal,
-              });
-            } else if (provider === "grok") {
-              result = await runGrokAgent({
-                agent: data.ref.name,
-                model: data.model,
-                prompt,
-                projectDir,
-                sessionId,
-                onLog,
-                signal: opts.signal,
-              });
-            } else {
-              const defs = await registry.get("claude-code").listAgents({ projectDir });
-              const def = defs.find((a) => a.name === data.ref.name);
-              result = await runClaudeAgent({
-                agent: data.ref.name,
-                agentSystemPrompt: def?.raw ? matter(def.raw).content.trim() : undefined,
-                model: data.model,
-                prompt,
-                projectDir,
-                sessionId,
-                permissionMode: data.permissionMode,
-                onLog,
-                signal: opts.signal,
-              });
-            }
+            const harnessExtras = nodeHarnessExtrasField(data);
+            const result = await timedProviderRun(
+              log,
+              data.ref.name,
+              provider,
+              data.model,
+              async () => {
+                if (provider === "opencode") {
+                  return runOpencodeAgent({
+                    agent: data.ref.name,
+                    model: data.model,
+                    prompt,
+                    projectDir,
+                    sessionId,
+                    onLog,
+                    signal: opts.signal,
+                  });
+                }
+                if (provider === "cursor") {
+                  return runCursorAgent({
+                    agent: data.ref.name,
+                    model: data.model,
+                    prompt,
+                    projectDir,
+                    sessionId,
+                    onLog,
+                    signal: opts.signal,
+                    ignoreLocalMarkdown,
+                  });
+                }
+                if (provider === "antigravity") {
+                  return runAntigravityAgent({
+                    agent: data.ref.name,
+                    model: data.model,
+                    prompt,
+                    projectDir,
+                    sessionId,
+                    onLog,
+                    signal: opts.signal,
+                    harnessExtras,
+                  });
+                }
+                if (provider === "codex") {
+                  return runCodexAgent({
+                    agent: data.ref.name,
+                    model: data.model,
+                    prompt,
+                    projectDir,
+                    sessionId,
+                    sandbox: data.sandbox,
+                    askForApproval: data.askForApproval,
+                    onLog,
+                    signal: opts.signal,
+                    ignoreLocalMarkdown,
+                  });
+                }
+                if (provider === "copilot") {
+                  return runCopilotAgent({
+                    agent: data.ref.name,
+                    model: data.model,
+                    prompt,
+                    projectDir,
+                    sessionId,
+                    onLog,
+                    signal: opts.signal,
+                    ignoreLocalMarkdown,
+                  });
+                }
+                if (provider === "grok") {
+                  return runGrokAgent({
+                    agent: data.ref.name,
+                    model: data.model,
+                    prompt,
+                    projectDir,
+                    sessionId,
+                    onLog,
+                    signal: opts.signal,
+                    harnessExtras,
+                  });
+                }
+                if (provider === "muse") {
+                  return runMuseAgent({
+                    agent: data.ref.name,
+                    model: data.model,
+                    prompt,
+                    projectDir,
+                    sessionId,
+                    onLog,
+                    signal: opts.signal,
+                    harnessExtras,
+                    ignoreLocalMarkdown,
+                  });
+                }
+                const defs = await registry.get("claude-code").listAgents({ projectDir });
+                const def = defs.find((a) => a.name === data.ref.name);
+                return runClaudeAgent({
+                  agent: data.ref.name,
+                  agentSystemPrompt: def?.raw ? matter(def.raw).content.trim() : undefined,
+                  model: data.model,
+                  prompt,
+                  projectDir,
+                  sessionId,
+                  permissionMode: data.permissionMode,
+                  onLog,
+                  signal: opts.signal,
+                  harnessExtras,
+                  ignoreLocalMarkdown,
+                });
+              },
+            );
             const text =
               result.resultText ?? (await lastAssistantText(result.provider, result.newSessionId));
             if (text) collected[i] = text;
@@ -1307,20 +1398,28 @@ export async function executeWorkflow(opts: ExecuteOptions): Promise<{
             onLog,
             signal: opts.signal,
           };
-          const result =
-            ref.provider === "opencode"
-              ? await runOpencodeAgent(sessionArgs)
-              : ref.provider === "cursor"
-                ? await runCursorAgent(sessionArgs)
-                : ref.provider === "antigravity"
-                  ? await runAntigravityAgent(sessionArgs)
-                  : ref.provider === "codex"
-                    ? await runCodexAgent(sessionArgs)
-                    : ref.provider === "copilot"
-                      ? await runCopilotAgent(sessionArgs)
-                      : ref.provider === "grok"
-                        ? await runGrokAgent(sessionArgs)
-                        : await runClaudeAgent(sessionArgs);
+          const result = await timedProviderRun(
+            log,
+            `session ${shortId(ref.sessionId) || ref.provider}`,
+            ref.provider,
+            undefined,
+            async () =>
+              ref.provider === "opencode"
+                ? runOpencodeAgent(sessionArgs)
+                : ref.provider === "cursor"
+                  ? runCursorAgent(sessionArgs)
+                  : ref.provider === "antigravity"
+                    ? runAntigravityAgent(sessionArgs)
+                    : ref.provider === "codex"
+                      ? runCodexAgent(sessionArgs)
+                      : ref.provider === "copilot"
+                        ? runCopilotAgent(sessionArgs)
+                        : ref.provider === "grok"
+                          ? runGrokAgent(sessionArgs)
+                          : ref.provider === "muse"
+                            ? runMuseAgent(sessionArgs)
+                            : runClaudeAgent(sessionArgs),
+          );
           outputs.set(node.id, {
             text: result.resultText ?? (await lastAssistantText(result.provider, result.newSessionId)),
             session: { provider: result.provider, sessionId: result.newSessionId },

@@ -1,6 +1,6 @@
 # Keeping providers fresh
 
-Agent CLIs (Claude Code, Cursor `agent`, opencode, Antigravity `agy`, Codex, GitHub Copilot, Grok Build) store transcripts in **undocumented** formats and rename flags without notice. threadle does **not** mirror their configs/APIs with a daily diff bot.
+Agent CLIs (Claude Code, Cursor `agent`, opencode, Antigravity `agy`, Codex, GitHub Copilot, Grok Build, Muse Code) store transcripts in **undocumented** formats and rename flags without notice. threadle does **not** mirror their configs/APIs with a daily diff bot.
 
 ## Strategy
 
@@ -33,7 +33,7 @@ It does **not** parse transcripts or prove schemas (that’s fixture CI).
 
 ### What `--providers` adds
 
-1. **Golden fixtures** (when `packages/server/test/fixtures/providers` is on disk — repo checkout / CI): parse one sample per provider (`fixture:claude-code`, `fixture:cursor`, … `fixture:grok`). Published installs skip these rows.
+1. **Golden fixtures** (when `packages/server/test/fixtures/providers` is on disk — repo checkout / CI): parse one sample per provider (`fixture:claude-code`, `fixture:cursor`, … `fixture:grok`, `fixture:muse`). Published installs skip these rows.
 2. **Inject flag probes** for each **installed** CLI — run help and look for inject-critical tokens listed in [`packages/server/src/providers/freshness/inject-flags.ts`](../packages/server/src/providers/freshness/inject-flags.ts):
 
 | Detail | Behavior |
@@ -41,12 +41,14 @@ It does **not** parse transcripts or prove schemas (that’s fixture CI).
 | Missing binary | Skip (`ok`) |
 | Help text contains any `match` string | `ok` |
 | No match | `!!` and non-zero exit |
-| Subcommand help | Some probes use e.g. `opencode run --help` (not only top-level `--help`) |
+| Subcommand help | Some probes use e.g. `opencode run --help` or `muse exec --help` (not only top-level `--help`) |
 | Bracket notation | Claude documents `--append-system-prompt[-file]` — both that form and the long flag count |
 | Fixture missing | Skip (`ok`) |
 | Fixture parse / shape fail | `!!` and non-zero exit |
 
 A `!! flag:` row means “help no longer mentions a string we rely on for inject/run” — confirm with the real CLI before changing adapters (help text and the live flag can diverge). A `!! fixture:` row means a golden sample stopped normalizing.
+
+**Muse models.** Upstream has no `muse models` list yet. threadle’s model picker scrapes Spark ids from `muse exec --help` / `muse --help`, keeps hardcoded fallbacks, and honors `MUSE_MODELS`. That catalog is soft — expand fallbacks or env when Meta renames Spark ids.
 
 ## Adding a fixture
 

@@ -5,7 +5,8 @@ export type ProviderId =
   | "antigravity"
   | "codex"
   | "copilot"
-  | "grok";
+  | "grok"
+  | "muse";
 
 export type SessionStatus = "idle" | "live" | "running" | "waiting" | "unknown";
 export type SessionKind = "session" | "subagent-run";
@@ -38,6 +39,13 @@ export interface SessionRef {
   /** actual spend: what was really paid — 0 for subscription-billed sessions */
   actualCost?: number;
   meta?: Record<string, unknown>;
+}
+
+/** True when SessionRef was tagged by Settings → test pilot (or bare pilot cwd). */
+export function isPilotSession(s: {
+  meta?: Record<string, unknown>;
+}): boolean {
+  return s.meta?.pilot === true;
 }
 
 export type ContentPartType =

@@ -4,7 +4,7 @@ import { providerShort } from "@/lib/providers";
 
 const props = defineProps<{
   modelValue: string;
-  /** Filter ids in display order (e.g. sessionFiltersFor result). */
+  /** Filter ids in display order (`all` first, then providers A–Z, optional `payload`). */
   options: readonly string[];
   /** Override chip label; defaults: all → all, payload → payloads, else providerShort. */
   labelFor?: (id: string) => string;
@@ -393,5 +393,6 @@ const measureMoreLabel = computed(() => `+${Math.max(1, props.options.length)}`)
 .pfc-menu-item[data-provider="codex"] { --chip-prov: var(--codex); }
 .pfc-menu-item[data-provider="copilot"] { --chip-prov: var(--copilot); }
 .pfc-menu-item[data-provider="grok"] { --chip-prov: var(--grok); }
+.pfc-menu-item[data-provider="muse"] { --chip-prov: var(--muse); }
 .pfc-menu-item[data-provider="threadle"] { --chip-prov: var(--threadle); }
 </style>
