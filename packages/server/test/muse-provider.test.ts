@@ -142,3 +142,28 @@ describe("muse model soft catalog", () => {
     }
   });
 });
+
+describe("muse jsonl ingest", () => {
+  it("reads session id from stream.id and terminal text", async () => {
+    const { ingestMuseJsonLine } = await import("../src/providers/muse/inject.js");
+    const state = { sessionId: undefined as string | undefined, resultText: undefined as string | undefined, deltas: [] as string[] };
+    ingestMuseJsonLine(
+      JSON.stringify({
+        stream: { kind: "session", id: "01a0ce79-7535-7d92-bca9-b68e3bcf5a01" },
+        payload_type: "run.output.delta",
+        payload: { text: "Hello" },
+      }),
+      state,
+    );
+    expect(state.sessionId).toBe("01a0ce79-7535-7d92-bca9-b68e3bcf5a01");
+    ingestMuseJsonLine(
+      JSON.stringify({
+        stream: { kind: "session", id: "01a0ce79-7535-7d92-bca9-b68e3bcf5a01" },
+        payload_type: "run.terminal.completed",
+        payload: { text: "Hello, world." },
+      }),
+      state,
+    );
+    expect(state.resultText).toBe("Hello, world.");
+  });
+});

@@ -85,6 +85,43 @@ function execArgs(opts: {
   return args;
 }
 
+/** Pull session id + assistant text from one muse `--json` MSP line. */
+export function ingestMuseJsonLine(
+  line: string,
+  state: { sessionId?: string; resultText?: string; deltas: string[] },
+): void {
+  let row: Record<string, unknown>;
+  try {
+    row = JSON.parse(line) as Record<string, unknown>;
+  } catch {
+    return;
+  }
+  if (typeof row.session_id === "string" && row.session_id) {
+    state.sessionId = row.session_id;
+  } else if (typeof row.sessionId === "string" && row.sessionId) {
+    state.sessionId = row.sessionId;
+  }
+  const stream = row.stream;
+  if (stream && typeof stream === "object" && !Array.isArray(stream)) {
+    const s = stream as Record<string, unknown>;
+    if (s.kind === "session" && typeof s.id === "string" && s.id) {
+      state.sessionId = s.id;
+    }
+  }
+  const pt = typeof row.payload_type === "string" ? row.payload_type : "";
+  const payload =
+    row.payload && typeof row.payload === "object" && !Array.isArray(row.payload)
+      ? (row.payload as Record<string, unknown>)
+      : undefined;
+  if (!payload) return;
+  if (pt === "run.output.delta" && typeof payload.text === "string" && payload.text) {
+    state.deltas.push(payload.text);
+  }
+  if (pt === "run.terminal.completed" && typeof payload.text === "string" && payload.text.trim()) {
+    state.resultText = payload.text.trim();
+  }
+}
+
 async function withPromptFile(
   prompt: string,
   fn: (file: string) => Promise<{ sessionId?: string; resultText?: string; isError: boolean }>,
@@ -112,31 +149,21 @@ async function runMuseStreaming(
     reject: false,
     env: { ...process.env },
   });
-  const chunks: string[] = [];
-  let sessionId: string | undefined;
+  const state = { sessionId: undefined as string | undefined, resultText: undefined as string | undefined, deltas: [] as string[] };
   forEachLine(child.stdout, (line) => {
-    chunks.push(line);
     if (onLog) onLog("text" as LogLane, line);
-    try {
-      const row = JSON.parse(line) as Record<string, unknown>;
-      const sid =
-        (typeof row.session_id === "string" && row.session_id) ||
-        (typeof row.sessionId === "string" && row.sessionId) ||
-        undefined;
-      if (sid) sessionId = sid;
-    } catch {
-      /* plain text */
-    }
+    ingestMuseJsonLine(line, state);
   });
   forEachLine(child.stderr, (line) => {
     if (onLog) onLog("raw" as LogLane, line);
   });
   const result = await child;
   const sidIdx = args.indexOf("--session-id");
-  if (sidIdx >= 0 && args[sidIdx + 1]) sessionId = sessionId ?? args[sidIdx + 1];
+  if (sidIdx >= 0 && args[sidIdx + 1]) state.sessionId = state.sessionId ?? args[sidIdx + 1];
+  const fromDeltas = state.deltas.join("").trim();
   return {
-    sessionId,
-    resultText: chunks.join("\n").trim() || result.stdout?.trim() || undefined,
+    sessionId: state.sessionId,
+    resultText: state.resultText || fromDeltas || undefined,
     isError: result.exitCode !== 0 && result.exitCode !== undefined,
   };
 }
@@ -166,13 +193,16 @@ export async function injectMuse(
   }
 
   if (target.mode === "new-session") {
+    const pinned = randomUUID();
     const r = await withPromptFile(prompt, (file) =>
-      runMuseStreaming(execArgs({ promptFile: file, model: target.model }), cwd),
+      runMuseStreaming(
+        execArgs({ promptFile: file, model: target.model, sessionId: pinned }),
+        cwd,
+      ),
     );
     if (r.isError) throw new Error("muse new-session inject failed");
-    const id = r.sessionId ?? randomUUID();
     return {
-      newSessionId: id,
+      newSessionId: r.sessionId ?? pinned,
       provider: "muse",
       resultText: r.resultText,
     };
@@ -190,12 +220,13 @@ export async function runMuseAgent(opts: {
   onLog?: LogSink;
   signal?: AbortSignal;
 }): Promise<InjectResult> {
+  const pinned = opts.sessionId ?? randomUUID();
   const r = await withPromptFile(opts.prompt, (file) =>
     runMuseStreaming(
       execArgs({
         promptFile: file,
         model: opts.model,
-        sessionId: opts.sessionId,
+        sessionId: pinned,
       }),
       opts.projectDir,
       opts.onLog,
@@ -203,8 +234,7 @@ export async function runMuseAgent(opts: {
     ),
   );
   if (r.isError) throw new Error("muse agent run failed");
-  const id = r.sessionId ?? opts.sessionId;
-  if (!id) throw new Error("muse agent run returned no session id");
+  const id = r.sessionId ?? pinned;
   return {
     newSessionId: id,
     provider: "muse",
