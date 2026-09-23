@@ -171,7 +171,10 @@
             <span>{{ fmtBytes(picked.size) }}</span>
           </div>
         </div>
-        <button type="button" class="sess-detail-close" @click="picked = undefined">✕</button>
+        <DetailExpandControls
+          @expand="detailExpanded = true"
+          @close="closeFilePicked"
+        />
       </div>
       <div class="sess-detail-actions">
         <button
@@ -233,6 +236,70 @@
         }}</span>
       </div>
     </aside>
+
+    <DetailExpandModal
+      :open="!!picked && detailExpanded"
+      :label="picked?.label?.trim() || (picked ? fileBasename(picked.path) : 'File')"
+      @close="detailExpanded = false"
+    >
+      <template v-if="picked">
+        <div class="sess-detail-head">
+          <div class="sess-detail-titles">
+            <div
+              class="sess-detail-title"
+              :title="picked.label || fileBasename(picked.path)"
+            >
+              {{ picked.label?.trim() || fileBasename(picked.path) }}
+            </div>
+            <div class="sess-detail-meta mono">
+              <span>{{ picked.kind }}</span>
+              <span v-if="picked.note">{{ picked.note }}</span>
+              <span>{{ fmtBytes(picked.size) }}</span>
+            </div>
+          </div>
+          <DetailExpandControls hide-expand @close="detailExpanded = false" />
+        </div>
+        <div class="sess-detail-actions">
+          <button
+            v-if="canPreview(picked)"
+            type="button"
+            class="vsc-btn"
+            title="Open"
+            @click="fileViewers.open(picked.path)"
+          >
+            ⧉ open
+          </button>
+          <button
+            type="button"
+            class="vsc-btn"
+            :title="`Open in ${settings.editorLabel}`"
+            @click="settings.openPath(picked.path)"
+          >
+            ⟨/⟩ {{ settings.editorLabel }}
+          </button>
+          <button
+            type="button"
+            class="vsc-btn"
+            title="Copy absolute path"
+            @click="copyPath(picked.path)"
+          >
+            {{ pathCopied ? "✓ copied" : "❐ path" }}
+          </button>
+        </div>
+        <div class="run-kv mono">
+          <span class="run-key">group</span>
+          <span class="run-val">{{ groupLabel(pickedGroup) }}</span>
+          <span class="run-key">kind</span>
+          <span class="run-val">{{ picked.kind }}</span>
+          <span class="run-key">size</span>
+          <span class="run-val">{{ fmtBytes(picked.size) }}</span>
+          <span class="run-key">path</span>
+          <span class="run-val file-path" :title="picked.path">{{
+            bidiPath(tildePath(picked.path))
+          }}</span>
+        </div>
+      </template>
+    </DetailExpandModal>
   </div>
 
   <Teleport to="body">
@@ -295,6 +362,8 @@ import FolderMark from "@/panels/FolderMark.vue";
 import { useSettingsStore } from "@/stores/settings";
 import { useFileViewersStore, isLikelyTextPath } from "@/stores/fileViewers";
 import { useFavoritesStore } from "@/stores/favorites";
+import DetailExpandControls from "@/panels/DetailExpandControls.vue";
+import DetailExpandModal from "@/panels/DetailExpandModal.vue";
 import "./chrome.css";
 
 interface FileEntry {
@@ -339,6 +408,7 @@ const groupF = ref("all");
 const fileSort = ref<"mtime" | "size" | "name">("mtime");
 const picked = ref<FileEntry>();
 const pickedGroup = ref("");
+const detailExpanded = ref(false);
 const openMenu = ref<string>();
 const fileCtx = ref<{ entry: FileEntry; group: string; x: number; y: number }>();
 const pathCopied = ref(false);
@@ -435,10 +505,18 @@ watch(visibleGroups, (groups) => {
   if (!still) {
     picked.value = undefined;
     pickedGroup.value = "";
+    detailExpanded.value = false;
   }
 });
 
+function closeFilePicked(): void {
+  picked.value = undefined;
+  pickedGroup.value = "";
+  detailExpanded.value = false;
+}
+
 function pickFile(f: FileEntry, group: string): void {
+  detailExpanded.value = false;
   if (picked.value?.path === f.path) {
     picked.value = undefined;
     pickedGroup.value = "";

@@ -380,7 +380,7 @@
           />
           <div class="bp-detail-head">
             <span class="micro-label">{{ detail.kindLabel }}</span>
-            <button class="bp-close" @click="selectedId = undefined">✕</button>
+            <DetailExpandControls @expand="detailExpanded = true" @close="closeBlueprintDetail" />
           </div>
           <div class="bp-detail-title" :title="detail.title">{{ detail.title }}</div>
           <div class="meta-kv mono">
@@ -650,6 +650,13 @@
               ⌗ open blueprint
             </button>
             <button
+              v-if="detail.pluginsBrowse"
+              class="threadle-btn"
+              @click="openPluginsInventory(detail.pluginsBrowse)"
+            >
+              ▣ plugins inventory
+            </button>
+            <button
               v-if="detail.reasoningOf && !detail.invocationsOf"
               class="threadle-btn"
               title="Download every thinking block of this session as markdown"
@@ -659,6 +666,128 @@
             </button>
           </div>
         </aside>
+
+        <DetailExpandModal
+          :open="!!detail && detailExpanded"
+          :label="blueprintDetailLabel"
+          @close="detailExpanded = false"
+        >
+          <template v-if="detail">
+            <div class="bp-detail-head">
+              <span class="micro-label">{{ detail.kindLabel }}</span>
+              <DetailExpandControls hide-expand @close="detailExpanded = false" />
+            </div>
+            <div class="bp-detail-title" :title="detail.title">{{ detail.title }}</div>
+            <div class="meta-kv mono">
+              <template v-for="[k, v] in detail.rows" :key="k">
+                <span class="kv-key" :title="METRIC_HINTS[k]">{{ k }}</span
+                ><span>{{
+                  k === "status" ? (liveSessionStatus ?? v) : v
+                }}</span>
+              </template>
+            </div>
+            <div v-if="selectedId === 'root' && internals" class="bp-internals">
+              <div class="micro-label bp-hunks-label">
+                context per request
+                <span
+                  v-if="internals.contextEstimated"
+                  class="bp-est"
+                  title="Estimated from transcript size (chars÷4)"
+                  >~est</span
+                >
+              </div>
+              <svg
+                v-if="sparkPoints"
+                class="bp-spark"
+                viewBox="0 0 100 44"
+                preserveAspectRatio="none"
+                role="img"
+                aria-label="context tokens per request over the session"
+              >
+                <line
+                  v-for="x in compactionTicks"
+                  :key="x"
+                  :x1="x"
+                  :x2="x"
+                  y1="3"
+                  y2="41"
+                  class="bp-spark-compact"
+                />
+                <polyline :points="sparkPoints" class="bp-spark-line" />
+              </svg>
+              <div class="bp-spark-labels mono">
+                <span
+                  >peak
+                  {{
+                    fmtTokens(internals.peakContext, {
+                      estimate: internals.contextEstimated,
+                    })
+                  }}</span
+                >
+                <span
+                  >now
+                  {{
+                    fmtTokens(internals.lastContext, {
+                      estimate: internals.contextEstimated,
+                    })
+                  }}</span
+                >
+              </div>
+              <div class="meta-kv mono">
+                <span class="kv-key" :title="METRIC_HINTS.compactions">compactions</span
+                ><span>{{ internals.compactions }}</span>
+                <span class="kv-key" :title="METRIC_HINTS.thinking">thinking</span
+                ><span
+                  >{{ internals.thinkingBlocks }} blocks ·
+                  {{ fmtTokens(Math.round(internals.thinkingChars / 4)) }} tok est</span
+                >
+                <span class="kv-key" :title="METRIC_HINTS['tool errors']">tool errors</span
+                ><span>{{ internals.toolErrors }}</span>
+                <span class="kv-key" :title="METRIC_HINTS.duration">duration</span
+                ><span>{{ fmtDuration(internals.durationMs) }}</span>
+              </div>
+            </div>
+            <div v-if="detail.calls?.length" class="bp-calls">
+              <div class="micro-label bp-hunks-label">invocations</div>
+              <div class="bp-call-list nowheel">
+                <div v-for="(call, i) in detail.calls" :key="i" class="bp-call">
+                  <span class="bp-call-time">{{ callTime(call.ts) }}</span>
+                  <span class="bp-call-text">{{ call.summary }}</span>
+                </div>
+                <div v-if="detail.callsTruncated" class="bp-call-more">
+                  +{{ detail.callsTruncated }} more not shown · download for full
+                </div>
+              </div>
+            </div>
+            <div v-if="detail.hasTranscript" class="bp-calls">
+              <div class="micro-label bp-hunks-label">transcript</div>
+              <div v-if="transcriptPreviewLoading" class="bp-call-more">loading…</div>
+              <div v-else-if="transcriptPreviewError" class="bp-call-more">{{ transcriptPreviewError }}</div>
+              <div v-else class="bp-call-list nowheel">
+                <div
+                  v-for="(row, i) in transcriptPreview"
+                  :key="i"
+                  class="bp-call"
+                >
+                  <span class="bp-call-time">{{ displayMessageRole(row.role) }}</span>
+                  <span class="bp-call-text">{{ row.summary }}</span>
+                </div>
+                <div v-if="transcriptPreviewMore" class="bp-call-more">
+                  +{{ transcriptPreviewMore }} more · view transcript for full
+                </div>
+                <div v-else-if="!transcriptPreview.length" class="bp-call-more">
+                  no messages
+                </div>
+              </div>
+            </div>
+            <div v-if="detail.hunks?.length" class="bp-hunks">
+              <div class="micro-label bp-hunks-label">edited lines</div>
+              <div class="bp-hunk-chips">
+                <span v-for="h in detail.hunks" :key="h" class="threadle-chip mono">{{ h }}</span>
+              </div>
+            </div>
+          </template>
+        </DetailExpandModal>
       </div>
     <StatusBar />
     </div>
@@ -704,6 +833,9 @@ import { useFilterChipMenu } from "@/lib/useFilterChipMenu";
 import { displayMessageRole } from "@/lib/messageRole";
 import FilterChipMenu from "@/components/FilterChipMenu.vue";
 import GraphLoadingOverlay from "@/components/GraphLoadingOverlay.vue";
+import DetailExpandControls from "@/panels/DetailExpandControls.vue";
+import DetailExpandModal from "@/panels/DetailExpandModal.vue";
+import "@/views/dashboard/chrome.css";
 
 const route = useRoute();
 const router = useRouter();
@@ -868,11 +1000,44 @@ interface Blueprint {
   children: SessionRef[];
 }
 
+interface PluginPack {
+  provider: string;
+  id: string;
+  name: string;
+  version?: string;
+  description?: string;
+  origin: {
+    kind: string;
+    path: string;
+    marketplaceId?: string;
+  };
+  state: string;
+  children: Array<{
+    kind: string;
+    name: string;
+    path?: string;
+    description?: string;
+  }>;
+}
+
+interface MatchedPlugin extends PluginPack {
+  matched: string[];
+}
+
 const data = ref<Blueprint>();
+const plugins = ref<PluginPack[]>([]);
 const loading = ref(true);
 const error = ref<string>();
 const selectedId = ref<string>();
+const detailExpanded = ref(false);
 const bpFilter = ref("");
+
+function closeBlueprintDetail(): void {
+  selectedId.value = undefined;
+  detailExpanded.value = false;
+}
+
+const blueprintDetailLabel = computed(() => detail.value?.title ?? detail.value?.kindLabel ?? "Details");
 const urlsOpen = ref(false);
 
 const sessionHasTranscript = computed(() => {
@@ -933,6 +1098,7 @@ const TYPE_TOGGLES = [
   { key: "skills", glyph: "✦", label: "skills used" },
   { key: "rules", glyph: "§", label: "rules" },
   { key: "skillsets", glyph: "✦", label: "skillsets" },
+  { key: "plugins", glyph: "▣", label: "plugins" },
   { key: "contexts", glyph: "❝", label: "contexts" },
   { key: "reasoning", glyph: "∴", label: "reasoning" },
   { key: "subagents", glyph: "⎇", label: "subagents" },
@@ -945,6 +1111,7 @@ const typeFilters = reactive<Record<string, boolean>>({
   skills: true,
   rules: true,
   skillsets: true,
+  plugins: true,
   contexts: true,
   reasoning: true,
   subagents: true,
@@ -1006,6 +1173,8 @@ function typeCount(key: string): number {
       return (d.rulesFiles ?? []).filter((r) => r.kind === "rules").length;
     case "skillsets":
       return (d.rulesFiles ?? []).filter((r) => r.kind === "skill").length;
+    case "plugins":
+      return matchedPlugins(d).length;
     case "contexts":
       return (
         (d.contexts?.extracted.length ?? 0) +
@@ -1049,6 +1218,63 @@ function bpMatch(...texts: Array<string | undefined>): boolean {
   return texts.some((t) => t?.toLowerCase().includes(q));
 }
 
+function pathUnder(child: string, root: string): boolean {
+  const c = child.replace(/\\/g, "/").toLowerCase();
+  const r = root.replace(/\\/g, "/").replace(/\/+$/, "").toLowerCase();
+  if (!r) return false;
+  return c === r || c.startsWith(`${r}/`);
+}
+
+function matchedPlugins(d: Blueprint): MatchedPlugin[] {
+  const files = d.rulesFiles ?? [];
+  const used = new Set(d.skills.map((s) => s.name.toLowerCase()));
+  const out: MatchedPlugin[] = [];
+  for (const p of plugins.value) {
+    const reasons: string[] = [];
+    for (const f of files) {
+      if (pathUnder(f.path, p.origin.path)) reasons.push(f.name);
+    }
+    for (const ch of p.children) {
+      if (ch.kind === "skill" && used.has(ch.name.toLowerCase())) {
+        reasons.push(`used · ${ch.name}`);
+      }
+      if (ch.path) {
+        for (const f of files) {
+          if (pathUnder(f.path, ch.path) || pathUnder(ch.path, f.path)) {
+            reasons.push(ch.name);
+          }
+        }
+      }
+    }
+    if (used.has(p.id.toLowerCase()) || used.has(p.name.toLowerCase())) {
+      reasons.push(`used · ${p.name}`);
+    }
+    if (!reasons.length) continue;
+    if (
+      !bpMatch(
+        p.name,
+        p.id,
+        p.description,
+        p.origin.marketplaceId,
+        ...reasons,
+      )
+    ) {
+      continue;
+    }
+    out.push({ ...p, matched: [...new Set(reasons)] });
+  }
+  return out;
+}
+
+async function loadPlugins(): Promise<void> {
+  try {
+    const res = await fetch("/api/plugins");
+    plugins.value = (await res.json()) as PluginPack[];
+  } catch {
+    plugins.value = [];
+  }
+}
+
 async function loadBlueprint(): Promise<void> {
   loading.value = true;
   error.value = undefined;
@@ -1056,9 +1282,10 @@ async function loadBlueprint(): Promise<void> {
   selectedId.value = undefined;
   bpFilter.value = "";
   try {
-    const res = await fetch(
-      `/api/sessions/${provider.value}/blueprint/${sessionId.value}`,
-    );
+    const [res] = await Promise.all([
+      fetch(`/api/sessions/${provider.value}/blueprint/${sessionId.value}`),
+      plugins.value.length ? Promise.resolve(null) : loadPlugins(),
+    ]);
     if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
     data.value = (await res.json()) as Blueprint;
   } catch (err) {
@@ -1066,6 +1293,13 @@ async function loadBlueprint(): Promise<void> {
   } finally {
     loading.value = false;
   }
+}
+
+function openPluginsInventory(key: string): void {
+  void router.push({
+    path: "/",
+    query: { view: "agents", browse: "plugins", plugin: key },
+  });
 }
 
 watch(
@@ -1206,6 +1440,18 @@ const nodes = computed<VFNode[]>(() => {
       sub: `skillset · ${r.source}`,
       badge: r.scope,
       missing: fileViewers.isMissing(r.path),
+    });
+    midY += ROW;
+  }
+  const pluginHits = typeFilters.plugins ? matchedPlugins(d) : [];
+  if (pluginHits.length) midY += 24;
+  for (const p of pluginHits) {
+    push(`plugin:${p.provider}:${p.id}`, 420, midY, {
+      kind: "plugin",
+      glyph: "▣",
+      title: p.name,
+      sub: `${p.provider}${p.version ? ` · ${p.version}` : ""} · ${p.state}`,
+      badge: String(p.matched.length),
     });
     midY += ROW;
   }
@@ -1862,6 +2108,8 @@ interface Detail {
   callsTruncated?: number;
   openPath?: string;
   blueprintOf?: { provider: string; id: string };
+  /** Jump to Agents → plugins focused on this pack (`provider:id`). */
+  pluginsBrowse?: string;
 }
 
 function detailFor(id: string | undefined): Detail | undefined {
@@ -2016,6 +2264,34 @@ function detailFor(id: string | undefined): Detail | undefined {
       openPath: r.path,
     };
   }
+  if (id.startsWith("plugin:")) {
+    const key = id.slice("plugin:".length);
+    const hit = matchedPlugins(d).find((p) => `${p.provider}:${p.id}` === key);
+    if (!hit) return undefined;
+    return {
+      kindLabel: "plugin pack",
+      title: hit.name,
+      rows: [
+        ["provider", hit.provider],
+        ["version", hit.version ?? "—"],
+        ["state", hit.state],
+        ["origin", hit.origin.kind],
+        ...(hit.origin.marketplaceId
+          ? [["marketplace", hit.origin.marketplaceId] as [string, string]]
+          : []),
+        ["path", hit.origin.path],
+        ["matched", hit.matched.join(", ")],
+        [
+          "children",
+          hit.children.length
+            ? hit.children.map((c) => `${c.kind}:${c.name}`).join(", ")
+            : "—",
+        ],
+      ],
+      openPath: hit.origin.path,
+      pluginsBrowse: `${hit.provider}:${hit.id}`,
+    };
+  }
   if (id === "ctx:session" && d.ref) {
     const last = d.internals?.lastContext;
     const peak = d.internals?.peakContext;
@@ -2115,6 +2391,10 @@ function detailFor(id: string | undefined): Detail | undefined {
 }
 
 const detail = computed<Detail | undefined>(() => detailFor(selectedId.value));
+
+watch(selectedId, () => {
+  detailExpanded.value = false;
+});
 
 watch(
   () => {

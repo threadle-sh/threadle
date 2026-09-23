@@ -20,7 +20,9 @@
             ? 'Filter agents…'
             : agentBrowse === 'memory'
               ? 'Filter memory…'
-              : 'Filter runs…'
+              : agentBrowse === 'plugins'
+                ? 'Filter plugins…'
+                : 'Filter runs…'
         "
         spellcheck="false"
       />
@@ -65,6 +67,14 @@
         >
           memory{{ memoryCount != null ? ` · ${memoryCount}` : "" }}
         </button>
+        <button
+          class="filter-chip"
+          :class="{ active: agentBrowse === 'plugins' }"
+          title="Installed / marketplace plugin packs"
+          @click="setAgentBrowse('plugins')"
+        >
+          plugins{{ pluginsCount != null ? ` · ${pluginsCount}` : "" }}
+        </button>
       </div>
     </div>
   </div>
@@ -76,6 +86,17 @@
             :filter="agentFilter"
             :provider-filter="agentProviderF"
             @loaded="memoryCount = $event"
+          />
+        </div>
+
+        <!-- plugins: packs + children -->
+        <div v-else-if="agentBrowse === 'plugins'" class="lib-flex">
+          <PluginsBrowser
+            class="mem-browser-host"
+            :filter="agentFilter"
+            :provider-filter="agentProviderF"
+            :focus-key="pluginFocus"
+            @loaded="pluginsCount = $event"
           />
         </div>
 
@@ -148,7 +169,10 @@
                   <span v-if="pickedRun.agent" class="sess-detail-agent">⟨/⟩ {{ pickedRun.agent }}</span>
                 </div>
               </div>
-              <button class="sess-detail-close" @click="pickedRun = undefined">✕</button>
+              <DetailExpandControls
+                @expand="runDetailExpanded = true"
+                @close="closePickedRun"
+              />
             </div>
             <div class="sess-detail-actions">
               <button class="vsc-btn" title="Open in Sessions" @click="openRunInSessions(pickedRun)">
@@ -186,6 +210,32 @@
           <aside v-else class="lib-aside lib-aside-empty">
             <p class="stat-note">Select a run to inspect it here.</p>
           </aside>
+
+          <DetailExpandModal
+            :open="!!pickedRun && runDetailExpanded"
+            :label="pickedRun?.title ?? (pickedRun ? shortId(pickedRun.id) : 'Run')"
+            @close="runDetailExpanded = false"
+          >
+            <template v-if="pickedRun">
+              <div class="lib-aside-head">
+                <div class="sess-detail-titles">
+                  <span class="lib-aside-title mono">{{ pickedRun.title ?? shortId(pickedRun.id) }}</span>
+                  <div class="sess-detail-meta mono">
+                    <SessionLivePill :status="pickedRunLiveStatus" />
+                    <span v-if="isSubRun(pickedRun)" class="inst-sub micro-label">sub</span>
+                    <span v-if="pickedRun.agent" class="sess-detail-agent">⟨/⟩ {{ pickedRun.agent }}</span>
+                  </div>
+                </div>
+                <DetailExpandControls hide-expand @close="runDetailExpanded = false" />
+              </div>
+              <SessionInfoPanel
+                :provider="pickedRun.provider"
+                :session-id="pickedRun.id"
+                :seed="pickedRun"
+                @open-parent="openRunParent(pickedRun)"
+              />
+            </template>
+          </DetailExpandModal>
         </div>
 
         <div v-else class="lib-flex">
@@ -233,7 +283,10 @@
           <aside v-if="agentPicked" class="lib-aside">
             <div class="lib-aside-head">
               <span class="lib-aside-title mono">⟨/⟩ {{ agentPicked.name }}</span>
-              <button class="sess-detail-close" @click="agentPicked = undefined">✕</button>
+              <DetailExpandControls
+                @expand="agentDetailExpanded = true"
+                @close="closeAgentPicked"
+              />
             </div>
             <div class="run-kv mono">
               <span class="run-key">provider</span><span class="run-val">{{ agentPicked.provider }}</span>
@@ -292,6 +345,75 @@
             </template>
             <p v-else class="stat-note">no prompt body recorded for this agent</p>
           </aside>
+
+          <DetailExpandModal
+            :open="!!agentPicked && agentDetailExpanded"
+            :label="agentPicked ? `⟨/⟩ ${agentPicked.name}` : 'Agent'"
+            @close="agentDetailExpanded = false"
+          >
+            <template v-if="agentPicked">
+              <div class="lib-aside-head">
+                <span class="lib-aside-title mono">⟨/⟩ {{ agentPicked.name }}</span>
+                <DetailExpandControls hide-expand @close="agentDetailExpanded = false" />
+              </div>
+              <div class="run-kv mono">
+                <span class="run-key">provider</span><span class="run-val">{{ agentPicked.provider }}</span>
+                <span class="run-key">kind</span><span class="run-val">{{ agentPicked.kind ?? "—" }}</span>
+                <span class="run-key">scope</span><span class="run-val">{{ agentPicked.scope }}</span>
+                <span class="run-key">model</span><span class="run-val">{{ agentPicked.model ?? "session default" }}</span>
+                <span class="run-key">source</span><span class="run-val">{{ agentPicked.source }}</span>
+                <span class="run-key">used</span
+                ><span class="run-val">
+                  {{ agentUsage(agentPicked).count
+                    ? `${agentUsage(agentPicked).count} sessions · last ${agentUsage(agentPicked).last} · ${fmtTokens(agentUsage(agentPicked).tokensOut)} tok out`
+                    : "never" }}
+                </span>
+              </div>
+              <div class="sess-detail-actions">
+                <button class="vsc-btn" title="New workflow: prompt wired into this agent" @click="useAgentInWorkflow">
+                  → use in workflow
+                </button>
+                <button
+                  class="vsc-btn"
+                  title="Show this agent's instances"
+                  @click="browseAgentRuns(agentPicked)"
+                >
+                  ❯ instances
+                </button>
+                <button
+                  v-if="isAbsolutePath(agentPicked.source)"
+                  class="vsc-btn"
+                  @click="settings.openPath(agentPicked.source)"
+                >
+                  ✎ {{ settings.editorLabel }}
+                </button>
+              </div>
+              <template v-if="agentUsage(agentPicked).recent.length">
+                <div class="micro-label">
+                  recent ({{ agentUsage(agentPicked).count
+                  }}<template v-if="agentUsage(agentPicked).live"> · {{ agentUsage(agentPicked).live }} live</template>)
+                </div>
+                <div class="lin-injlist">
+                  <button
+                    v-for="r in agentUsage(agentPicked).recent"
+                    :key="r.provider + r.id"
+                    class="lin-inj mono"
+                    @click="jumpToRun(r)"
+                    @contextmenu.prevent.stop="openRunCtx($event, r)"
+                  >
+                    <i class="inst-dot" :class="{ live: isSessionLive(r.status) }" />
+                    <span v-if="isSubRun(r)" class="inst-sub micro-label">sub</span>
+                    {{ r.title ?? shortId(r.id) }} <em>{{ relativeTime(r.updatedAt) }}</em>
+                  </button>
+                </div>
+              </template>
+              <template v-if="agentPicked.raw">
+                <div class="micro-label">system prompt / definition</div>
+                <pre class="lin-content mono">{{ agentPicked.raw.slice(0, 12000) }}</pre>
+              </template>
+              <p v-else class="stat-note">no prompt body recorded for this agent</p>
+            </template>
+          </DetailExpandModal>
         </div>
 
   <Teleport to="body">
@@ -432,13 +554,18 @@ import SessionInfoPanel from "@/panels/SessionInfoPanel.vue";
 import SessionLivePill from "@/panels/SessionLivePill.vue";
 import GrowthMark from "@/panels/GrowthMark.vue";
 import MemoryBrowser from "@/panels/MemoryBrowser.vue";
+import PluginsBrowser from "@/panels/PluginsBrowser.vue";
+import DetailExpandControls from "@/panels/DetailExpandControls.vue";
+import DetailExpandModal from "@/panels/DetailExpandModal.vue";
 import "./chrome.css";
 
 const props = defineProps<{
   /** Deep-link: agent name (+ optional provider) from `?agent=` / `?provider=`. */
   focus?: { name: string; provider?: string };
-  /** Deep-link: `?browse=memory` etc. */
+  /** Deep-link: `?browse=memory` / `?browse=plugins` etc. */
   browse?: string;
+  /** Deep-link: `?plugin=provider:id` when browsing plugins. */
+  pluginFocus?: string;
 }>();
 
 const emit = defineEmits<{
@@ -476,12 +603,18 @@ function arrow(table: string, key: string): string {
 
 const agentFilter = ref("");
 const agentPicked = ref<AgentDef>();
+const agentDetailExpanded = ref(false);
+
+function closeAgentPicked(): void {
+  agentPicked.value = undefined;
+  agentDetailExpanded.value = false;
+}
 
 function pickAgent(a: AgentDef): void {
-  agentPicked.value =
-    agentPicked.value?.name === a.name && agentPicked.value?.provider === a.provider
-      ? undefined
-      : a;
+  const same =
+    agentPicked.value?.name === a.name && agentPicked.value?.provider === a.provider;
+  agentPicked.value = same ? undefined : a;
+  agentDetailExpanded.value = false;
 }
 
 watch(
@@ -553,12 +686,26 @@ const agentInstances = computed(() => ({
 }));
 
 /** Exclusive Agents browse modes — tiles are radios, not toggles. */
-type AgentBrowse = "defs" | "runs" | "subs" | "live" | "memory";
+type AgentBrowse = "defs" | "runs" | "subs" | "live" | "memory" | "plugins";
 const agentBrowse = ref<AgentBrowse>("defs");
 const pickedRun = ref<SessionRef>();
+const runDetailExpanded = ref(false);
 const memoryCount = ref<number | null>(null);
+const pluginsCount = ref<number | null>(null);
 
-const BROWSE_MODES: AgentBrowse[] = ["defs", "runs", "subs", "live", "memory"];
+function closePickedRun(): void {
+  pickedRun.value = undefined;
+  runDetailExpanded.value = false;
+}
+
+const BROWSE_MODES: AgentBrowse[] = [
+  "defs",
+  "runs",
+  "subs",
+  "live",
+  "memory",
+  "plugins",
+];
 
 function browseFromProp(raw?: string): AgentBrowse | undefined {
   if (!raw) return undefined;
@@ -587,7 +734,7 @@ function setAgentBrowse(mode: AgentBrowse): void {
   agentBrowse.value = mode;
   if (mode === "defs") {
     pickedRun.value = undefined;
-  } else if (mode === "memory") {
+  } else if (mode === "memory" || mode === "plugins") {
     pickedRun.value = undefined;
     agentPicked.value = undefined;
   } else {
@@ -608,13 +755,15 @@ function setAgentBrowse(mode: AgentBrowse): void {
 }
 
 function selectRun(s: SessionRef): void {
-  pickedRun.value =
-    pickedRun.value?.provider === s.provider && pickedRun.value?.id === s.id ? undefined : s;
+  const same = pickedRun.value?.provider === s.provider && pickedRun.value?.id === s.id;
+  pickedRun.value = same ? undefined : s;
+  runDetailExpanded.value = false;
 }
 
 function jumpToRun(s: SessionRef): void {
   setAgentBrowse(isSubRun(s) ? "subs" : "runs");
   pickedRun.value = s;
+  runDetailExpanded.value = false;
   agentFilter.value = s.agent ?? "";
 }
 
@@ -660,6 +809,7 @@ onMounted(() => {
   sessions.ensureHydrated();
   void loadInstances();
   void prefetchMemoryCount();
+  void prefetchPluginsCount();
   document.addEventListener("click", dismissCtx);
   document.addEventListener("contextmenu", dismissCtx);
 });
@@ -675,6 +825,16 @@ async function prefetchMemoryCount(): Promise<void> {
     memoryCount.value = Array.isArray(data) ? data.length : 0;
   } catch {
     memoryCount.value = 0;
+  }
+}
+
+async function prefetchPluginsCount(): Promise<void> {
+  try {
+    const res = await fetch("/api/plugins");
+    const data = (await res.json()) as unknown[];
+    pluginsCount.value = Array.isArray(data) ? data.length : 0;
+  } catch {
+    pluginsCount.value = 0;
   }
 }
 
@@ -987,10 +1147,11 @@ const agentGroups = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-height: calc(100vh - 220px);
+  max-height: calc(100vh - 160px);
   overflow: auto;
   position: sticky;
-  top: 0;
+  top: 12px;
+  align-self: flex-start;
 }
 .lib-aside-empty {
   justify-content: center;

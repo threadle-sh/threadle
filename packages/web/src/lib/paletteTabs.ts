@@ -13,6 +13,7 @@ export const PAL_RAIL_GROUPS = [
       { id: "sessions", glyph: "❯", label: "sessions" },
       { id: "nodes", glyph: "▦", label: "nodes" },
       { id: "skills", glyph: "✦", label: "skills" },
+      { id: "plugins", glyph: "▣", label: "plugins" },
       { id: "rules", glyph: "§", label: "rules" },
       { id: "library", glyph: "", label: "library" },
     ] as const,

@@ -298,7 +298,10 @@
             <span>{{ picked.graph.edgeCount }} wires</span>
           </div>
         </div>
-        <button type="button" class="sess-detail-close" @click="picked = undefined">✕</button>
+        <DetailExpandControls
+          @expand="detailExpanded = true"
+          @close="closeMetaPicked"
+        />
       </div>
       <div class="sess-detail-actions">
         <button type="button" class="vsc-btn" @click="router.push(`/graph/${picked.graph.id}`)">
@@ -350,7 +353,10 @@
             <span>{{ relativeTime(picked.artifact.mtime) }}</span>
           </div>
         </div>
-        <button type="button" class="sess-detail-close" @click="picked = undefined">✕</button>
+        <DetailExpandControls
+          @expand="detailExpanded = true"
+          @close="closeMetaPicked"
+        />
       </div>
       <div class="sess-detail-actions">
         <button
@@ -443,7 +449,10 @@
             <span>{{ picked.owner }}</span>
           </div>
         </div>
-        <button type="button" class="sess-detail-close" @click="picked = undefined">✕</button>
+        <DetailExpandControls
+          @expand="detailExpanded = true"
+          @close="closeMetaPicked"
+        />
       </div>
       <div class="sess-detail-actions">
         <button type="button" class="vsc-btn" @click="copyText(picked.path)">
@@ -460,6 +469,113 @@
       </div>
       <p class="meta-desc">{{ picked.desc }}</p>
     </aside>
+
+    <DetailExpandModal
+      :open="!!picked && detailExpanded"
+      :label="metaDetailExpandLabel"
+      @close="detailExpanded = false"
+    >
+      <template v-if="picked?.kind === 'graph'">
+        <div class="sess-detail-head">
+          <div class="sess-detail-titles">
+            <div class="sess-detail-title" :title="picked.graph.name">{{ picked.graph.name }}</div>
+            <div class="sess-detail-meta mono">
+              <span>{{ picked.graph.kind }}</span>
+              <span>{{ picked.graph.nodeCount }} nodes</span>
+            </div>
+          </div>
+          <DetailExpandControls hide-expand @close="detailExpanded = false" />
+        </div>
+        <div class="sess-detail-actions">
+          <button type="button" class="vsc-btn" @click="router.push(`/graph/${picked.graph.id}`)">
+            ⌗ open canvas
+          </button>
+          <button type="button" class="vsc-btn" @click="copyText(picked.graph.id)">
+            {{ pathCopied === picked.graph.id ? "✓ copied" : "❐ id" }}
+          </button>
+        </div>
+        <div class="run-kv mono">
+          <span class="run-key">id</span>
+          <span class="run-val" :title="picked.graph.id">{{ picked.graph.id }}</span>
+          <span class="run-key">kind</span>
+          <span class="run-val">{{ picked.graph.kind }}</span>
+          <span class="run-key">nodes</span>
+          <span class="run-val">{{ picked.graph.nodeCount }}</span>
+          <span class="run-key">wires</span>
+          <span class="run-val">{{ picked.graph.edgeCount }}</span>
+          <span class="run-key">updated</span>
+          <span class="run-val">{{ absWhen(picked.graph.updatedAt) }}</span>
+        </div>
+      </template>
+      <template v-else-if="picked?.kind === 'artifact'">
+        <div class="sess-detail-head">
+          <div class="sess-detail-titles">
+            <div class="sess-detail-title mono" :title="picked.artifact.name">
+              {{ picked.artifact.name }}
+            </div>
+            <div class="sess-detail-meta mono">
+              <span class="op-badge" :class="'rule-' + picked.artifact.kind">{{
+                picked.artifact.kind
+              }}</span>
+              <span>{{ fmtBytes(picked.artifact.size) }}</span>
+            </div>
+          </div>
+          <DetailExpandControls hide-expand @close="detailExpanded = false" />
+        </div>
+        <div class="sess-detail-actions">
+          <button
+            v-if="isLikelyTextPath(picked.artifact.path)"
+            type="button"
+            class="vsc-btn"
+            @click="fileViewers.open(picked.artifact.path)"
+          >
+            ⧉ open
+          </button>
+          <button
+            type="button"
+            class="vsc-btn"
+            @click="settings.openPath(picked.artifact.path)"
+          >
+            ⟨/⟩ {{ settings.editorLabel }}
+          </button>
+          <button type="button" class="vsc-btn" @click="copyText(picked.artifact.path)">
+            {{ pathCopied === picked.artifact.path ? "✓ copied" : "❐ path" }}
+          </button>
+        </div>
+        <div class="run-kv mono">
+          <span class="run-key">scope</span>
+          <span class="run-val">{{
+            picked.scope === "global" ? "global (~)" : picked.scope
+          }}</span>
+          <span class="run-key">path</span>
+          <span class="run-val file-path" :title="picked.artifact.path">{{
+            bidiPath(picked.artifact.path)
+          }}</span>
+        </div>
+        <template v-if="picked.artifact.description">
+          <div class="micro-label">description</div>
+          <p class="meta-desc">{{ picked.artifact.description }}</p>
+        </template>
+      </template>
+      <template v-else-if="picked?.kind === 'storage'">
+        <div class="sess-detail-head">
+          <div class="sess-detail-titles">
+            <div class="sess-detail-title mono" :title="picked.path">{{ picked.path }}</div>
+            <div class="sess-detail-meta mono">
+              <span>{{ picked.access }}</span>
+              <span>{{ picked.owner }}</span>
+            </div>
+          </div>
+          <DetailExpandControls hide-expand @close="detailExpanded = false" />
+        </div>
+        <div class="sess-detail-actions">
+          <button type="button" class="vsc-btn" @click="copyText(picked.path)">
+            {{ pathCopied === picked.path ? "✓ copied" : "❐ path" }}
+          </button>
+        </div>
+        <p class="meta-desc">{{ picked.desc }}</p>
+      </template>
+    </DetailExpandModal>
   </div>
 
   <Teleport to="body">
@@ -540,6 +656,8 @@ import { copyToClipboard } from "@/lib/pathActions";
 import { useSettingsStore } from "@/stores/settings";
 import { useFileViewersStore, isLikelyTextPath } from "@/stores/fileViewers";
 import GraphLoadingOverlay from "@/components/GraphLoadingOverlay.vue";
+import DetailExpandControls from "@/panels/DetailExpandControls.vue";
+import DetailExpandModal from "@/panels/DetailExpandModal.vue";
 import "./chrome.css";
 
 export interface RuleArtifact {
@@ -670,7 +788,21 @@ const sectionFilter = ref<SectionFilter>("all");
 const query = ref("");
 const listSort = ref<"updated" | "name" | "size">("updated");
 const picked = ref<Picked>();
+const detailExpanded = ref(false);
 const openMenu = ref<string>();
+
+const metaDetailExpandLabel = computed(() => {
+  const p = picked.value;
+  if (!p) return "Details";
+  if (p.kind === "graph") return p.graph.name;
+  if (p.kind === "artifact") return p.artifact.name;
+  return p.path;
+});
+
+function closeMetaPicked(): void {
+  picked.value = undefined;
+  detailExpanded.value = false;
+}
 const metaCtx = ref<MetaCtx>();
 const pathCopied = ref<string>();
 let metaCtxIgnoreClick = false;
@@ -795,6 +927,7 @@ const filteredRuleGroups = computed(() => {
 });
 
 function pickGraph(g: GraphSummary): void {
+  detailExpanded.value = false;
   picked.value =
     picked.value?.kind === "graph" && picked.value.graph.id === g.id
       ? undefined
@@ -802,6 +935,7 @@ function pickGraph(g: GraphSummary): void {
 }
 
 function pickArtifact(a: RuleArtifact, scope: string): void {
+  detailExpanded.value = false;
   picked.value =
     picked.value?.kind === "artifact" && picked.value.artifact.path === a.path
       ? undefined
@@ -809,6 +943,7 @@ function pickArtifact(a: RuleArtifact, scope: string): void {
 }
 
 function pickStorage(p: StoragePath): void {
+  detailExpanded.value = false;
   picked.value =
     picked.value?.kind === "storage" && picked.value.path === p.path
       ? undefined
@@ -987,19 +1122,19 @@ watch([sectionFilter, query], () => {
   const p = picked.value;
   if (!p) return;
   if (p.kind === "graph") {
-    if (!filteredGraphs.value.some((g) => g.id === p.graph.id)) picked.value = undefined;
+    if (!filteredGraphs.value.some((g) => g.id === p.graph.id)) closeMetaPicked();
     return;
   }
   if (p.kind === "artifact") {
     const still = filteredRuleGroups.value.some((rg) =>
       rg.artifacts.some((a) => a.path === p.artifact.path),
     );
-    if (!still) picked.value = undefined;
+    if (!still) closeMetaPicked();
     return;
   }
   if (p.kind === "storage") {
     if (!showStorage.value || !filteredStorage.value.some((s) => s.path === p.path)) {
-      picked.value = undefined;
+      closeMetaPicked();
     }
   }
 });

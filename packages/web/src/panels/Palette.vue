@@ -86,6 +86,10 @@
               :skills="paletteSkills"
               :ready="rulesReady"
             />
+            <PalettePluginsPane
+              v-if="palTab === 'plugins'"
+              :filter="search"
+            />
             <PaletteRulesPane
               v-if="palTab === 'rules'"
               :rules="paletteRules"
@@ -377,6 +381,7 @@ import {
   PaletteSessionsPane,
   PaletteNodesPane,
   PaletteSkillsPane,
+  PalettePluginsPane,
   PaletteRulesPane,
   PaletteLibraryPane,
   PaletteGraphsPane,

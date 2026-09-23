@@ -203,7 +203,7 @@
             <span class="lin-detail-title">
               {{ selected.type === "payload" ? (KIND_SHORT[selected.payload!.kind] ?? selected.payload!.kind) : (selected.title ?? "session") }}
             </span>
-            <button class="ap-close" @click="selected = undefined">✕</button>
+            <DetailExpandControls @expand="detailExpanded = true" @close="closeDetail" />
           </div>
 
           <template v-if="selected.type === 'payload'">
@@ -317,6 +317,132 @@
             />
           </template>
         </aside>
+
+        <DetailExpandModal
+          :open="!!selected && detailExpanded"
+          :label="lineageDetailLabel"
+          @close="detailExpanded = false"
+        >
+          <template v-if="selected">
+            <div class="lin-detail-head">
+              <span class="lin-detail-title">
+                {{ selected.type === "payload" ? (KIND_SHORT[selected.payload!.kind] ?? selected.payload!.kind) : (selected.title ?? "session") }}
+              </span>
+              <DetailExpandControls hide-expand @close="detailExpanded = false" />
+            </div>
+
+            <template v-if="selected.type === 'payload'">
+              <div class="run-kv mono">
+                <span class="run-key">hash</span><span class="run-val">{{ selected.payload!.hash.slice(0, 16) }}…</span>
+                <span class="run-key">kind</span><span class="run-val">{{ selected.payload!.kind }}</span>
+                <span class="run-key">size</span><span class="run-val">{{ fmtChars(selected.payload!.chars) }} chars</span>
+                <span class="run-key">created</span><span class="run-val">{{ new Date(selected.payload!.createdAt).toLocaleString() }}</span>
+                <span class="run-key">from</span><span class="run-val">{{ sourceTitle(selected.payload!) }}</span>
+                <template v-if="orphanHashes.has(selected.payload!.hash)">
+                  <span class="run-key">status</span><span class="run-val">never injected</span>
+                </template>
+              </div>
+              <div class="lin-actions">
+                <button
+                  class="vsc-btn"
+                  title="Open"
+                  @click="
+                    void fileViewers.openPayload({
+                      hash: selected.payload!.hash,
+                      name: selected.payload!.preview || selected.payload!.kind,
+                    })
+                  "
+                >
+                  ⧉ open
+                </button>
+                <button class="vsc-btn" @click="openBlueprint(selected.payload!.source)">⌗ blueprint</button>
+                <a class="vsc-btn" :href="`/api/payloads/${selected.payload!.hash}`" target="_blank">⇓ raw</a>
+                <button
+                  v-if="injectsOf(selected.payload!.hash)[0]?.result?.sessionId"
+                  class="vsc-btn"
+                  @click="diffHandoff(selected.payload!, injectsOf(selected.payload!.hash)[0]!)"
+                >
+                  ⇆ diff
+                </button>
+              </div>
+              <div v-if="injectsOf(selected.payload!.hash).length" class="lin-injlist">
+                <div class="micro-label">injected into</div>
+                <button
+                  v-for="(inj, ii) in injectsOf(selected.payload!.hash)"
+                  :key="ii"
+                  class="lin-inj mono"
+                  @click="inj.result && openBlueprint({ provider: inj.result.provider, sessionId: inj.result.sessionId })"
+                >
+                  ⇄ {{ injTitle(inj) }}
+                  <em>{{ shortMode(inj.mode) }} · {{ relativeTime(inj.ts) }}</em>
+                </button>
+              </div>
+              <div class="micro-label lin-content-label">content</div>
+              <div v-if="contentLoading" class="lin-dim-sm">loading…</div>
+              <pre v-else class="lin-content mono">{{ content }}</pre>
+            </template>
+
+            <template v-else>
+              <div class="run-kv mono">
+                <span class="run-key">provider</span><span class="run-val">{{ selected.provider }}</span>
+                <span class="run-key">session</span><span class="run-val">{{ selected.sessionId }}</span>
+              </div>
+              <div class="lin-actions">
+                <button
+                  class="vsc-btn"
+                  title="View the interactive message transcript"
+                  @click="fileViewers.openTranscript(selected.provider!, selected.sessionId!)"
+                >
+                  ≡ transcript
+                </button>
+                <button
+                  class="vsc-btn"
+                  title="View the reconstructed model context"
+                  @click="void fileViewers.openContext(selected.provider!, selected.sessionId!)"
+                >
+                  ❝ context
+                </button>
+                <button
+                  class="vsc-btn"
+                  @click="openBlueprint({ provider: selected.provider!, sessionId: selected.sessionId! })"
+                >
+                  ⌗ blueprint
+                </button>
+                <button
+                  v-if="diffPeerFor(selected)"
+                  class="vsc-btn"
+                  @click="openDiff(
+                    { provider: selected.provider!, sessionId: selected.sessionId! },
+                    diffPeerFor(selected)!,
+                  )"
+                >
+                  ⇆ diff
+                </button>
+              </div>
+              <div v-if="runsFor(selected.provider, selected.sessionId).length" class="lin-injlist">
+                <div class="micro-label">threadle runs</div>
+                <button
+                  v-for="(r, ri) in runsFor(selected.provider, selected.sessionId)"
+                  :key="ri"
+                  class="lin-inj mono"
+                  @click="
+                    r.graphId
+                      ? router.push(`/graph/${r.graphId}`)
+                      : router.push({ path: '/', query: { view: 'runs' } })
+                  "
+                >
+                  ⌗ {{ r.label ?? r.kind }}
+                  <em>{{ r.kind }} · {{ relativeTime(r.ts) }}</em>
+                </button>
+              </div>
+              <SessionInfoPanel
+                class="lin-sip"
+                :provider="selected.provider!"
+                :session-id="selected.sessionId!"
+              />
+            </template>
+          </template>
+        </DetailExpandModal>
       </div>
     <StatusBar />
     </div>
@@ -366,6 +492,8 @@ import {
 } from "@/lib/providers";
 import ProviderFilterChips from "@/components/ProviderFilterChips.vue";
 import GraphLoadingOverlay from "@/components/GraphLoadingOverlay.vue";
+import DetailExpandControls from "@/panels/DetailExpandControls.vue";
+import DetailExpandModal from "@/panels/DetailExpandModal.vue";
 import { useFileViewersStore } from "@/stores/fileViewers";
 import "@/views/dashboard/chrome.css";
 
@@ -460,6 +588,28 @@ const selected = ref<{
 }>();
 const content = ref("");
 const contentLoading = ref(false);
+const detailExpanded = ref(false);
+
+const lineageDetailLabel = computed(() => {
+  const s = selected.value;
+  if (!s) return "Details";
+  if (s.type === "payload") {
+    return KIND_SHORT[s.payload!.kind] ?? s.payload!.kind;
+  }
+  return s.title ?? "session";
+});
+
+function closeDetail(): void {
+  selected.value = undefined;
+  detailExpanded.value = false;
+}
+
+watch(
+  () => selected.value?.id,
+  () => {
+    detailExpanded.value = false;
+  },
+);
 
 interface CtxItem {
   glyph: string;
@@ -853,7 +1003,7 @@ function fitNode(id: string): void {
 }
 
 function onPaneClick(): void {
-  selected.value = undefined;
+  closeDetail();
   nodeCtx.value = undefined;
 }
 

@@ -473,7 +473,7 @@
               <span class="map-detail-title" :title="selected.title">{{ selected.title }}</span>
               <span class="micro-label">{{ selected.kindLabel }}</span>
             </div>
-            <button class="ap-close" @click="selected = undefined">✕</button>
+            <DetailExpandControls @expand="mapDetailExpanded = true" @close="closeMapDetail" />
           </div>
           <div v-if="selected.blurb" class="map-detail-blurb">{{ selected.blurb }}</div>
           <div class="run-kv mono">
@@ -493,6 +493,39 @@
             </button>
           </div>
         </aside>
+
+        <DetailExpandModal
+          :open="!!selected && mapDetailExpanded"
+          :label="selected?.title ?? 'Details'"
+          @close="mapDetailExpanded = false"
+        >
+          <template v-if="selected">
+            <div class="map-detail-head">
+              <div class="map-detail-titles">
+                <span class="map-detail-title" :title="selected.title">{{ selected.title }}</span>
+                <span class="micro-label">{{ selected.kindLabel }}</span>
+              </div>
+              <DetailExpandControls hide-expand @close="mapDetailExpanded = false" />
+            </div>
+            <div v-if="selected.blurb" class="map-detail-blurb">{{ selected.blurb }}</div>
+            <div class="run-kv mono">
+              <template v-for="(row, i) in selected.rows" :key="i">
+                <span class="run-key">{{ row.k }}</span>
+                <span class="run-val" :class="{ dim: row.dim }" :title="row.title ?? row.v">{{ row.v }}</span>
+              </template>
+            </div>
+            <div v-if="selected.actions?.length" class="map-detail-actions">
+              <button
+                v-for="(a, i) in selected.actions"
+                :key="i"
+                class="vsc-btn"
+                @click="a.run()"
+              >
+                {{ a.label }}
+              </button>
+            </div>
+          </template>
+        </DetailExpandModal>
       </div>
     <StatusBar />
     </div>
@@ -562,6 +595,8 @@ import { useFilterChipMenu } from "@/lib/useFilterChipMenu";
 import FilterChipMenu from "@/components/FilterChipMenu.vue";
 import ProviderFilterChips from "@/components/ProviderFilterChips.vue";
 import GraphLoadingOverlay from "@/components/GraphLoadingOverlay.vue";
+import DetailExpandControls from "@/panels/DetailExpandControls.vue";
+import DetailExpandModal from "@/panels/DetailExpandModal.vue";
 import "@/views/dashboard/chrome.css";
 
 import "@vue-flow/core/dist/style.css";
@@ -714,6 +749,20 @@ const doc = ref<AtlasDocument>();
 const loading = ref(false);
 const error = ref<string>();
 const selected = ref<DetailSel>();
+const mapDetailExpanded = ref(false);
+
+function closeMapDetail(): void {
+  selected.value = undefined;
+  mapDetailExpanded.value = false;
+}
+
+watch(
+  () => selected.value?.id,
+  () => {
+    mapDetailExpanded.value = false;
+  },
+);
+
 /** Which hubs are open — plain object so Vue tracks each key */
 const expanded = ref<Partial<Record<AtlasHubId, boolean>>>({});
 const query = ref("");
@@ -1539,7 +1588,7 @@ function fitNode(id: string): void {
 }
 
 function onPaneClick(): void {
-  selected.value = undefined;
+  closeMapDetail();
   nodeCtx.value = undefined;
   projectRowCtxDir.value = undefined;
 }
@@ -2180,7 +2229,7 @@ async function load(): Promise<void> {
   loading.value = true;
   error.value = undefined;
   doc.value = undefined;
-  selected.value = undefined;
+  closeMapDetail();
   try {
     const res = await fetch(`/api/atlas?dir=${encodeURIComponent(projectDir)}`);
     if (!res.ok) {
@@ -2210,7 +2259,7 @@ watch(dir, (next, prev) => {
   if (next !== prev) {
     // New project — clear so load() can restore that dir's open set / expand-all
     expanded.value = {};
-    selected.value = undefined;
+    closeMapDetail();
     query.value = "";
     if (projectPopOpen.value) closeProjectPop();
   }
