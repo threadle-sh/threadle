@@ -28,7 +28,7 @@ jobs:
         run: node scripts/update-models-pricing.mjs
 
       - name: Open PR if changed
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           commit-message: "chore: refresh bundled models.dev prices"
           title: "chore: refresh bundled models.dev prices"
