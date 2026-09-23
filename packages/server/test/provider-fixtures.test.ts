@@ -98,6 +98,27 @@ describe("provider golden fixtures", () => {
       delete process.env.OPENCODE_DATA_DIR;
     });
 
+    it("accumulates step-finish tokens from JSON stream lines", async () => {
+      const { findOpencodeUsageInJsonl } = await import(
+        "../src/providers/opencode/inject.js"
+      );
+      const stream = [
+        JSON.stringify({ type: "text", part: { type: "text", text: "hi" } }),
+        JSON.stringify({
+          type: "step-finish",
+          tokens: { input: 10, output: 5 },
+        }),
+        JSON.stringify({
+          type: "step-finish",
+          tokens: { input: 3, output: 1 },
+        }),
+      ].join("\n");
+      expect(findOpencodeUsageInJsonl(stream)).toEqual({
+        inputTokens: 13,
+        outputTokens: 6,
+      });
+    });
+
     it("reads known part types and skips unknown from fixture schema", async () => {
       tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "threadle-oc-fix-"));
       process.env.OPENCODE_DATA_DIR = tmpDir;

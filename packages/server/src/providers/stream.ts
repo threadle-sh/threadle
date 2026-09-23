@@ -1,7 +1,7 @@
 import readline from "node:readline";
 import type { Readable } from "node:stream";
 
-export type LogLane = "text" | "thinking" | "tool" | "raw";
+export type LogLane = "text" | "thinking" | "tool" | "raw" | "meta";
 export type LogSink = (lane: LogLane, line: string) => void;
 
 /** Attach a per-line parser to a child stdout stream; parse errors are ignored. */

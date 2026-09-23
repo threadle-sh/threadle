@@ -1,6 +1,11 @@
 import { execa } from "execa";
 import type { ContextPayload, InjectResult, InjectTarget } from "@threadle/shared";
 import { enrichUsageExhaustionError } from "@threadle/shared";
+import { formatDuration } from "../run-metrics.js";
+import {
+  estimateTokenBaseline,
+  formatBaselineSuffix,
+} from "@threadle/shared";
 import { forEachLine, toolSummary, type LogLane, type LogSink } from "../stream.js";
 import { positionalSafe } from "../argv-safe.js";
 import { agentBin } from "./agent-bin.js";
@@ -26,6 +31,7 @@ interface CursorJsonResult {
   is_error?: boolean;
   result?: string;
   session_id?: string;
+  duration_ms?: number;
   usage?: {
     inputTokens?: number;
     outputTokens?: number;
@@ -186,11 +192,35 @@ function cursorEventToLogs(line: string): Array<[LogLane, string]> {
   return out;
 }
 
+function cursorResultMeta(
+  evt: CursorJsonResult,
+  opts?: { prompt?: string; ignoreLocalMarkdown?: boolean },
+): string {
+  const parts: string[] = [];
+  if (typeof evt.duration_ms === "number") parts.push(formatDuration(evt.duration_ms));
+  const u = evt.usage;
+  if (u) {
+    const inTok = u.inputTokens ?? 0;
+    const outTok = u.outputTokens ?? 0;
+    if (inTok || outTok) parts.push(`${inTok}→${outTok} tok`);
+    if (opts?.prompt && inTok) {
+      const b = estimateTokenBaseline(inTok, opts.prompt, {
+        ignoreLocalMarkdown: opts.ignoreLocalMarkdown,
+      });
+      const suf = b ? formatBaselineSuffix(b) : "";
+      if (suf) parts.push(suf);
+    }
+  }
+  if (evt.subtype) parts.push(evt.subtype);
+  return parts.length ? `■ ${parts.join(" · ")}` : "■ done";
+}
+
 async function runAgentStreaming(
   args: string[],
   cwd: string,
   onLog: LogSink,
   signal?: AbortSignal,
+  metaOpts?: { prompt?: string; ignoreLocalMarkdown?: boolean },
 ): Promise<{
   sessionId?: string;
   resultText?: string;
@@ -199,7 +229,7 @@ async function runAgentStreaming(
   usage?: CursorJsonResult["usage"];
 }> {
   const child = execa(
-    "agent",
+    agentBin(),
     [...args, "--output-format", "stream-json"],
     {
       cwd,
@@ -216,7 +246,10 @@ async function runAgentStreaming(
     try {
       const evt = JSON.parse(line) as CursorJsonResult & { session_id?: string };
       if (typeof evt.session_id === "string") sessionId = evt.session_id;
-      if (evt.type === "result") result = evt;
+      if (evt.type === "result") {
+        result = evt;
+        onLog("meta", cursorResultMeta(evt, metaOpts));
+      }
       for (const [lane, text] of cursorEventToLogs(line)) onLog(lane, text);
     } catch {
       // ignore
@@ -325,6 +358,8 @@ export interface RunCursorAgentOptions {
   prompt: string;
   projectDir: string;
   sessionId?: string;
+  /** Caller should pass an empty bare workspace (no AGENTS.md / .cursor/rules). */
+  ignoreLocalMarkdown?: boolean;
   onLog?: LogSink;
   signal?: AbortSignal;
 }
@@ -332,6 +367,9 @@ export interface RunCursorAgentOptions {
 export async function runCursorAgent(
   opts: RunCursorAgentOptions,
 ): Promise<InjectResult> {
+  if (opts.onLog && opts.ignoreLocalMarkdown) {
+    opts.onLog("meta", "ignore local md · bare workspace (no AGENTS.md / rules)");
+  }
   const chatId = opts.sessionId ?? (await createChatId());
   const args = baseArgs({
     sessionId: chatId,
@@ -342,7 +380,10 @@ export async function runCursorAgent(
   applyAgentMode(args, opts.agent);
 
   const result = opts.onLog
-    ? await runAgentStreaming(args, opts.projectDir, opts.onLog, opts.signal)
+    ? await runAgentStreaming(args, opts.projectDir, opts.onLog, opts.signal, {
+        prompt: opts.prompt,
+        ignoreLocalMarkdown: opts.ignoreLocalMarkdown,
+      })
     : await runAgentJson(args, opts.projectDir);
 
   if (result.isError) {
@@ -357,6 +398,12 @@ export async function runCursorAgent(
     newSessionId,
     provider: "cursor",
     resultText: result.resultText,
+    usage: result.usage
+      ? {
+          inputTokens: result.usage.inputTokens,
+          outputTokens: result.usage.outputTokens,
+        }
+      : undefined,
   };
 }
 

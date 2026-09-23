@@ -147,4 +147,19 @@ describe("copilot provider", () => {
     expect(sess?.tokensReasoning).toBe(10);
     expect(sess?.model).toBe("gpt-5");
   });
+
+  it("parses --usage-output-file JSON shapes", async () => {
+    const { parseCopilotUsageFile } = await import("../src/providers/copilot/usage.js");
+    expect(
+      parseCopilotUsageFile(
+        JSON.stringify({ input_tokens: 10, output_tokens: 2 }),
+      ),
+    ).toEqual({ inputTokens: 10, outputTokens: 2 });
+    expect(
+      parseCopilotUsageFile(
+        JSON.stringify({ usage: { inputTokens: 7, outputTokens: 1 } }),
+      ),
+    ).toEqual({ inputTokens: 7, outputTokens: 1 });
+    expect(parseCopilotUsageFile("{}")).toBeUndefined();
+  });
 });

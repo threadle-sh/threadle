@@ -13,11 +13,18 @@
 import { computed } from "vue";
 import type { SessionStatus } from "@threadle/shared";
 
-const props = defineProps<{ status?: SessionStatus }>();
+const props = defineProps<{
+  status?: SessionStatus;
+  /** Live deriveRunPhase label when a threadle job owns this session */
+  phase?: string;
+}>();
 
 const label = computed(() => {
   if (props.status === "waiting") return "needs input";
-  if (props.status === "running") return "running";
+  if (props.status === "running") {
+    const p = props.phase?.trim();
+    return p || "running";
+  }
   return "";
 });
 
@@ -25,7 +32,12 @@ const title = computed(() => {
   if (props.status === "waiting") {
     return "Session is waiting for you — permission, approval, or other input";
   }
-  if (props.status === "running") return "Agent is actively working in this session";
+  if (props.status === "running") {
+    const p = props.phase?.trim();
+    return p
+      ? `Agent phase: ${p}`
+      : "Agent is actively working in this session";
+  }
   return "";
 });
 </script>

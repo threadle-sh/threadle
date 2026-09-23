@@ -44,6 +44,13 @@ export function summarizeGraphExecution(g: Graph): ManifestItem[] {
         pushFlag(flags, "sandbox", d.sandbox);
         pushFlag(flags, "approval", d.askForApproval);
         pushFlag(flags, "model", d.model);
+        if (d.ref.provider === "muse" || d.ref.provider === "claude-code" || d.ref.provider === "grok" || d.ref.provider === "antigravity") {
+          const he = d.harnessExtras ?? d.museReminders;
+          if (he !== undefined) {
+            flags.push(he ? "extras: on" : "extras: off");
+          }
+        }
+        if (d.ignoreLocalMarkdown) flags.push("ignore local md");
         out.push({
           ...base,
           label: d.label || d.ref.name,

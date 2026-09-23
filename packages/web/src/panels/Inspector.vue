@@ -10,7 +10,15 @@
       <div class="ins-title-wrap">
         <div class="ins-title" :title="title">{{ title }}</div>
         <div class="ins-sub">
-          <SessionLivePill v-if="sessionRef" :status="inspectorLiveStatus" />
+          <SessionLivePill
+            v-if="sessionRef"
+            :status="inspectorLiveStatus"
+            :phase="
+              sessionRef
+                ? phaseForSession(sessionRef.provider, sessionRef.sessionId)
+                : undefined
+            "
+          />
           <span>{{ subtitle }}</span>
         </div>
       </div>
@@ -197,6 +205,7 @@ import SessionInfoPanel from "./SessionInfoPanel.vue";
 import SessionLivePill from "./SessionLivePill.vue";
 import { api } from "@/api/client";
 import { bidiPath, shortId } from "@/lib/format";
+import { useJobPhases } from "@/lib/useJobPhases";
 import { useSettingsStore } from "@/stores/settings";
 import { useSessionsStore } from "@/stores/sessions";
 import { useFileViewersStore, isLikelyTextPath } from "@/stores/fileViewers";
@@ -223,6 +232,7 @@ const props = defineProps<{
 const settings = useSettingsStore();
 const fileViewers = useFileViewersStore();
 const sessions = useSessionsStore();
+const { phaseForSession } = useJobPhases();
 
 const inspectorLiveStatus = computed(() => {
   const ref_ = props.sessionRef;

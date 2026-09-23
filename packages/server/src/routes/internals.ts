@@ -54,6 +54,14 @@ const ITEMS: ItemSpec[] = [
     clearable: false,
   },
   {
+    id: "pilot-sessions",
+    label: "Test pilot sessions",
+    rel: "pilot-sessions.json",
+    kind: "file",
+    description: "Session ids spawned by Settings → test pilot (show/hide in Sessions).",
+    clearable: false,
+  },
+  {
     id: "payloads", label: "Context payloads", rel: "payloads", kind: "dir",
     description: "Extracted summaries, transcript excerpts and their tags (content-addressed).",
     clearable: true, danger: true,
