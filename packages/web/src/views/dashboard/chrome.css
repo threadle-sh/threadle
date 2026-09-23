@@ -250,6 +250,12 @@
 .cols-inst .stat-cols,
 .cols-inst .stat-row {
   grid-template-columns: var(--cols);
+  /* Keep fixed columns visible when the detail aside squeezes the table */
+  min-width: max(100%, 520px);
+}
+
+.cols-inst.stat-table {
+  overflow-x: auto;
 }
 
 .cols-inst .stat-cols > span:nth-child(-n + 3) {
@@ -264,8 +270,8 @@
 .run-row.picked,
 .sess-row.picked,
 .stat-row.picked {
-  background: var(--panel-bg-raised);
-  box-shadow: none;
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  box-shadow: inset 2px 0 0 var(--border-strong);
 }
 
 .cols-inst .stat-val.inst-proj {

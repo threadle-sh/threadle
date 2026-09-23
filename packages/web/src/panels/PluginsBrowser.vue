@@ -124,6 +124,10 @@ const filtered = computed(() => {
   });
 });
 
+function childCount(e: PluginEntry, kind: PluginChildKind): number {
+  return e.children.filter((c) => c.kind === kind).length;
+}
+
 interface ProvGroup {
   provider: string;
   entries: PluginEntry[];
@@ -284,12 +288,15 @@ const loading = computed(() => items.value === undefined);
           </div>
           <div
             class="stat-table cols-plug"
-            v-col-resize="'plug-v1'"
-            data-cols="minmax(0,1fr) 72px 88px 120px 48px"
+            v-col-resize="'plug-v2'"
+            data-cols="minmax(0,1fr) 72px 88px 120px 56px 56px 64px"
           >
             <div class="stat-cols micro-label">
               <span>name</span><span>ver</span><span>state</span
-              ><span>origin</span><span class="num">kids</span>
+              ><span>origin</span
+              ><span class="num">commands</span
+              ><span class="num">agents</span
+              ><span class="num">children</span>
             </div>
             <button
               v-for="e in g.entries"
@@ -306,6 +313,8 @@ const loading = computed(() => items.value === undefined);
               <span class="mono dim ellip" :title="e.origin.marketplaceId || e.origin.kind">{{
                 e.origin.marketplaceId || e.origin.kind
               }}</span>
+              <span class="num mono">{{ childCount(e, "command") }}</span>
+              <span class="num mono">{{ childCount(e, "agent") }}</span>
               <span class="num mono">{{ e.children.length }}</span>
             </button>
           </div>
