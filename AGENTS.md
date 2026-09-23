@@ -1,7 +1,7 @@
 # threadle — agent instructions
 
 threadle is a local-first node-graph patchbay for CLI agent sessions (Claude Code,
-opencode, Cursor Agent, Antigravity, Codex, GitHub Copilot, Grok Build): observability (blueprints, activity, statistics) plus context
+opencode, Cursor Agent, Antigravity, Codex, GitHub Copilot, Grok Build, Muse Code): observability (blueprints, activity, statistics) plus context
 wiring/handoff between sessions on a canvas.
 
 ## Vocabulary (UI + docs)
@@ -34,7 +34,7 @@ Plain terms lead. Graph JSON keeps historical type ids for compatibility.
   and the built-in `NodeDefinition` catalog (`src/nodes/`). Single source of
   truth; UI and server both import it.
 - `packages/server` — Hono API (`bin: threadle`). Providers under
-  `src/providers/{claude-code,opencode,cursor,antigravity,codex,copilot,grok}` read agent storage **read-only**;
+  `src/providers/{claude-code,opencode,cursor,antigravity,codex,copilot,grok,muse}` read agent storage **read-only**;
   all runs/injections go through each tool's CLI or HTTP surface.
 - `packages/web` — Vue 3 + Vue Flow. True-black monochrome theme
   (`src/theme/theme.css`); no emojis, text glyphs only (❯ ⎇ ⟨/⟩ ▤ ⚙ ✦).
@@ -49,7 +49,7 @@ Plain terms lead. Graph JSON keeps historical type ids for compatibility.
   custom nodes / stdlib / recipes. Shared pure helpers live in
   `packages/shared` (`judge`, `until`, `wait-idle`, `iterator`, …).
 - Never write into `~/.claude/projects`, opencode's SQLite, `~/.cursor`
-  chats/transcripts, `~/.gemini/antigravity-cli`, `~/.codex`, `~/.copilot`, or `~/.grok`; parsers must skip unknown
+  chats/transcripts, `~/.gemini/antigravity-cli`, `~/.codex`, `~/.copilot`, `~/.grok`, `~/.muse`, or `~/.local/share/muse`; parsers must skip unknown
   record types, not throw (formats are undocumented and churn).
 - All list/table UIs: mono micro-labels, right-aligned numeric columns,
   `minmax(0, 1fr)` name columns, values ellipsize instead of wrapping.

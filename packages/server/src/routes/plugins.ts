@@ -6,6 +6,7 @@ import { codexHome } from "../providers/codex/paths.js";
 import { copilotHome } from "../providers/copilot/paths.js";
 import { cursorHome } from "../providers/cursor/paths.js";
 import { grokHome } from "../providers/grok/paths.js";
+import { pluginsRoot as musePluginsRoot } from "../providers/muse/paths.js";
 import { pathContained } from "../path-safe.js";
 
 export type PluginProvider =
@@ -13,7 +14,8 @@ export type PluginProvider =
   | "codex"
   | "copilot"
   | "grok"
-  | "cursor";
+  | "cursor"
+  | "muse";
 
 export type PluginOriginKind =
   | "marketplace-catalog"
@@ -518,6 +520,39 @@ export async function listCursorPlugins(): Promise<PluginEntry[]> {
   return out;
 }
 
+/** Muse plugin cache under ~/.local/share/muse/plugins (read-only). */
+export async function listMusePlugins(): Promise<PluginEntry[]> {
+  const roots = [
+    path.join(musePluginsRoot(), "cache", "builtin"),
+    path.join(musePluginsRoot(), "installed"),
+  ];
+  const out: PluginEntry[] = [];
+  for (const root of roots) {
+    let entries: fs.Dirent[];
+    try {
+      entries = await fs.promises.readdir(root, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const e of entries) {
+      if (!e.isDirectory() || e.name.startsWith(".")) continue;
+      const pluginRoot = path.join(root, e.name);
+      out.push({
+        provider: "muse",
+        id: e.name,
+        name: e.name,
+        origin: {
+          kind: root.includes("cache") ? "cache" : "installed-tree",
+          path: pluginRoot,
+        },
+        state: root.includes("cache") ? "cached" : "installed",
+        children: await listPluginChildren(pluginRoot),
+      });
+    }
+  }
+  return out;
+}
+
 export async function listAllPlugins(
   providerFilter?: string,
 ): Promise<PluginEntry[]> {
@@ -530,6 +565,7 @@ export async function listAllPlugins(
   if (!want || want === "copilot") tasks.push(listCopilotPlugins());
   if (!want || want === "grok") tasks.push(listGrokPlugins());
   if (!want || want === "cursor") tasks.push(listCursorPlugins());
+  if (!want || want === "muse") tasks.push(listMusePlugins());
 
   const chunks = await Promise.all(tasks);
   const out = chunks.flat();

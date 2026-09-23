@@ -5,7 +5,8 @@ export type ProviderId =
   | "antigravity"
   | "codex"
   | "copilot"
-  | "grok";
+  | "grok"
+  | "muse";
 
 export type SessionStatus = "idle" | "live" | "running" | "waiting" | "unknown";
 export type SessionKind = "session" | "subagent-run";

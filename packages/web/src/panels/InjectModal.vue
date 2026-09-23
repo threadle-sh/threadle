@@ -165,6 +165,20 @@ const modes = computed<ModeOption[]>(() => {
       },
     ];
   }
+  if (props.provider === "muse") {
+    return [
+      {
+        value: "continue",
+        label: "Continue session with context",
+        hint: "Sends context + kickoff via `muse exec --session-id`; the session replies.",
+      },
+      {
+        value: "new-session",
+        label: "New session in project dir",
+        hint: "Starts a fresh Muse Code exec session seeded with the context.",
+      },
+    ];
+  }
   return [
     {
       value: "synthetic",

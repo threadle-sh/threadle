@@ -692,7 +692,11 @@ const rows = computed<Array<[string, string]>>(() => {
       0,
       ["token source", "estimate (chars/4)"],
     );
-  } else if (tokenSource === "cli" || tokenSource === "turn_ended") {
+  } else if (
+    tokenSource === "cli" ||
+    tokenSource === "turn_ended" ||
+    tokenSource === "transcript"
+  ) {
     out.splice(
       out.findIndex(([k]) => k === "tokens out") + 1,
       0,
@@ -770,6 +774,7 @@ const resumeCmd = computed(() => {
   if (r.provider === "codex") return `${cd}codex exec resume ${r.id}`;
   if (r.provider === "copilot") return `${cd}copilot --resume ${r.id}`;
   if (r.provider === "grok") return `${cd}grok --resume ${r.id}`;
+  if (r.provider === "muse") return `${cd}muse resume ${r.id}`;
   return `${cd}claude --resume ${r.id}`;
 });
 

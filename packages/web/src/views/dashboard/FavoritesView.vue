@@ -185,6 +185,7 @@ function inferProviderFromPath(raw: string): string | undefined {
   if (p.includes("/.codex/") || p.includes("/codex/")) return "codex";
   if (p.includes("/copilot")) return "copilot";
   if (p.includes("/.grok/") || p.includes("/grok/")) return "grok";
+  if (p.includes("/.muse/") || p.includes("/.local/share/muse/")) return "muse";
   return undefined;
 }
 

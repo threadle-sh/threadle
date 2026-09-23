@@ -219,7 +219,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import type { GraphSummary, SessionRef } from "@threadle/shared";
+import type { GraphSummary, ProviderId, SessionRef } from "@threadle/shared";
 import { api, subscribeEvents } from "@/api/client";
 import { relativeTime, shortId, fmtTokens, isTokenEstimate } from "@/lib/format";
 import { useSessionsStore } from "@/stores/sessions";
@@ -238,7 +238,7 @@ interface RunRecord {
   finishedAt?: number;
   result?: {
     inject?: {
-      provider: "claude-code" | "opencode" | "cursor" | "antigravity" | "codex" | "copilot" | "grok";
+      provider: ProviderId;
       newSessionId: string;
     };
   };

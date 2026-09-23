@@ -8004,7 +8004,7 @@ async function runGraph(scope?: Set<string>): Promise<void> {
             pushLog("run", "raw", `⋈ merge synthesize via ${node.data.provider}`);
             const { jobId } = await api.runAgent({
               provider: node.data.provider,
-              agent: node.data.agent || (node.data.provider === "cursor" || node.data.provider === "antigravity" ? "agent" : node.data.provider === "codex" ? "codex" : node.data.provider === "copilot" ? "copilot" : node.data.provider === "grok" ? "grok" : "build"),
+              agent: node.data.agent || (node.data.provider === "cursor" || node.data.provider === "antigravity" ? "agent" : node.data.provider === "codex" ? "codex" : node.data.provider === "copilot" ? "copilot" : node.data.provider === "grok" ? "grok" : node.data.provider === "muse" ? "muse" : "build"),
               model: node.data.model,
               prompt: text,
               graphId: g.id,

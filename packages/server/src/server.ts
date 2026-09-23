@@ -32,6 +32,7 @@ import { memoryRoutes } from "./routes/memory.js";
 import { pluginRoutes } from "./routes/plugins.js";
 import { gcTmpFiles } from "./gc.js";
 import { appLog, captureConsole, compactJobHistory } from "./jobs.js";
+import { museShare } from "./providers/muse/paths.js";
 
 export interface AppOptions {
   projectDir: string;
@@ -390,6 +391,10 @@ async function storageInfo(providerId: string): Promise<StorageInfo | undefined>
       const p = process.env.GROK_HOME?.trim()
         ? path.resolve(process.env.GROK_HOME.trim())
         : path.join(os.homedir(), ".grok");
+      const s = await dirSize(p);
+      value = { path: p, ...s };
+    } else if (providerId === "muse") {
+      const p = museShare();
       const s = await dirSize(p);
       value = { path: p, ...s };
     }

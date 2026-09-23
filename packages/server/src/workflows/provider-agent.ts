@@ -5,6 +5,7 @@ import { runAntigravityAgent } from "../providers/antigravity/inject.js";
 import { runCodexAgent } from "../providers/codex/inject.js";
 import { runCopilotAgent } from "../providers/copilot/inject.js";
 import { runGrokAgent } from "../providers/grok/inject.js";
+import { runMuseAgent } from "../providers/muse/inject.js";
 import { runOpencodeAgent } from "../providers/opencode/inject.js";
 import type { LogSink } from "../providers/stream.js";
 
@@ -39,6 +40,8 @@ export async function runProviderAgent(opts: ProviderAgentOpts): Promise<InjectR
       return runCopilotAgent(common);
     case "grok":
       return runGrokAgent(common);
+    case "muse":
+      return runMuseAgent(common);
     case "claude-code":
     default:
       return runClaudeAgent(common);

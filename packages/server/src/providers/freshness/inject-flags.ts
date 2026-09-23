@@ -7,7 +7,7 @@
 export interface InjectFlagProbe {
   id: string;
   /** How to resolve the binary (PATH name or absolute). */
-  bin: "claude" | "opencode" | "cursor-agent" | "agy" | "codex" | "copilot" | "grok";
+  bin: "claude" | "opencode" | "cursor-agent" | "agy" | "codex" | "copilot" | "grok" | "muse";
   /**
    * Substrings that count as present (any match). Use several when help uses
    * bracket notation (`--foo[-bar]`) or aliases.
@@ -144,5 +144,39 @@ export const INJECT_FLAG_PROBES: InjectFlagProbe[] = [
     bin: "grok",
     match: ["--session-id", "-s"],
     why: "pin new session UUID",
+  },
+  {
+    id: "muse:exec",
+    bin: "muse",
+    match: ["exec"],
+    why: "muse exec headless inject",
+  },
+  {
+    id: "muse:json",
+    bin: "muse",
+    match: ["--json"],
+    why: "jsonl event stream",
+    helpArgs: ["exec", "--help"],
+  },
+  {
+    id: "muse:prompt-file",
+    bin: "muse",
+    match: ["--prompt-file"],
+    why: "context file inject",
+    helpArgs: ["exec", "--help"],
+  },
+  {
+    id: "muse:approval-mode",
+    bin: "muse",
+    match: ["--approval-mode"],
+    why: "non-interactive approval never",
+    helpArgs: ["exec", "--help"],
+  },
+  {
+    id: "muse:session-id",
+    bin: "muse",
+    match: ["--session-id"],
+    why: "continue / pin session UUID",
+    helpArgs: ["exec", "--help"],
   },
 ];

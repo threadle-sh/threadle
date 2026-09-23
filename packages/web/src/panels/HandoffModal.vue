@@ -25,13 +25,9 @@
           <span class="field-label">target agent</span>
           <div class="ho-row">
             <select v-model="targetProvider" class="threadle-input ho-prov">
-              <option value="claude-code">claude</option>
-              <option value="opencode">opencode</option>
-              <option value="cursor">cursor</option>
-              <option value="antigravity">antigravity</option>
-              <option value="codex">codex</option>
-              <option value="copilot">copilot</option>
-              <option value="grok">grok</option>
+              <option v-for="id in PROVIDER_IDS" :key="id" :value="id">
+                {{ providerShort(id) }}
+              </option>
             </select>
             <select v-model="agent" class="threadle-input">
               <option v-for="a in targetAgents" :key="a.name" :value="a.name">{{ a.name }}</option>
@@ -100,7 +96,7 @@ import { useRouter } from "vue-router";
 import type { AgentDef, ModelInfo, ProviderId } from "@threadle/shared";
 import { defaultConfigFor } from "@threadle/shared";
 import { api } from "@/api/client";
-import { defaultHandoffTarget } from "@/lib/providers";
+import { defaultHandoffTarget, PROVIDER_IDS, providerShort } from "@/lib/providers";
 
 const props = defineProps<{
   source: { provider: string; sessionId: string; title?: string; projectDir?: string };
@@ -158,7 +154,9 @@ function pickDefaultAgent(): void {
               ? "copilot"
               : targetProvider.value === "grok"
                 ? "grok"
-                : "general-purpose"),
+                : targetProvider.value === "muse"
+                  ? "muse"
+                  : "general-purpose"),
     )?.name ??
     list[0]?.name ??
     "";

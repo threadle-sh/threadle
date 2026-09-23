@@ -55,6 +55,7 @@ import { runAntigravityAgent } from "../providers/antigravity/inject.js";
 import { runCodexAgent } from "../providers/codex/inject.js";
 import { runCopilotAgent } from "../providers/copilot/inject.js";
 import { runGrokAgent } from "../providers/grok/inject.js";
+import { runMuseAgent } from "../providers/muse/inject.js";
 import { runOpencodeAgent } from "../providers/opencode/inject.js";
 import { getCustomDef, runCustomDef, LEGACY_PORT } from "../routes/custom-nodes.js";
 import { callMcpTool } from "../mcp/client.js";
@@ -756,6 +757,15 @@ export async function executeWorkflow(opts: ExecuteOptions): Promise<{
                 onLog,
                 signal: opts.signal,
               });
+            } else if (provider === "muse") {
+              result = await runMuseAgent({
+                agent: node.data.agent || "muse",
+                model: node.data.model,
+                prompt,
+                projectDir: opts.projectDir,
+                onLog,
+                signal: opts.signal,
+              });
             } else {
               result = await runClaudeAgent({
                 agent: node.data.agent,
@@ -1226,6 +1236,16 @@ export async function executeWorkflow(opts: ExecuteOptions): Promise<{
                 onLog,
                 signal: opts.signal,
               });
+            } else if (provider === "muse") {
+              result = await runMuseAgent({
+                agent: data.ref.name,
+                model: data.model,
+                prompt,
+                projectDir,
+                sessionId,
+                onLog,
+                signal: opts.signal,
+              });
             } else {
               const defs = await registry.get("claude-code").listAgents({ projectDir });
               const def = defs.find((a) => a.name === data.ref.name);
@@ -1320,7 +1340,9 @@ export async function executeWorkflow(opts: ExecuteOptions): Promise<{
                       ? await runCopilotAgent(sessionArgs)
                       : ref.provider === "grok"
                         ? await runGrokAgent(sessionArgs)
-                        : await runClaudeAgent(sessionArgs);
+                        : ref.provider === "muse"
+                          ? await runMuseAgent(sessionArgs)
+                          : await runClaudeAgent(sessionArgs);
           outputs.set(node.id, {
             text: result.resultText ?? (await lastAssistantText(result.provider, result.newSessionId)),
             session: { provider: result.provider, sessionId: result.newSessionId },

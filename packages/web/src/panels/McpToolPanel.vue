@@ -191,6 +191,7 @@ function shortSource(source: string): string {
   if (source.endsWith("mcp_config.json")) return "antigravity";
   if (source.endsWith("mcp-config.json") || source.includes(".copilot")) return "copilot";
   if (source.includes(".grok")) return "grok";
+  if (source.includes(".muse")) return "muse";
   if (source.endsWith("config.toml")) return "codex";
   if (source.includes("opencode")) return "opencode";
   if (source.endsWith(".claude.json")) return "claude";

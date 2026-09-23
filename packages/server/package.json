@@ -1,6 +1,6 @@
 {
   "name": "threadle",
-  "version": "1.0.11",
+  "version": "1.1.0",
   "description": "Local-first node-graph patchbay for Claude Code, opencode, Cursor Agent, Antigravity, Codex, Copilot, and Grok Build sessions.",
   "type": "module",
   "license": "MIT",

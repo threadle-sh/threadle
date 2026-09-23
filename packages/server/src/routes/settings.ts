@@ -52,7 +52,7 @@ export interface ThreadleSettings {
   appearance?: "system" | "light" | "dark";
   /**
    * Optional provider accent overrides (`#rrggbb`). Omitted keys keep theme defaults.
-   * Known ids: claude-code, opencode, cursor, antigravity, codex, copilot, grok.
+   * Known ids: antigravity, claude-code, codex, copilot, cursor, grok, muse, opencode.
    */
   providerColors?: Partial<Record<string, string>>;
   /** When false, canvas MCP client discovery/calls are disabled. Default true. */
@@ -103,13 +103,14 @@ function parsePublishAllowlist(v: unknown): string[] | null {
 }
 
 const PROVIDER_COLOR_IDS = [
-  "claude-code",
-  "opencode",
-  "cursor",
   "antigravity",
+  "claude-code",
   "codex",
   "copilot",
+  "cursor",
   "grok",
+  "muse",
+  "opencode",
 ] as const;
 
 const HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;

@@ -310,7 +310,7 @@ function skillBucketLabel(
   return {
     key: "global",
     label: "global (agent homes)",
-    hint: "~/.claude / ~/.cursor / ~/.agents / opencode / antigravity / codex / copilot / grok",
+    hint: "~/.claude / ~/.cursor / ~/.agents / opencode / antigravity / codex / copilot / grok / muse",
     order: 40,
   };
 }
