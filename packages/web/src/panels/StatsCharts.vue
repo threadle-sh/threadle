@@ -128,7 +128,7 @@ const props = defineProps<{ sessions: SessionRef[] }>();
 type Counts = Record<ProviderId, number>;
 
 function emptyCounts(): Counts {
-  return { "claude-code": 0, opencode: 0, cursor: 0, antigravity: 0, codex: 0, copilot: 0, grok: 0 };
+  return Object.fromEntries(PROVIDER_IDS.map((id) => [id, 0])) as Counts;
 }
 
 function pct(v: number, max: number): string {

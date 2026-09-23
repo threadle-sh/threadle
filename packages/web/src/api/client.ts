@@ -18,6 +18,7 @@ import type {
   WorkflowFolderIndex,
   FavoriteCreate,
   FavoriteEntry,
+  ProviderId,
 } from "@threadle/shared";
 
 async function http<T>(path: string, init?: RequestInit): Promise<T> {
@@ -238,19 +239,52 @@ export const api = {
         kind: string;
         label?: string;
         graphId?: string;
+        sessionRef?: { provider: string; sessionId: string };
         status: "running" | "done" | "error" | "cancelled";
         createdAt: number;
         finishedAt?: number;
         error?: string;
+        result?: {
+          inject?: {
+            provider: string;
+            newSessionId: string;
+          };
+        };
       }>
     >("/api/jobs"),
   cancelJob: (id: string) =>
     http<{ ok: boolean }>(`/api/jobs/${id}`, { method: "DELETE" }),
+  jobLogs: (id: string) =>
+    http<{ lines: Array<{ ts: number; lane: string; line: string }> }>(
+      `/api/jobs/${encodeURIComponent(id)}/logs`,
+    ),
   runAgent: (req: RunAgentRequest) =>
     http<{ jobId: string }>("/api/run/agent", {
       method: "POST",
       body: JSON.stringify(req),
     }),
+  pilotPlan: (extraTests = false) =>
+    http<{
+      prompt: string;
+      extraTests: boolean;
+      harnessExtras: false;
+      extraCaseCount: number;
+      cases: Array<{
+        id: string;
+        provider: ProviderId;
+        variant: string;
+        agent: string;
+        model?: string;
+        permissionMode?: string;
+        sandbox?: string;
+        askForApproval?: string;
+        harnessExtras?: boolean;
+        extra?: boolean;
+        note?: string;
+        available: boolean;
+        skipReason?: string;
+      }>;
+    }>(`/api/run/pilot${extraTests ? "?extra=1" : ""}`),
   runSession: (req: RunSessionRequest) =>
     http<{ jobId: string }>("/api/run/session", {
       method: "POST",

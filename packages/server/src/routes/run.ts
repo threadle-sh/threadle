@@ -1,14 +1,22 @@
 import { Hono } from "hono";
 import matter from "gray-matter";
-import type { InjectResult, ModelInfo, RunAgentRequest, RunSessionRequest } from "@threadle/shared";
+import type {
+  InjectResult,
+  ModelInfo,
+  RunAgentRequest,
+  RunSessionRequest,
+} from "@threadle/shared";
 import {
   claudeExhaustedForModel,
   enrichUsageExhaustionError,
+  estimateTokenBaseline,
   formatUsageExhaustionMessage,
   isAbsolutePath,
   summarizeGraphExecution,
 } from "@threadle/shared";
 import { isKnownProjectDir } from "../readable-paths.js";
+import { ensureBareWorkspace } from "../providers/bare-workspace.js";
+import { markPilotSession } from "../pilot-sessions/store.js";
 import { bus } from "../events.js";
 import { appendJobLog, appLog, jobs, mergeJobNodeOutput, readAppLogs, readJobLogs, readJobOutputs, findLatestGraphOutputs, type CachedNodeOutput } from "../jobs.js";
 import {
@@ -24,11 +32,17 @@ import {
 import { listCodexModels, runCodexAgent } from "../providers/codex/inject.js";
 import { listCopilotModels, runCopilotAgent } from "../providers/copilot/inject.js";
 import { listGrokModels, runGrokAgent } from "../providers/grok/inject.js";
+import { listMuseModels, runMuseAgent } from "../providers/muse/inject.js";
 import { registry } from "../providers/registry.js";
 import { executeWorkflow } from "../workflows/executor.js";
 import { readGraph } from "../graphs/store.js";
 import { readSubscription } from "./subscription.js";
 import type { LogSink } from "../providers/stream.js";
+import {
+  allPilotCases,
+  PILOT_PROMPT,
+  pilotCasesFor,
+} from "../providers/pilot-defaults.js";
 
 const LOG_LINE_MAX = 2000;
 const KNOWN_PROVIDERS = new Set([
@@ -39,6 +53,7 @@ const KNOWN_PROVIDERS = new Set([
   "codex",
   "copilot",
   "grok",
+  "muse",
 ]);
 
 function logSinkFor(jobId: string): LogSink {
@@ -51,6 +66,30 @@ function logSinkFor(jobId: string): LogSink {
 
 export const runRoutes = new Hono();
 export const modelRoutes = new Hono();
+
+/** Cheap one-shot smoke plan for Settings → test pilot. */
+runRoutes.get("/pilot", async (c) => {
+  const extraTests = c.req.query("extra") === "1" || c.req.query("extra") === "true";
+  const info = await registry.info();
+  const byId = new Map(info.map((p) => [p.id, p]));
+  const cases = pilotCasesFor(extraTests).map((def) => {
+    const available = byId.get(def.provider)?.available === true;
+    return {
+      ...def,
+      available,
+      skipReason: available ? undefined : "CLI not available",
+    };
+  });
+  const extras = allPilotCases().filter((c) => c.extra);
+  return c.json({
+    prompt: PILOT_PROMPT,
+    extraTests,
+    harnessExtras: false as const,
+    cases,
+    /** Catalog of optional cases (for UI copy) even when extraTests is off. */
+    extraCaseCount: extras.length,
+  });
+});
 
 // aliases the claude CLI accepts for --model, plus room for full ids via free text
 const CLAUDE_MODELS = ["sonnet", "opus", "haiku", "claude-fable-5", "claude-opus-5", "claude-sonnet-5"];
@@ -78,6 +117,9 @@ modelRoutes.get("/", async (c) => {
   for (const id of await listGrokModels()) {
     models.push({ provider: "grok", id });
   }
+  for (const id of await listMuseModels()) {
+    models.push({ provider: "muse", id });
+  }
   return c.json(models);
 });
 
@@ -89,12 +131,25 @@ runRoutes.post("/agent", async (c) => {
   if (!KNOWN_PROVIDERS.has(req.provider)) {
     return c.json({ error: `unknown provider: ${String(req.provider)}` }, 400);
   }
-  if (req.projectDir && !(await isKnownProjectDir(req.projectDir))) {
+  if (
+    !req.ignoreLocalMarkdown &&
+    req.projectDir &&
+    !(await isKnownProjectDir(req.projectDir))
+  ) {
     return c.json({ error: `projectDir is not a known project directory: ${req.projectDir}` }, 403);
   }
-  const projectDir = req.projectDir || process.cwd();
+  const projectDir = req.ignoreLocalMarkdown
+    ? await ensureBareWorkspace()
+    : req.projectDir || process.cwd();
 
-  const { jobId, signal } = jobs.create("run-agent", `${req.provider}:${req.agent}`, req.graphId);
+  const { jobId, signal } = jobs.create(
+    "run-agent",
+    `${req.provider}:${req.agent}`,
+    req.graphId,
+    req.sessionId
+      ? { sessionRef: { provider: req.provider, sessionId: req.sessionId } }
+      : undefined,
+  );
   void (async () => {
     try {
       bus.publish({
@@ -104,6 +159,9 @@ runRoutes.post("/agent", async (c) => {
       });
 
       const onLog = logSinkFor(jobId);
+      if (req.ignoreLocalMarkdown) {
+        onLog("meta", `bare workspace · ignore local md (${projectDir})`);
+      }
       if (req.provider === "claude-code") {
         try {
           const sub = await readSubscription();
@@ -135,6 +193,7 @@ runRoutes.post("/agent", async (c) => {
           sessionId: req.sessionId,
           onLog,
           signal,
+          ignoreLocalMarkdown: req.ignoreLocalMarkdown,
         });
       } else if (req.provider === "cursor") {
         result = await runCursorAgent({
@@ -145,6 +204,7 @@ runRoutes.post("/agent", async (c) => {
           sessionId: req.sessionId,
           onLog,
           signal,
+          ignoreLocalMarkdown: req.ignoreLocalMarkdown,
         });
       } else if (req.provider === "antigravity") {
         result = await runAntigravityAgent({
@@ -155,6 +215,8 @@ runRoutes.post("/agent", async (c) => {
           sessionId: req.sessionId,
           onLog,
           signal,
+          harnessExtras: req.harnessExtras ?? req.museReminders,
+          ignoreLocalMarkdown: req.ignoreLocalMarkdown,
         });
       } else if (req.provider === "codex") {
         result = await runCodexAgent({
@@ -167,6 +229,7 @@ runRoutes.post("/agent", async (c) => {
           askForApproval: req.askForApproval,
           onLog,
           signal,
+          ignoreLocalMarkdown: req.ignoreLocalMarkdown,
         });
       } else if (req.provider === "copilot") {
         result = await runCopilotAgent({
@@ -177,6 +240,7 @@ runRoutes.post("/agent", async (c) => {
           sessionId: req.sessionId,
           onLog,
           signal,
+          ignoreLocalMarkdown: req.ignoreLocalMarkdown,
         });
       } else if (req.provider === "grok") {
         result = await runGrokAgent({
@@ -187,6 +251,20 @@ runRoutes.post("/agent", async (c) => {
           sessionId: req.sessionId,
           onLog,
           signal,
+          harnessExtras: req.harnessExtras ?? req.museReminders,
+          ignoreLocalMarkdown: req.ignoreLocalMarkdown,
+        });
+      } else if (req.provider === "muse") {
+        result = await runMuseAgent({
+          agent: req.agent,
+          model: req.model,
+          prompt: req.prompt,
+          projectDir,
+          sessionId: req.sessionId,
+          onLog,
+          signal,
+          harnessExtras: req.harnessExtras ?? req.museReminders,
+          ignoreLocalMarkdown: req.ignoreLocalMarkdown,
         });
       } else {
         // .md-defined agents run with their body as appended system prompt
@@ -204,7 +282,30 @@ runRoutes.post("/agent", async (c) => {
           permissionMode: req.permissionMode,
           onLog,
           signal,
+          harnessExtras: req.harnessExtras ?? req.museReminders,
+          ignoreLocalMarkdown: req.ignoreLocalMarkdown,
         });
+      }
+      if (req.pilot && result.newSessionId) {
+        const inTok = result.usage?.inputTokens;
+        const outTok = result.usage?.outputTokens;
+        const baseline =
+          inTok != null
+            ? estimateTokenBaseline(inTok, req.prompt, {
+                ignoreLocalMarkdown: req.ignoreLocalMarkdown,
+              })
+            : undefined;
+        await markPilotSession({
+          provider: result.provider,
+          sessionId: result.newSessionId,
+          caseId: req.pilotCaseId,
+          tokensIn: inTok,
+          tokensOut: outTok,
+          promptEst: baseline?.promptEst,
+          baselineEst: baseline?.baselineEst,
+          baselineNote: baseline?.baselineNote,
+          ignoreLocalMarkdown: req.ignoreLocalMarkdown,
+        }).catch(() => undefined);
       }
       const done = { type: "job.done", jobId, inject: result } as const;
       jobs.finish(jobId, { status: "done", result: done });
@@ -234,7 +335,12 @@ runRoutes.post("/session", async (c) => {
   }
   const projectDir = req.projectDir || process.cwd();
 
-  const { jobId, signal } = jobs.create("run-session", req.sessionId.slice(0, 16), req.graphId);
+  const { jobId, signal } = jobs.create(
+    "run-session",
+    req.sessionId.slice(0, 16),
+    req.graphId,
+    { sessionRef: { provider: req.provider, sessionId: req.sessionId } },
+  );
   void (async () => {
     try {
       bus.publish({
@@ -265,7 +371,9 @@ runRoutes.post("/session", async (c) => {
                   ? await runCopilotAgent(runArgs)
                   : req.provider === "grok"
                     ? await runGrokAgent(runArgs)
-                    : await runClaudeAgent(runArgs);
+                    : req.provider === "muse"
+                      ? await runMuseAgent(runArgs)
+                      : await runClaudeAgent(runArgs);
       const done = { type: "job.done", jobId, inject: result } as const;
       jobs.finish(jobId, { status: "done", result: done });
       bus.publish(done);

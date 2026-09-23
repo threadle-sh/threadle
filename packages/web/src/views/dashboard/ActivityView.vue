@@ -487,7 +487,7 @@ import { useFileViewersStore, isLikelyTextPath } from "@/stores/fileViewers";
 import "./chrome.css";
 
 interface SessionActivity {
-  provider: "claude-code" | "opencode" | "cursor" | "antigravity" | "codex" | "copilot" | "grok";
+  provider: ProviderId;
   sessionId: string;
   title?: string;
   projectDir: string;

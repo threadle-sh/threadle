@@ -12,6 +12,7 @@ import { probeInjectFlags } from "./providers/freshness/probe.js";
 import { probeGoldenFixtures } from "./providers/freshness/fixtures.js";
 import { probeUpstream } from "./providers/freshness/upstream.js";
 import { grokBin } from "./providers/grok/paths.js";
+import { museBin } from "./providers/muse/paths.js";
 import { codexBin } from "./providers/codex/paths.js";
 import { copilotBin } from "./providers/copilot/paths.js";
 
@@ -154,6 +155,7 @@ export async function runCheck(
     checkPreferredOrPath("cli:codex", codexBin(), "codex"),
     checkPreferredOrPath("cli:copilot", copilotBin(), "copilot"),
     checkPreferredOrPath("cli:grok", grokBin(), "grok"),
+    checkPreferredOrPath("cli:muse", museBin(), "muse"),
   ]);
   checks.push(...cliChecks);
 

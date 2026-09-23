@@ -19,6 +19,7 @@ export interface JobRecord {
   label?: string;
   /** workflow (graph) that launched the run, when known */
   graphId?: string;
+  sessionRef?: { provider: string; sessionId: string };
   status: JobStatus;
   createdAt: number;
   finishedAt?: number;
@@ -48,7 +49,10 @@ class JobRegistry extends EventEmitter {
     kind: JobKind,
     label?: string,
     graphId?: string,
-    opts?: { clientDriven?: boolean },
+    opts?: {
+      clientDriven?: boolean;
+      sessionRef?: { provider: string; sessionId: string };
+    },
   ): { jobId: string; signal: AbortSignal } {
     this.counter += 1;
     const jobId = `job_${Date.now().toString(36)}_${this.counter}`;
@@ -59,6 +63,7 @@ class JobRegistry extends EventEmitter {
       kind,
       label,
       graphId,
+      sessionRef: opts?.sessionRef,
       status: "running",
       createdAt: Date.now(),
       touchedAt: Date.now(),

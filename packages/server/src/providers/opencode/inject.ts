@@ -1,8 +1,10 @@
 import crypto from "node:crypto";
 import { execa, type ResultPromise } from "execa";
+import { estimateTokenBaseline, formatBaselineSuffix } from "@threadle/shared";
 import type { ContextPayload, InjectResult, InjectTarget } from "@threadle/shared";
 import { forEachLine, toolSummary, type LogLane, type LogSink } from "../stream.js";
 import { positionalSafe } from "../argv-safe.js";
+import { query, type SessionRow } from "./db.js";
 
 const INJECT_TIMEOUT_MS = 10 * 60_000;
 
@@ -56,6 +58,58 @@ function findResultText(stdout: string): string | undefined {
   }
   const text = parts.join("");
   return text.trim() ? text : undefined;
+}
+
+/** Accumulate step-finish tokens from an opencode JSON event stream. */
+export function findOpencodeUsageInJsonl(stdout: string): {
+  inputTokens: number;
+  outputTokens: number;
+} | undefined {
+  let inputTokens = 0;
+  let outputTokens = 0;
+  let saw = false;
+  for (const line of stdout.split("\n")) {
+    if (!line.trim()) continue;
+    try {
+      const evt = JSON.parse(line) as Record<string, unknown>;
+      let bag: unknown;
+      if (evt.type === "step-finish" && evt.tokens) {
+        bag = evt.tokens;
+      } else {
+        const part =
+          evt.part && typeof evt.part === "object" && !Array.isArray(evt.part)
+            ? (evt.part as Record<string, unknown>)
+            : undefined;
+        if (part?.type === "step-finish" && part.tokens) bag = part.tokens;
+      }
+      if (!bag || typeof bag !== "object" || Array.isArray(bag)) continue;
+      const t = bag as Record<string, unknown>;
+      const inn =
+        typeof t.input === "number"
+          ? t.input
+          : typeof t.input_tokens === "number"
+            ? t.input_tokens
+            : undefined;
+      const out =
+        typeof t.output === "number"
+          ? t.output
+          : typeof t.output_tokens === "number"
+            ? t.output_tokens
+            : undefined;
+      if (inn != null) {
+        inputTokens += inn;
+        saw = true;
+      }
+      if (out != null) {
+        outputTokens += out;
+        saw = true;
+      }
+    } catch {
+      // skip
+    }
+  }
+  if (!saw || (!inputTokens && !outputTokens)) return undefined;
+  return { inputTokens, outputTokens };
 }
 
 function scanForSessionId(value: unknown, depth: number): string | undefined {
@@ -286,6 +340,59 @@ export interface RunAgentOptions {
   /** live stream of the run's text/tool events */
   onLog?: LogSink;
   signal?: AbortSignal;
+  ignoreLocalMarkdown?: boolean;
+}
+
+async function sessionTokensFromDb(
+  sessionId: string,
+): Promise<{ inputTokens: number; outputTokens: number } | undefined> {
+  try {
+    const rows = await query<SessionRow>(
+      "SELECT tokens_input, tokens_output FROM session WHERE id = ?",
+      [sessionId],
+    );
+    const row = rows[0];
+    if (!row) return undefined;
+    const inputTokens = Number(row.tokens_input) || 0;
+    const outputTokens = Number(row.tokens_output) || 0;
+    if (!inputTokens && !outputTokens) return undefined;
+    return { inputTokens, outputTokens };
+  } catch {
+    return undefined;
+  }
+}
+
+async function waitSessionTokensFromDb(
+  sessionId: string,
+  attempts = 4,
+  delayMs = 150,
+): Promise<{ inputTokens: number; outputTokens: number } | undefined> {
+  for (let i = 0; i < attempts; i++) {
+    const u = await sessionTokensFromDb(sessionId);
+    if (u) return u;
+    if (i + 1 < attempts) {
+      await new Promise((r) => setTimeout(r, delayMs * (i + 1)));
+    }
+  }
+  return undefined;
+}
+
+function logTokMeta(
+  onLog: LogSink | undefined,
+  usage: { inputTokens: number; outputTokens: number } | undefined,
+  prompt: string | undefined,
+  ignoreLocalMarkdown: boolean | undefined,
+): void {
+  if (!onLog || !usage) return;
+  const parts = [`${usage.inputTokens}→${usage.outputTokens} tok`];
+  if (prompt) {
+    const b = estimateTokenBaseline(usage.inputTokens, prompt, {
+      ignoreLocalMarkdown,
+    });
+    const suf = b ? formatBaselineSuffix(b) : "";
+    if (suf) parts.push(suf);
+  }
+  onLog("meta", `■ ${parts.join(" · ")}`);
 }
 
 /** Map one `opencode run --format json` event line onto a log lane. */
@@ -323,28 +430,37 @@ export async function runOpencodeAgent(opts: RunAgentOptions): Promise<InjectRes
   if (opts.sessionId) args.push("-s", opts.sessionId);
   if (opts.model) args.push("-m", opts.model);
   args.push(positionalSafe(opts.prompt));
+  if (opts.onLog && opts.ignoreLocalMarkdown) {
+    opts.onLog("meta", "ignore local md · bare cwd only (no skip flag)");
+  }
   const child = execa("opencode", args, {
     cwd: opts.projectDir,
     timeout: INJECT_TIMEOUT_MS,
     stdin: "ignore",
     cancelSignal: opts.signal,
   });
-  if (opts.onLog) {
-    const onLog = opts.onLog;
-    forEachLine(child.stdout, (line) => {
+  const lines: string[] = [];
+  forEachLine(child.stdout, (line) => {
+    lines.push(line);
+    if (opts.onLog) {
       const log = opencodeEventToLog(line);
-      if (log) onLog(log[0], log[1]);
-    });
-  }
-  const { stdout } = await child;
-  const newSessionId = findSessionId(stdout) ?? opts.sessionId;
+      if (log) opts.onLog(log[0], log[1]);
+    }
+  });
+  await child;
+  const streamText = lines.join("\n");
+  const newSessionId = findSessionId(streamText) ?? opts.sessionId;
   if (!newSessionId) {
     throw new Error("could not determine session id from opencode run output");
   }
+  let usage = findOpencodeUsageInJsonl(streamText);
+  if (!usage) usage = await waitSessionTokensFromDb(newSessionId);
+  logTokMeta(opts.onLog, usage, opts.prompt, opts.ignoreLocalMarkdown);
   return {
     newSessionId,
     provider: "opencode",
-    resultText: findResultText(stdout),
+    resultText: findResultText(streamText),
+    usage,
   };
 }
 

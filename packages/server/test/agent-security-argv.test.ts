@@ -46,19 +46,14 @@ describe("claude agent argv", () => {
 });
 
 describe("codex safety argv", () => {
-  it("defaults sandbox and ask-for-approval", () => {
-    expect(safetyArgs()).toEqual([
-      "--sandbox",
-      "workspace-write",
-      "--ask-for-approval",
-      "never",
-    ]);
+  it("defaults to --approve-for-me (workspace-write implied)", () => {
+    expect(safetyArgs()).toEqual(["--approve-for-me"]);
   });
 
-  it("uses opts.sandbox / askForApproval when set", () => {
+  it("uses explicit --sandbox when not workspace-write", () => {
     expect(
       safetyArgs({ sandbox: "read-only", askForApproval: "on-request" }),
-    ).toEqual(["--sandbox", "read-only", "--ask-for-approval", "on-request"]);
+    ).toEqual(["--sandbox", "read-only"]);
   });
 
   it("threads safety into execArgs", () => {
@@ -73,11 +68,18 @@ describe("codex safety argv", () => {
       "--json",
       "--sandbox",
       "danger-full-access",
-      "--ask-for-approval",
-      "never",
       "--model",
       "gpt-5",
       "do it",
+    ]);
+  });
+
+  it("default execArgs uses approve-for-me", () => {
+    expect(execArgs({ prompt: "hi" })).toEqual([
+      "exec",
+      "--json",
+      "--approve-for-me",
+      "hi",
     ]);
   });
 });

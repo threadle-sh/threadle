@@ -515,7 +515,7 @@ UI **▶** (no gates) and **≫** use the same `POST /api/run/workflow` path as 
 | `no skill named "…" found` | Install/unmute the skill, or mute the node in the UI and re-export |
 | `nothing to run for "…"` | Path, recipe id, template id, or graph id wrong; run `threadle recipes` / `--list-templates` |
 | `threadle server not reachable` | Start `threadle --no-open` before `jobs` / `services` / `skills` / `open` / `run --detach` |
-| Agent CLI not found | Install Cursor `agent` / Claude Code / opencode / Antigravity `agy` / Codex / GitHub Copilot / Grok Build; ensure on `PATH` — or run `threadle check` |
+| Agent CLI not found | Install Cursor `agent` / Claude Code / opencode / Antigravity `agy` / Codex / GitHub Copilot / Grok Build / Muse Code; ensure on `PATH` — or run `threadle check` |
 | Wrong project files | Pass `--dir` to the repo root you intend |
 | `context not materialized` / blocked ❝ | Wire a session/agent (extracts mid-run), drag from Library, or mute |
 

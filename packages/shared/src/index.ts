@@ -1,4 +1,5 @@
 export * from "./session.js";
+export * from "./token-baseline.js";
 export * from "./context.js";
 export * from "./graph.js";
 export * from "./execution-manifest.js";
@@ -39,6 +40,8 @@ export * from "./wait-idle.js";
 export * from "./iterator.js";
 export * from "./ply.js";
 export * from "./api.js";
+export * from "./harness-extras.js";
+export * from "./run-phase.js";
 export * from "./detached.js";
 export * from "./frames.js";
 export * from "./workflow.js";

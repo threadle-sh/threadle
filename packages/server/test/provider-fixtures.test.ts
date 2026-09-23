@@ -16,6 +16,8 @@ import { _resetDbForTests } from "../src/providers/opencode/db.js";
 import { readOpencodeTranscript } from "../src/providers/opencode/normalize.js";
 import { discoverSessions } from "../src/providers/grok/discover.js";
 import { readGrokTranscript } from "../src/providers/grok/transcript.js";
+import { discoverSessions as discoverMuseSessions, childrenOf as museChildrenOf } from "../src/providers/muse/discover.js";
+import { readMuseTranscript } from "../src/providers/muse/transcript.js";
 
 const fixturesRoot = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -94,6 +96,27 @@ describe("provider golden fixtures", () => {
         tmpDir = undefined;
       }
       delete process.env.OPENCODE_DATA_DIR;
+    });
+
+    it("accumulates step-finish tokens from JSON stream lines", async () => {
+      const { findOpencodeUsageInJsonl } = await import(
+        "../src/providers/opencode/inject.js"
+      );
+      const stream = [
+        JSON.stringify({ type: "text", part: { type: "text", text: "hi" } }),
+        JSON.stringify({
+          type: "step-finish",
+          tokens: { input: 10, output: 5 },
+        }),
+        JSON.stringify({
+          type: "step-finish",
+          tokens: { input: 3, output: 1 },
+        }),
+      ].join("\n");
+      expect(findOpencodeUsageInJsonl(stream)).toEqual({
+        inputTokens: 13,
+        outputTokens: 6,
+      });
     });
 
     it("reads known part types and skips unknown from fixture schema", async () => {
@@ -224,6 +247,43 @@ describe("provider golden fixtures", () => {
       expect(msgs.some((m) => m.parts.some((p) => p.text?.includes("reply from updates.jsonl")))).toBe(
         true,
       );
+    });
+  });
+
+  describe("muse", () => {
+    const prev = process.env.MUSE_DATA_DIR;
+    const sessionId = "01a0ce3e-daea-76f0-99fc-d53076374955";
+
+    afterEach(() => {
+      if (prev === undefined) delete process.env.MUSE_DATA_DIR;
+      else process.env.MUSE_DATA_DIR = prev;
+    });
+
+    it("discovers session and skips unknown MSP payload types", async () => {
+      process.env.MUSE_DATA_DIR = fixture("muse");
+      const refs = await discoverMuseSessions();
+      expect(refs.length).toBe(1);
+      expect(refs[0]?.id).toBe(sessionId);
+      const msgs = await readMuseTranscript(sessionId);
+      expect(msgs.length).toBeGreaterThanOrEqual(2);
+      expect(msgs.every((m) => m.role === "user" || m.role === "assistant")).toBe(true);
+      expect(
+        msgs.every((m) =>
+          m.parts.every((p) => p.type === "text" || p.type === "thinking" || p.type === "tool_use" || p.type === "tool_result"),
+        ),
+      ).toBe(true);
+    });
+
+    it("links subagent under parent via sessions/<id>/subagent/<child>", async () => {
+      process.env.MUSE_DATA_DIR = fixture("muse");
+      const childId = "39e5d5fc-1c2e-4acc-a294-741942f8fbbf";
+      const refs = await discoverMuseSessions();
+      expect(refs.map((r) => r.id)).toEqual([sessionId]);
+      const kids = await museChildrenOf(sessionId);
+      expect(kids).toHaveLength(1);
+      expect(kids[0]?.id).toBe(childId);
+      expect(kids[0]?.parentId).toBe(sessionId);
+      expect(kids[0]?.kind).toBe("subagent-run");
     });
   });
 });

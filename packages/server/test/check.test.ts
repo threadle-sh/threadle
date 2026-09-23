@@ -19,6 +19,7 @@ vi.mock("../src/providers/registry.js", () => ({
       { id: "codex", available: false },
       { id: "copilot", available: false },
       { id: "grok", available: false },
+      { id: "muse", available: false },
     ],
   },
 }));
@@ -31,6 +32,7 @@ const PROVIDER_IDS = [
   "codex",
   "copilot",
   "grok",
+  "muse",
 ] as const;
 
 const CLI_IDS = [
@@ -41,6 +43,7 @@ const CLI_IDS = [
   "cli:codex",
   "cli:copilot",
   "cli:grok",
+  "cli:muse",
 ] as const;
 
 /** `runCheck` treats baked UI as critical; unit CI may not have built yet. */
@@ -104,6 +107,7 @@ describe("threadle check", () => {
       "fixture:antigravity",
       "fixture:opencode",
       "fixture:grok",
+      "fixture:muse",
     ];
     for (const id of fixtureIds) {
       expect(byId[id], `missing ${id}`).toBeDefined();
@@ -123,6 +127,7 @@ describe("golden fixture probe", () => {
     const root = goldenFixturesRoot();
     expect(root).toBeTruthy();
     expect(fs.existsSync(path.join(root!, "grok"))).toBe(true);
+    expect(fs.existsSync(path.join(root!, "muse"))).toBe(true);
   });
 
   it("probes all provider fixtures without throwing", async () => {
@@ -135,6 +140,7 @@ describe("golden fixture probe", () => {
         "fixture:codex",
         "fixture:cursor",
         "fixture:grok",
+        "fixture:muse",
         "fixture:opencode",
       ].sort(),
     );

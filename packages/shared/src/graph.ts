@@ -71,6 +71,19 @@ export interface AgentDefNodeData {
   sandbox?: string;
   /** Codex: ask-for-approval mode (e.g. never | on-request | on-failure) */
   askForApproval?: string;
+  /**
+   * Post-answer harness extras (Muse reminders, Claude hooks/slash skills,
+   * Grok subagents, Antigravity slash). When set, overrides Settings
+   * `harnessExtras` for this node. Omit to inherit.
+   */
+  harnessExtras?: boolean;
+  /** @deprecated use harnessExtras */
+  museReminders?: boolean;
+  /**
+   * Skip project AGENTS.md / CLAUDE.md / rules — run in an empty bare
+   * workspace (+ provider skip flags). Default off (use real project).
+   */
+  ignoreLocalMarkdown?: boolean;
 }
 
 /** Value types flowing along text lanes */
@@ -940,6 +953,11 @@ const nodeDataSchema = z.union([
       .enum(["never", "on-request", "on-failure", "untrusted"])
       .or(z.literal(""))
       .optional(),
+    /** Post-answer extras; omit = inherit Settings. Legacy: museReminders. */
+    harnessExtras: z.boolean().optional(),
+    museReminders: z.boolean().optional(),
+    /** Skip project AGENTS.md / CLAUDE.md / rules (bare workspace). */
+    ignoreLocalMarkdown: z.boolean().optional(),
   }),
   z.object({
     type: z.literal("prompt"),
@@ -965,6 +983,7 @@ const nodeDataSchema = z.union([
         "codex",
         "copilot",
         "grok",
+        "muse",
       ])
       .optional(),
     model: z.string().optional(),

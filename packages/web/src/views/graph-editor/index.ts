@@ -5,6 +5,7 @@ export { default as DetachedGateModal } from "./DetachedGateModal.vue";
 export { default as ImportRunModal } from "./ImportRunModal.vue";
 export { default as RecipeSetupBanner } from "./RecipeSetupBanner.vue";
 export type { RecipeSetupState, RecipeSetupGaps } from "./RecipeSetupBanner.vue";
+export { default as GraphRunHud } from "./GraphRunHud.vue";
 export { default as NodeContextMenu } from "./NodeContextMenu.vue";
 export type { CtxExchangeAgent } from "./NodeContextMenu.vue";
 export { default as WireDropMenu } from "./WireDropMenu.vue";

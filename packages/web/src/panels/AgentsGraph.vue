@@ -16,6 +16,7 @@ import { basename, shortId } from "@/lib/format";
 import { providerColor, providerShort } from "@/lib/providers";
 import { useSessionsStore } from "@/stores/sessions";
 import SessionLivePill from "@/panels/SessionLivePill.vue";
+import { useJobPhases } from "@/lib/useJobPhases";
 
 const INST_CAP = 8;
 const COL_DEF = 40;
@@ -57,6 +58,7 @@ const emit = defineEmits<{
 }>();
 
 const sessions = useSessionsStore();
+const { phaseForSession } = useJobPhases();
 const { fitView } = useVueFlow({ id: "agents-graph" });
 const hoverId = ref<string>();
 const range = ref<GraphRangeId>("all");
@@ -678,7 +680,10 @@ defineExpose({ fitAll });
                   {{ data.session.title ?? shortId(data.session.id) }}
                 </div>
                 <div class="ag-meta mono">
-                  <SessionLivePill :status="data.status" />
+                  <SessionLivePill
+                    :status="data.status"
+                    :phase="phaseForSession(data.session.provider, data.session.id)"
+                  />
                   <span class="ag-meta-rest">
                     <template v-if="data.sub && data.session.parentId">
                       ↑ {{ shortId(data.session.parentId) }}

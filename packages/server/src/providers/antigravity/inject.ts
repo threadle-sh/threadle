@@ -1,7 +1,9 @@
 import { execa } from "execa";
 import type { ContextPayload, InjectResult, InjectTarget } from "@threadle/shared";
-import { forEachLine, type LogLane, type LogSink } from "../stream.js";
+import { estimateTokenBaseline, formatBaselineSuffix } from "@threadle/shared";
+import type { LogSink } from "../stream.js";
 import { positionalSafe } from "../argv-safe.js";
+import { resolveRunHarnessExtras, logHarnessExtrasLanes } from "../harness-extras.js";
 import { agyBin } from "./agy-bin.js";
 import { recordAntigravityUsage } from "./usage.js";
 
@@ -62,17 +64,30 @@ function applyAgentMode(args: string[], agent?: string): void {
   }
 }
 
+/** Build argv for a headless `agy` run (without --output-format). Exported for tests. */
+export function buildAgyAgentArgv(opts: {
+  sessionId?: string;
+  model?: string;
+  agent?: string;
+  prompt: string;
+  harnessExtras?: boolean;
+}): string[] {
+  return baseArgs(opts);
+}
+
 function baseArgs(opts: {
   sessionId?: string;
   model?: string;
   agent?: string;
   prompt: string;
+  harnessExtras?: boolean;
 }): string[] {
-  const args = ["-p", "--dangerously-skip-permissions"];
+  // `-p` / `--print` takes the prompt as its value (not a bare flag + positional).
+  const args = ["-p", positionalSafe(opts.prompt), "--dangerously-skip-permissions"];
   if (opts.sessionId) args.push("--conversation", opts.sessionId);
   if (opts.model) args.push("--model", opts.model);
+  if (opts.harnessExtras === false) args.push("--disable-slash-commands");
   applyAgentMode(args, opts.agent);
-  args.push(positionalSafe(opts.prompt));
   return args;
 }
 
@@ -91,94 +106,45 @@ async function persistUsage(
 async function runAgyJson(
   args: string[],
   cwd: string,
-): Promise<{
-  sessionId?: string;
-  resultText?: string;
-  isError: boolean;
-  usage?: AgyJsonResult["usage"];
-}> {
-  const { stdout } = await execa(agyBin(), [...args.slice(0, -1), "--output-format", "json", args[args.length - 1]!], {
-    cwd,
-    timeout: INJECT_TIMEOUT_MS,
-    stdin: "ignore",
-  });
-  const evt = parseJsonResult(stdout);
-  const isError = Boolean(evt?.status && !/^SUCCESS$/i.test(evt.status));
-  return {
-    sessionId: evt?.conversation_id,
-    resultText: typeof evt?.response === "string" ? evt.response.trimEnd() : undefined,
-    isError,
-    usage: evt?.usage,
-  };
-}
-
-function agyEventToLogs(line: string): Array<[LogLane, string]> {
-  const out: Array<[LogLane, string]> = [];
-  try {
-    const evt = JSON.parse(line) as Record<string, unknown>;
-    if (typeof evt.response === "string" && evt.response) {
-      out.push(["text", evt.response]);
-    }
-    if (typeof evt.text === "string" && evt.text) {
-      out.push(["text", evt.text]);
-    }
-    if (typeof evt.content === "string" && evt.content && evt.type === "PLANNER_RESPONSE") {
-      out.push(["text", evt.content]);
-    }
-  } catch {
-    // ignore
-  }
-  return out;
-}
-
-async function runAgyStreaming(
-  args: string[],
-  cwd: string,
-  onLog: LogSink,
   signal?: AbortSignal,
 ): Promise<{
   sessionId?: string;
   resultText?: string;
   isError: boolean;
   usage?: AgyJsonResult["usage"];
+  stderr?: string;
 }> {
-  // insert output-format before the prompt (last arg)
-  const prompt = args[args.length - 1]!;
-  const head = args.slice(0, -1);
-  const child = execa(
-    agyBin(),
-    [...head, "--output-format", "stream-json", prompt],
-    {
-      cwd,
-      timeout: INJECT_TIMEOUT_MS,
-      stdin: "ignore",
-      cancelSignal: signal,
-    },
-  );
-  let result: AgyJsonResult | undefined;
-  let sessionId: string | undefined;
-  const chunks: string[] = [];
-  forEachLine(child.stdout, (line) => {
-    chunks.push(line);
-    try {
-      const evt = JSON.parse(line) as AgyJsonResult & { conversation_id?: string };
-      if (typeof evt.conversation_id === "string") sessionId = evt.conversation_id;
-      if (evt.response !== undefined || evt.usage || evt.status) result = evt;
-      for (const [lane, text] of agyEventToLogs(line)) onLog(lane, text);
-    } catch {
-      // ignore
-    }
+  const child = await execa(agyBin(), [...args, "--output-format", "json"], {
+    cwd,
+    timeout: INJECT_TIMEOUT_MS,
+    stdin: "ignore",
+    cancelSignal: signal,
+    reject: false,
   });
-  await child;
-  const stdout = chunks.join("\n");
-  const parsed = result ?? parseJsonResult(stdout);
-  if (parsed?.response) onLog("text", parsed.response);
+  const evt = parseJsonResult(child.stdout || "");
+  const resultText =
+    typeof evt?.response === "string" ? evt.response.trimEnd() : undefined;
+  const statusFail = Boolean(evt?.status && !/^SUCCESS$/i.test(evt.status));
+  const exitFail = child.exitCode !== 0 && child.exitCode !== undefined;
+  const emptyFail = !resultText?.trim();
   return {
-    sessionId: parsed?.conversation_id ?? sessionId,
-    resultText: typeof parsed?.response === "string" ? parsed.response.trimEnd() : undefined,
-    isError: Boolean(parsed?.status && !/^SUCCESS$/i.test(parsed.status)),
-    usage: parsed?.usage,
+    sessionId: evt?.conversation_id,
+    resultText,
+    isError: statusFail || exitFail || emptyFail,
+    usage: evt?.usage,
+    stderr: (child.stderr || "").trim() || undefined,
   };
+}
+
+function agyFailMessage(
+  prefix: string,
+  result: { resultText?: string; stderr?: string },
+): string {
+  const detail = [result.stderr, result.resultText].filter(Boolean).join("\n").trim();
+  if (!result.resultText?.trim() && !detail) {
+    return `${prefix}: no response`;
+  }
+  return detail ? `${prefix}: ${detail.slice(0, 400)}` : prefix;
 }
 
 export async function injectAntigravity(
@@ -197,13 +163,19 @@ export async function injectAntigravity(
       prompt: text,
     });
     const result = await runAgyJson(args, target.projectDir);
-    if (result.isError) throw new Error("antigravity continue inject failed");
+    if (result.isError) throw new Error(agyFailMessage("antigravity continue inject failed", result));
     const newSessionId = result.sessionId ?? target.sessionId;
     await persistUsage(newSessionId, result.usage);
     return {
       newSessionId,
       provider: "antigravity",
       resultText: result.resultText,
+      usage: result.usage
+        ? {
+            inputTokens: result.usage.input_tokens,
+            outputTokens: result.usage.output_tokens,
+          }
+        : undefined,
     };
   }
 
@@ -214,13 +186,19 @@ export async function injectAntigravity(
       prompt: text,
     });
     const result = await runAgyJson(args, target.projectDir);
-    if (result.isError) throw new Error("antigravity new-session inject failed");
+    if (result.isError) throw new Error(agyFailMessage("antigravity new-session inject failed", result));
     if (!result.sessionId) throw new Error("antigravity new-session returned no conversation_id");
     await persistUsage(result.sessionId, result.usage);
     return {
       newSessionId: result.sessionId,
       provider: "antigravity",
       resultText: result.resultText,
+      usage: result.usage
+        ? {
+            inputTokens: result.usage.input_tokens,
+            outputTokens: result.usage.output_tokens,
+          }
+        : undefined,
     };
   }
 
@@ -235,30 +213,61 @@ export interface RunAntigravityAgentOptions {
   sessionId?: string;
   onLog?: LogSink;
   signal?: AbortSignal;
+  harnessExtras?: boolean;
+  ignoreLocalMarkdown?: boolean;
 }
 
 export async function runAntigravityAgent(
   opts: RunAntigravityAgentOptions,
 ): Promise<InjectResult> {
+  const harnessExtras = await resolveRunHarnessExtras(opts.harnessExtras);
   const args = baseArgs({
     sessionId: opts.sessionId,
     model: opts.model,
     agent: opts.agent,
     prompt: opts.prompt,
+    harnessExtras,
   });
+  if (opts.onLog) {
+    logHarnessExtrasLanes(opts.onLog, "antigravity", harnessExtras);
+  }
 
-  const result = opts.onLog
-    ? await runAgyStreaming(args, opts.projectDir, opts.onLog, opts.signal)
-    : await runAgyJson(args, opts.projectDir);
+  // Always use final JSON — stream-json + stdin ignore aborts mid-turn on current agy.
+  const result = await runAgyJson(args, opts.projectDir, opts.signal);
 
-  if (result.isError) throw new Error("antigravity agent run failed");
+  if (result.isError) {
+    throw new Error(agyFailMessage("antigravity agent run failed", result));
+  }
   const newSessionId = result.sessionId ?? opts.sessionId;
   if (!newSessionId) throw new Error("antigravity agent run returned no conversation_id");
   await persistUsage(newSessionId, result.usage);
+  if (opts.onLog) {
+    if (result.resultText) opts.onLog("text", result.resultText);
+    if (result.usage) {
+      const inTok = result.usage.input_tokens ?? 0;
+      const outTok = result.usage.output_tokens ?? 0;
+      const think = result.usage.thinking_tokens ?? 0;
+      const parts = [`${inTok}→${outTok} tok`];
+      if (think) parts.push(`${think} think`);
+      if (result.usage.total_tokens) parts.push(`${result.usage.total_tokens} total`);
+      const b = estimateTokenBaseline(inTok, opts.prompt, {
+        ignoreLocalMarkdown: opts.ignoreLocalMarkdown,
+      });
+      const suf = b ? formatBaselineSuffix(b) : "";
+      if (suf) parts.push(suf);
+      opts.onLog("meta", `■ ${parts.join(" · ")}`);
+    }
+  }
   return {
     newSessionId,
     provider: "antigravity",
     resultText: result.resultText,
+    usage: result.usage
+      ? {
+          inputTokens: result.usage.input_tokens,
+          outputTokens: result.usage.output_tokens,
+        }
+      : undefined,
   };
 }
 

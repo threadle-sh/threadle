@@ -52,7 +52,7 @@ export interface ThreadleSettings {
   appearance?: "system" | "light" | "dark";
   /**
    * Optional provider accent overrides (`#rrggbb`). Omitted keys keep theme defaults.
-   * Known ids: claude-code, opencode, cursor, antigravity, codex, copilot, grok.
+   * Known ids: antigravity, claude-code, codex, copilot, cursor, grok, muse, opencode.
    */
   providerColors?: Partial<Record<string, string>>;
   /** When false, canvas MCP client discovery/calls are disabled. Default true. */
@@ -64,6 +64,15 @@ export interface ThreadleSettings {
    * Empty array (default) = none. `null` = all saved workflows (opt-in).
    */
   mcpPublishAllowlist?: string[] | null;
+  /**
+   * Post-answer harness extras (Muse reminders, Claude hooks/slash skills,
+   * Grok subagents, Antigravity slash skills). When false, inject passes each
+   * provider's skip switches. Default false — workflows care about wall time.
+   * Legacy key `museReminders` is still read.
+   */
+  harnessExtras?: boolean;
+  /** @deprecated use harnessExtras */
+  museReminders?: boolean;
 }
 
 const DEFAULTS: ThreadleSettings = {
@@ -75,6 +84,7 @@ const DEFAULTS: ThreadleSettings = {
   mcpClientEnabled: true,
   mcpDisabledServers: [],
   mcpPublishAllowlist: [],
+  harnessExtras: false,
 };
 
 function settingsFile(): string {
@@ -103,13 +113,14 @@ function parsePublishAllowlist(v: unknown): string[] | null {
 }
 
 const PROVIDER_COLOR_IDS = [
-  "claude-code",
-  "opencode",
-  "cursor",
   "antigravity",
+  "claude-code",
   "codex",
   "copilot",
+  "cursor",
   "grok",
+  "muse",
+  "opencode",
 ] as const;
 
 const HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
@@ -176,6 +187,7 @@ export function normalizeSettings(raw: Partial<ThreadleSettings>): ThreadleSetti
     mcpClientEnabled: raw.mcpClientEnabled !== false,
     mcpDisabledServers: parseStringIds(raw.mcpDisabledServers),
     mcpPublishAllowlist: parsePublishAllowlist(raw.mcpPublishAllowlist),
+    harnessExtras: raw.harnessExtras === true || raw.museReminders === true,
   };
 }
 
@@ -191,6 +203,7 @@ export async function readSettings(): Promise<ThreadleSettings> {
       notifications: { ...DEFAULT_NOTIFY },
       mcpDisabledServers: [],
       mcpPublishAllowlist: [],
+      harnessExtras: false,
     };
   }
 }
@@ -281,6 +294,7 @@ settingsRoutes.put("/", async (c) => {
     mcpClientEnabled: body.mcpClientEnabled !== false,
     mcpDisabledServers: parseStringIds(body.mcpDisabledServers),
     mcpPublishAllowlist: parsePublishAllowlist(body.mcpPublishAllowlist),
+    harnessExtras: body.harnessExtras === true || body.museReminders === true,
   };
   await fs.promises.mkdir(threadleConfigDir(), { recursive: true });
   await fs.promises.writeFile(settingsFile(), JSON.stringify(next, null, 2), "utf8");

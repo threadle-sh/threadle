@@ -1,5 +1,19 @@
 <template>
   <div class="agent-node" :class="{ 'menu-open': menuOpen }">
+    <div
+      v-if="hasExtras && !extrasEffective"
+      class="extras-skip-banner"
+      title="Post-answer harness extras skipped for this node"
+    >
+      ⊘ extras off
+    </div>
+    <div
+      v-if="data.ignoreLocalMarkdown"
+      class="extras-skip-banner bare-md-banner"
+      title="Runs in bare workspace — AGENTS.md / CLAUDE.md / rules skipped"
+    >
+      ⊘ ignore local md
+    </div>
     <NodeCard
       :id="id"
       glyph="⟨/⟩"
@@ -30,6 +44,17 @@
           :class="{ elevated: securityElevated }"
           :title="securityBadgeTitle"
         >{{ securityBadge }}</span>
+        <button
+          v-if="hasExtras"
+          type="button"
+          class="extras-btn nodrag nopan"
+          :class="{ on: extrasEffective, off: !extrasEffective }"
+          :title="extrasBtnTitle"
+          @click.stop="toggleExtras"
+          @pointerdown.stop
+        >
+          {{ extrasEffective ? "✦" : "⊘" }}
+        </button>
         <button
           ref="btnEl"
           type="button"
@@ -85,9 +110,17 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import type { AgentDefNodeData, NodeStatus } from "@threadle/shared";
-import { claudeExhaustedForModel, isSessionLive } from "@threadle/shared";
+import {
+  claudeExhaustedForModel,
+  isSessionLive,
+  nodeHarnessExtrasField,
+  providerHasHarnessExtras,
+  resolveHarnessExtras,
+  setNodeHarnessExtras,
+} from "@threadle/shared";
 import NodeCard from "./NodeCard.vue";
 import { useSessionsStore } from "@/stores/sessions";
+import { useSettingsStore } from "@/stores/settings";
 import { providerColor as colorFor } from "@/lib/providers";
 import { useSubscription } from "@/lib/useSubscription";
 
@@ -101,12 +134,34 @@ const props = defineProps<{
 }>();
 
 const sessions = useSessionsStore();
+const settings = useSettingsStore();
 const { snap, refresh: refreshSub } = useSubscription();
 const menuOpen = ref(false);
 const btnEl = ref<HTMLButtonElement | null>(null);
 const menuStyle = ref<Record<string, string>>({});
 
 const models = computed(() => props.models ?? []);
+const hasExtras = computed(() => providerHasHarnessExtras(props.data.ref.provider));
+
+/** Effective extras for this node (node override, else Settings). */
+const extrasEffective = computed(() =>
+  resolveHarnessExtras(nodeHarnessExtrasField(props.data), settings.harnessExtras),
+);
+
+const extrasBtnTitle = computed(() => {
+  const src =
+    nodeHarnessExtrasField(props.data) !== undefined
+      ? "this node"
+      : "Settings default";
+  return extrasEffective.value
+    ? `Harness extras on (${src}) — click to skip post-answer work`
+    : `Harness extras off (${src}) — click to allow post-answer work`;
+});
+
+function toggleExtras(): void {
+  // Pin an explicit override on the node so the graph is portable.
+  setNodeHarnessExtras(props.data, !extrasEffective.value);
+}
 
 const usageBadge = computed(() => {
   if (props.data.ref.provider !== "claude-code") return null;
@@ -163,7 +218,10 @@ const subtitle = computed(() => {
     : instances.value.length
       ? `${instances.value.length} inst`
       : "";
-  return inst ? `${base} · ${inst}` : base;
+  const rem =
+    hasExtras.value && !extrasEffective.value ? " · extras off" : "";
+  const bare = props.data.ignoreLocalMarkdown ? " · ignore md" : "";
+  return inst ? `${base} · ${inst}${rem}${bare}` : `${base}${rem}${bare}`;
 });
 
 const securityBadge = computed(() => {
@@ -270,6 +328,7 @@ watch(menuOpen, (open) => {
 
 onMounted(() => {
   void refreshSub();
+  void settings.load();
   window.addEventListener("pointerdown", onDocPointerDown, true);
   window.addEventListener("resize", onViewportChange);
   // Vue Flow viewport uses transform (not always scroll); wheel on the pane still fires.
@@ -287,6 +346,49 @@ onBeforeUnmount(() => {
 <style scoped>
 .agent-node {
   position: relative;
+}
+.extras-skip-banner {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 4px);
+  z-index: 6;
+  padding: 2px 6px;
+  border: 1px solid color-mix(in srgb, var(--status-waiting) 40%, var(--border));
+  border-radius: var(--radius-sm);
+  background: var(--panel-bg);
+  color: var(--status-waiting);
+  font-family: var(--mono);
+  font-size: var(--fs-2xs);
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.extras-btn {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--panel-bg);
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: var(--fs-xs);
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.extras-btn.on {
+  color: var(--text);
+}
+.extras-btn.off {
+  color: var(--status-waiting);
+  border-color: color-mix(in srgb, var(--status-waiting) 40%, var(--border));
+}
+.extras-btn:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+  background: var(--panel-bg-raised);
 }
 .sec-badge {
   max-width: 56px;

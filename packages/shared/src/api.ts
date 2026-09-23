@@ -37,6 +37,11 @@ export interface InjectResult {
   newSessionId: string;
   provider: ProviderId;
   resultText?: string;
+  /** Optional first-turn usage (when the CLI reports it). */
+  usage?: {
+    inputTokens?: number;
+    outputTokens?: number;
+  };
 }
 
 export interface DistillJobAccepted {
@@ -59,6 +64,19 @@ export interface RunAgentRequest {
   sandbox?: string;
   /** Codex ask-for-approval mode */
   askForApproval?: string;
+  /** Override Settings harnessExtras for this spawn (provider-specific skips). */
+  harnessExtras?: boolean;
+  /** @deprecated use harnessExtras */
+  museReminders?: boolean;
+  /**
+   * Skip project AGENTS.md / CLAUDE.md / rules: run in an empty bare workspace
+   * (+ provider flags where available). Useful for cheap smoke / test-pilot.
+   */
+  ignoreLocalMarkdown?: boolean;
+  /** Mark the resulting session as a Settings test-pilot smoke run. */
+  pilot?: boolean;
+  /** Optional pilot case id recorded with the mark (e.g. muse:extras-off). */
+  pilotCaseId?: string;
 }
 
 export interface RunSessionRequest {
@@ -86,8 +104,8 @@ export type ServerEvent =
   | {
       type: "job.log";
       jobId: string;
-      /** stream lane: assistant text, reasoning, tool call, or raw process line */
-      lane: "text" | "thinking" | "tool" | "raw";
+      /** stream lane: assistant text, reasoning, tool call, raw process, or run metrics */
+      lane: "text" | "thinking" | "tool" | "raw" | "meta";
       line: string;
     }
   | { type: "job.done"; jobId: string; payload?: ContextPayload; inject?: InjectResult }
