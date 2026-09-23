@@ -413,7 +413,10 @@
             </button>
 
             <div v-if="selectedStep" class="gr-detail">
-              <div class="micro-label gr-section">selected · #{{ selectedIdx! + 1 }}</div>
+              <div class="gr-detail-head">
+                <div class="micro-label gr-section">selected · #{{ selectedIdx! + 1 }}</div>
+                <DetailExpandControls @expand="detailExpanded = true" @close="closeGrowthDetail" />
+              </div>
               <div class="meta-kv mono">
                 <span class="kv-key">Δ</span
                 ><span :class="deltaClass(selectedStep.delta)">{{
@@ -442,6 +445,45 @@
               </button>
             </div>
           </aside>
+
+          <DetailExpandModal
+            :open="!!selectedStep && detailExpanded"
+            :label="growthDetailLabel"
+            @close="detailExpanded = false"
+          >
+            <template v-if="selectedStep && selectedIdx != null">
+              <div class="gr-detail-head">
+                <div class="micro-label gr-section">selected · #{{ selectedIdx + 1 }}</div>
+                <DetailExpandControls hide-expand @close="detailExpanded = false" />
+              </div>
+              <div class="meta-kv mono">
+                <span class="kv-key">Δ</span
+                ><span :class="deltaClass(selectedStep.delta)">{{
+                  fmtDelta(selectedStep.delta)
+                }}</span>
+                <span class="kv-key">context</span
+                ><span>{{ fmtCtx(selectedStep.context) }}</span>
+                <template v-if="selectedStep.cacheRead != null">
+                  <span class="kv-key">cache</span
+                  ><span>{{ fmtTokens(selectedStep.cacheRead) }}</span>
+                </template>
+                <template v-if="selectedStep.input != null">
+                  <span class="kv-key">input</span
+                  ><span>{{ fmtTokens(selectedStep.input) }}</span>
+                </template>
+                <template v-if="cacheHitPct(selectedStep) != null">
+                  <span class="kv-key">cache hit</span
+                  ><span>{{ cacheHitPct(selectedStep) }}%</span>
+                </template>
+                <span class="kv-key">time</span
+                ><span>{{ selectedStep.ts ? fmtTime(selectedStep.ts) : "—" }}</span>
+              </div>
+              <pre class="gr-prompt mono gr-prompt-expand">{{ selectedStep.promptPreview }}</pre>
+              <button class="vsc-btn" @click="openStepTranscript(selectedIdx)">
+                ≡ open in transcript
+              </button>
+            </template>
+          </DetailExpandModal>
         </div>
       </div>
       <StatusBar />
@@ -543,6 +585,8 @@ import type { SessionRef } from "@threadle/shared";
 import DashNav from "@/panels/DashNav.vue";
 import StatusBar from "@/panels/StatusBar.vue";
 import GraphLoadingOverlay from "@/components/GraphLoadingOverlay.vue";
+import DetailExpandControls from "@/panels/DetailExpandControls.vue";
+import DetailExpandModal from "@/panels/DetailExpandModal.vue";
 import { useNavItems } from "@/panels/useNavItems";
 import { shortId, fmtTokens, isTokenEstimate } from "@/lib/format";
 import { estimateContextWindow } from "@/lib/contextWindow";
@@ -671,6 +715,7 @@ const layers = reactive<Record<LayerKey, boolean>>({
 });
 const hoverIdx = ref<number>();
 const selectedIdx = ref<number>();
+const detailExpanded = ref(false);
 const chartHost = ref<HTMLElement | null>(null);
 const tagEl = ref<HTMLElement | null>(null);
 const tagH = ref(96);
@@ -1116,6 +1161,20 @@ const tagUsageInfo = computed(() =>
 const selectedStep = computed(() =>
   selectedIdx.value != null ? steps.value[selectedIdx.value] : undefined,
 );
+
+const growthDetailLabel = computed(() => {
+  if (selectedIdx.value == null) return "Growth step";
+  return `Step #${selectedIdx.value + 1}`;
+});
+
+function closeGrowthDetail(): void {
+  selectedIdx.value = undefined;
+  detailExpanded.value = false;
+}
+
+watch(selectedIdx, () => {
+  detailExpanded.value = false;
+});
 
 const TAG_W = 280;
 const TAG_GAP = 18;
@@ -2308,6 +2367,18 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+.gr-detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.gr-detail-head .gr-section {
+  margin: 0;
+}
+.gr-prompt-expand {
+  max-height: none;
 }
 .gr-prompt {
   margin: 0;

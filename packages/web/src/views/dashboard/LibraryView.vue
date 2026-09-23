@@ -198,7 +198,10 @@
             <span>{{ fmtLibChars(libPicked.chars) }}</span>
           </div>
         </div>
-        <button class="sess-detail-close" @click="libPicked = undefined">✕</button>
+        <DetailExpandControls
+          @expand="detailExpanded = true"
+          @close="closeLibPicked"
+        />
       </div>
       <div class="sess-detail-actions">
         <button
@@ -274,6 +277,63 @@
       <div v-if="libContentLoading" class="stat-note">loading…</div>
       <pre v-else class="lib-content mono">{{ libContent }}</pre>
     </aside>
+
+    <DetailExpandModal
+      :open="!!libPicked && detailExpanded"
+      :label="libPicked?.preview || libPicked?.kind || 'Payload'"
+      @close="detailExpanded = false"
+    >
+      <template v-if="libPicked">
+        <div class="sess-detail-head">
+          <div class="sess-detail-titles">
+            <div class="sess-detail-title" :title="libPicked.preview || '(empty payload)'">
+              {{ libPicked.preview || "(empty payload)" }}
+            </div>
+            <div class="sess-detail-meta mono">
+              <span>{{ LIB_KIND_SHORT[libPicked.kind] ?? libPicked.kind }}</span>
+              <span>{{ fmtLibChars(libPicked.chars) }}</span>
+            </div>
+          </div>
+          <DetailExpandControls hide-expand @close="detailExpanded = false" />
+        </div>
+        <div class="sess-detail-actions">
+          <button
+            class="vsc-btn"
+            title="Open"
+            @click="
+              void fileViewers.openPayload({
+                hash: libPicked.hash,
+                name: libPicked.preview || libPicked.kind,
+              })
+            "
+          >
+            ⧉ open
+          </button>
+          <button class="vsc-btn" title="Create a workflow seeded with this context" @click="useLibInWorkflow">
+            → workflow
+          </button>
+          <button
+            class="vsc-btn"
+            title="Copy the full content"
+            :disabled="libContentLoading || !libContent"
+            @click="copyLib"
+          >
+            {{ libCopied ? "✓ copied" : "❐ copy" }}
+          </button>
+          <button class="vsc-btn" title="Download payload JSON" @click="downloadLibRaw">
+            ⇓ raw
+          </button>
+        </div>
+        <div class="run-kv mono">
+          <span class="run-key">hash</span><span class="run-val" :title="libPicked.hash">{{ libPicked.hash.slice(0, 16) }}…</span>
+          <span class="run-key">created</span><span class="run-val">{{ new Date(libPicked.createdAt).toLocaleString() }}</span>
+          <span class="run-key">from</span><span class="run-val">{{ libSourceTitle(libPicked) }}</span>
+        </div>
+        <div class="micro-label">content</div>
+        <div v-if="libContentLoading" class="stat-note">loading…</div>
+        <pre v-else class="lib-content mono">{{ libContent }}</pre>
+      </template>
+    </DetailExpandModal>
   </div>
 
   <Teleport to="body">
@@ -362,6 +422,8 @@ import { useFileViewersStore } from "@/stores/fileViewers";
 import { useFavoritesStore } from "@/stores/favorites";
 import ProviderFilterChips from "@/components/ProviderFilterChips.vue";
 import GraphLoadingOverlay from "@/components/GraphLoadingOverlay.vue";
+import DetailExpandControls from "@/panels/DetailExpandControls.vue";
+import DetailExpandModal from "@/panels/DetailExpandModal.vue";
 import "./chrome.css";
 
 interface LibPayload {
@@ -407,6 +469,7 @@ const libKindF = ref<"all" | "distilled-summary" | "transcript-excerpt" | "files
 const libProviderF = ref<SessionFilter>("all");
 const libSort = ref<"updated" | "size" | "title">("updated");
 const libPicked = ref<LibPayload>();
+const detailExpanded = ref(false);
 const libContent = ref("");
 const libContentLoading = ref(false);
 const libTagInput = ref("");
@@ -615,7 +678,13 @@ function libSourceTitle(p: LibPayload): string {
   return live?.title ?? `${providerShort(p.source.provider)} · ${shortId(p.source.sessionId)}`;
 }
 
+function closeLibPicked(): void {
+  libPicked.value = undefined;
+  detailExpanded.value = false;
+}
+
 function pickLib(p: LibPayload): void {
+  detailExpanded.value = false;
   if (libPicked.value?.hash === p.hash) {
     libPicked.value = undefined;
     return;

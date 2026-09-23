@@ -307,7 +307,10 @@
                   </button>
                 </div>
               </div>
-              <button class="sess-detail-close" @click="closePickedSession">✕</button>
+              <DetailExpandControls
+                @expand="detailExpanded = true"
+                @close="closePickedSession"
+              />
             </div>
             <div v-if="sessionFromAgents" class="sess-detail-actions">
               <button
@@ -380,6 +383,39 @@
               @open-parent="openParentSession(pickedSession)"
             />
           </aside>
+
+          <DetailExpandModal
+            :open="!!pickedSession && detailExpanded"
+            :label="pickedSession?.title ?? (pickedSession ? shortId(pickedSession.id) : 'Session')"
+            @close="detailExpanded = false"
+          >
+            <template v-if="pickedSession">
+              <div class="sess-detail-head">
+                <div class="sess-detail-titles">
+                  <div class="sess-detail-title" :title="pickedSession.title">
+                    {{ pickedSession.title ?? shortId(pickedSession.id) }}
+                  </div>
+                  <div class="sess-detail-meta mono">
+                    <SessionLivePill :status="pickedLiveStatus" />
+                    <span
+                      v-if="pickedSession.kind === 'subagent-run' || pickedSession.parentId"
+                      class="inst-sub micro-label"
+                    >sub</span>
+                    <span v-if="pickedSession.agent" class="sess-detail-agent">
+                      ⟨/⟩ {{ pickedSession.agent }}
+                    </span>
+                  </div>
+                </div>
+                <DetailExpandControls hide-expand @close="detailExpanded = false" />
+              </div>
+              <SessionInfoPanel
+                :provider="pickedSession.provider"
+                :session-id="pickedSession.id"
+                :seed="pickedSession"
+                @open-parent="openParentSession(pickedSession)"
+              />
+            </template>
+          </DetailExpandModal>
         </div>
           </template>
         </div>
@@ -492,6 +528,8 @@ import GraphLoadingOverlay from "@/components/GraphLoadingOverlay.vue";
 import SessionInfoPanel from "@/panels/SessionInfoPanel.vue";
 import SessionLivePill from "@/panels/SessionLivePill.vue";
 import GrowthMark from "@/panels/GrowthMark.vue";
+import DetailExpandControls from "@/panels/DetailExpandControls.vue";
+import DetailExpandModal from "@/panels/DetailExpandModal.vue";
 import "./chrome.css";
 
 export type SessionOpenRequest = {
@@ -960,6 +998,8 @@ function closePickedSession(): void {
     expandedKey.value = undefined;
   }
   pickedSession.value = undefined;
+  detailExpanded.value = false;
+  compareFrom.value = undefined;
   sessionFromAgents.value = false;
 }
 
@@ -967,6 +1007,7 @@ function closePickedSession(): void {
 
 const pickedSession = ref<SessionRef>();
 const compareFrom = ref<SessionRef>();
+const detailExpanded = ref(false);
 
 /** Always read live status from the store — pickedSession can be a stale snapshot after refresh. */
 const pickedLiveStatus = computed(() => {
@@ -1008,9 +1049,11 @@ function pickSession(s: SessionRef): void {
       expandedKey.value = undefined;
     }
     pickedSession.value = undefined;
+    detailExpanded.value = false;
     return;
   }
   pickedSession.value = s;
+  detailExpanded.value = false;
   // reveal nested runs under the parent (caret was removed; expand on select)
   if (!s.parentId && s.kind !== "subagent-run") {
     void ensureChildrenExpanded(s);

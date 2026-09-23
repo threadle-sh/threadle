@@ -114,7 +114,7 @@
         <aside v-if="picked" class="tl-detail">
           <div class="tl-detail-head">
             <span class="tl-detail-title" :title="picked.title">{{ picked.title }}</span>
-            <button class="tl-close" @click="picked = undefined">✕</button>
+            <DetailExpandControls @expand="detailExpanded = true" @close="closePicked" />
           </div>
           <div class="tl-detail-actions">
             <button
@@ -154,6 +154,56 @@
           </div>
           <SessionInfoPanel :provider="picked.provider" :session-id="picked.id" />
         </aside>
+
+        <DetailExpandModal
+          :open="!!picked && detailExpanded"
+          :label="picked?.title ?? 'Session'"
+          @close="detailExpanded = false"
+        >
+          <template v-if="picked">
+            <div class="tl-detail-head">
+              <span class="tl-detail-title" :title="picked.title">{{ picked.title }}</span>
+              <DetailExpandControls hide-expand @close="detailExpanded = false" />
+            </div>
+            <div class="tl-detail-actions">
+              <button
+                class="vsc-btn"
+                title="View the interactive message transcript in a floating window"
+                @click="fileViewers.openTranscript(picked.provider, picked.id)"
+              >
+                ≡ transcript
+              </button>
+              <button
+                class="vsc-btn"
+                @click="router.push(`/blueprint/${picked.provider}/${picked.id}?from=timeline`)"
+              >
+                ⌗ blueprint
+              </button>
+              <button
+                class="vsc-btn"
+                @click="router.push({ path: '/lineage', query: { focus: `${picked.provider}:${picked.id}` } })"
+              >
+                ⇄ lineage
+              </button>
+              <button
+                class="vsc-btn"
+                @click="router.push({ path: '/', query: { view: 'sessions' } })"
+              >
+                ❯ sessions view
+              </button>
+              <button
+                class="vsc-btn"
+                :title="
+                  isBarFavorite(picked) ? 'Remove from favorites' : 'Add to favorites'
+                "
+                @click="toggleBarFavorite(picked)"
+              >
+                {{ isBarFavorite(picked) ? "☆ unfavorite" : "★ favorite" }}
+              </button>
+            </div>
+            <SessionInfoPanel :provider="picked.provider" :session-id="picked.id" />
+          </template>
+        </DetailExpandModal>
       </div>
     <StatusBar />
     </div>
@@ -249,6 +299,8 @@ import {
 import ProviderFilterChips from "@/components/ProviderFilterChips.vue";
 import ProjectFilterSelect from "@/components/ProjectFilterSelect.vue";
 import GraphLoadingOverlay from "@/components/GraphLoadingOverlay.vue";
+import DetailExpandControls from "@/panels/DetailExpandControls.vue";
+import DetailExpandModal from "@/panels/DetailExpandModal.vue";
 import "@/views/dashboard/chrome.css";
 
 const RANGES = [
@@ -388,6 +440,19 @@ const scrollEl = ref<HTMLElement>();
 let userTouched = false;
 const query = ref("");
 const picked = ref<{ provider: string; id: string; title: string; projectDir?: string }>();
+const detailExpanded = ref(false);
+
+function closePicked(): void {
+  picked.value = undefined;
+  detailExpanded.value = false;
+}
+
+watch(
+  () => (picked.value ? `${picked.value.provider}:${picked.value.id}` : ""),
+  () => {
+    detailExpanded.value = false;
+  },
+);
 
 function projectLabel(dir: string): string {
   const parts = dir.split("/").filter(Boolean);
@@ -484,7 +549,7 @@ function startPan(e: MouseEvent): void {
   const onUp = (ev: MouseEvent): void => {
     // a "pan" that never moved is a background click — close the detail aside
     if (panStart && Math.hypot(ev.clientX - panStart.x, ev.clientY - panStart.y) < 4) {
-      picked.value = undefined;
+      closePicked();
     }
     panStart = undefined;
     panning.value = false;
@@ -549,7 +614,7 @@ const visible = computed(() => {
 watch(visible, (list) => {
   if (!picked.value) return;
   if (!list.some((s) => s.provider === picked.value!.provider && s.id === picked.value!.id)) {
-    picked.value = undefined;
+    closePicked();
   }
 });
 
@@ -740,16 +805,6 @@ onUnmounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-.tl-close {
-  background: none;
-  border: none;
-  color: var(--text-dim);
-  cursor: pointer;
-  font-size: var(--fs-md);
-}
-.tl-close:hover {
-  color: var(--text);
 }
 .tl-detail-actions {
   display: flex;

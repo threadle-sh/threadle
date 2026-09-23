@@ -10,7 +10,7 @@
           :class="effectiveAuto ? 'on' : 'off'"
         >{{ effectiveAuto ? "auto" : "manual" }}</span>
       </div>
-      <button class="ap-close" @click="emit('close')">✕</button>
+      <DetailExpandControls @expand="expanded = true" @close="emit('close')" />
     </div>
     <div class="ap-meta micro-label">
       {{ artifact.source }} · {{ fmtBytes(displaySize) }}
@@ -78,6 +78,62 @@
       @click="onBodyClick"
     />
   </aside>
+
+  <DetailExpandModal
+    :open="expanded"
+    :label="artifact.name"
+    @close="expanded = false"
+  >
+    <div class="ap-modal-panel">
+      <div class="ap-head">
+        <div class="ap-title-wrap">
+          <span class="op-badge" :class="'rule-' + artifact.kind">{{ artifact.kind }}</span>
+          <span class="ap-title mono" :title="artifact.path">{{ artifact.name }}</span>
+        </div>
+        <DetailExpandControls hide-expand @close="expanded = false" />
+      </div>
+      <div class="ap-meta micro-label">
+        {{ artifact.source }} · {{ fmtBytes(displaySize) }}
+        <span v-if="artifact.description" class="ap-desc"> · {{ artifact.description }}</span>
+      </div>
+      <div class="ap-actions">
+        <button
+          v-if="isLikelyTextPath(artifact.path)"
+          class="vsc-btn"
+          title="Open"
+          @click="fileViewers.open(artifact.path)"
+        >
+          ⧉ open
+        </button>
+        <button class="vsc-btn" @click="settings.openPath(artifact.path)">
+          open in {{ settings.editorLabel }}
+        </button>
+        <button v-if="!editing" class="vsc-btn" @click="startEdit">edit</button>
+        <template v-else>
+          <button class="vsc-btn primary" :disabled="busy" @click="save">
+            {{ busy ? "saving…" : "save" }}
+          </button>
+          <button class="vsc-btn" :disabled="busy" @click="cancelEdit">cancel</button>
+        </template>
+      </div>
+      <div v-if="actionError" class="ap-err">{{ actionError }}</div>
+      <div v-if="loading" class="ap-dim">loading…</div>
+      <div v-else-if="error" class="ap-dim">{{ error }}</div>
+      <textarea
+        v-else-if="editing"
+        v-model="draft"
+        class="ap-editor threadle-input ap-editor-lg"
+        spellcheck="false"
+      />
+      <div
+        v-else
+        class="ap-body t-text ap-body-lg"
+        v-html="rendered"
+        @click="onBodyClick"
+      />
+    </div>
+  </DetailExpandModal>
+
   <ConfirmModal
     v-model="outboundDlg"
     @confirm="onConfirmOutbound"
@@ -93,6 +149,8 @@ import { useSettingsStore } from "@/stores/settings";
 import { useFileViewersStore, isLikelyTextPath } from "@/stores/fileViewers";
 import { useFavoritesStore } from "@/stores/favorites";
 import ConfirmModal, { type ConfirmModel } from "@/panels/ConfirmModal.vue";
+import DetailExpandControls from "@/panels/DetailExpandControls.vue";
+import DetailExpandModal from "@/panels/DetailExpandModal.vue";
 
 export interface PreviewArtifact {
   path: string;
@@ -181,6 +239,7 @@ const actionError = ref<string>();
 const editing = ref(false);
 const busy = ref(false);
 const localAuto = ref<boolean | undefined>();
+const expanded = ref(false);
 
 const effectiveAuto = computed(() => localAuto.value ?? props.artifact.autoInvoke !== false);
 const displaySize = computed(() =>
@@ -195,6 +254,7 @@ watch(
     actionError.value = undefined;
     editing.value = false;
     localAuto.value = undefined;
+    expanded.value = false;
     try {
       const res = await fetch(`/api/rules/content?path=${encodeURIComponent(p)}`);
       if (!res.ok) throw new Error(`${res.status}`);
@@ -312,8 +372,9 @@ async function exportSkill(): Promise<void> {
   width: 420px;
   flex-shrink: 0;
   position: sticky;
-  top: 0;
-  max-height: calc(100vh - 140px);
+  top: 12px;
+  align-self: flex-start;
+  max-height: calc(100vh - 160px);
   overflow-y: auto;
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -357,15 +418,18 @@ async function exportSkill(): Promise<void> {
 .ap-desc {
   color: var(--text-dim);
 }
-.ap-close {
-  background: none;
-  border: none;
-  color: var(--text-dim);
-  cursor: pointer;
-  font-size: var(--fs-md);
+.ap-modal-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  flex: 1;
 }
-.ap-close:hover {
-  color: var(--text);
+.ap-editor-lg,
+.ap-body-lg {
+  flex: 1;
+  min-height: 420px;
+  max-height: none;
 }
 .ap-actions {
   display: flex;

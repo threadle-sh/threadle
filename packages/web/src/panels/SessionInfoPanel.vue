@@ -232,6 +232,25 @@
           </div>
         </div>
 
+        <div v-if="sessionPlugins.length" class="sip-block">
+          <div class="micro-label sip-section">
+            plugins · {{ sessionPlugins.length }}
+          </div>
+          <div class="sip-chips">
+            <button
+              v-for="p in sessionPlugins"
+              :key="`${p.provider}:${p.id}`"
+              type="button"
+              class="sip-chip mono sip-chip-btn chip-plugin"
+              :title="`${p.state}${p.version ? ` · ${p.version}` : ''} · ${p.matched.join(', ')}`"
+              @click="openPluginInventory(p)"
+            >
+              ▣ {{ p.name
+              }}<em v-if="p.matched.length"> · {{ p.matched.length }}</em>
+            </button>
+          </div>
+        </div>
+
         <div v-if="bp.children.length" class="sip-block">
           <div class="micro-label sip-section">subagents · {{ bp.children.length }}</div>
           <div class="sip-sublist">
@@ -313,6 +332,11 @@ interface BpLite {
   skills: Array<{ name: string; count: number; calls?: Array<{ summary: string }> }>;
   children: Array<{ id: string; title?: string; agent?: string }>;
   files: Array<{ path: string; op: string }>;
+  rulesFiles?: Array<{
+    path: string;
+    name: string;
+    kind: "rules" | "agent" | "skill";
+  }>;
   contexts?: {
     extracted: Array<{ hash: string; kind: string; preview: string; chars: number }>;
     injected: Array<{ hash: string; kind: string; preview: string; chars: number }>;
@@ -327,6 +351,97 @@ interface BpLite {
 }
 const bp = ref<BpLite>();
 const bpLoading = ref(false);
+
+interface PluginPack {
+  provider: string;
+  id: string;
+  name: string;
+  version?: string;
+  description?: string;
+  origin: { kind: string; path: string; marketplaceId?: string };
+  state: string;
+  children: Array<{ kind: string; name: string; path?: string }>;
+}
+
+interface MatchedPlugin {
+  provider: string;
+  id: string;
+  name: string;
+  version?: string;
+  state: string;
+  matched: string[];
+}
+
+const pluginCatalog = ref<PluginPack[] | null>(null);
+
+async function ensurePlugins(): Promise<PluginPack[]> {
+  if (pluginCatalog.value) return pluginCatalog.value;
+  try {
+    const res = await fetch("/api/plugins");
+    pluginCatalog.value = (await res.json()) as PluginPack[];
+  } catch {
+    pluginCatalog.value = [];
+  }
+  return pluginCatalog.value;
+}
+
+function pathUnder(child: string, root: string): boolean {
+  const c = child.replace(/\\/g, "/").toLowerCase();
+  const r = root.replace(/\\/g, "/").replace(/\/+$/, "").toLowerCase();
+  if (!r) return false;
+  return c === r || c.startsWith(`${r}/`);
+}
+
+const sessionPlugins = computed((): MatchedPlugin[] => {
+  const d = bp.value;
+  const catalog = pluginCatalog.value;
+  if (!d || !catalog?.length) return [];
+  const files = d.rulesFiles ?? [];
+  const used = new Set(d.skills.map((s) => s.name.toLowerCase()));
+  const out: MatchedPlugin[] = [];
+  for (const p of catalog) {
+    const reasons: string[] = [];
+    for (const f of files) {
+      if (pathUnder(f.path, p.origin.path)) reasons.push(f.name);
+    }
+    for (const ch of p.children) {
+      if (ch.kind === "skill" && used.has(ch.name.toLowerCase())) {
+        reasons.push(ch.name);
+      }
+      if (ch.path) {
+        for (const f of files) {
+          if (pathUnder(f.path, ch.path) || pathUnder(ch.path, f.path)) {
+            reasons.push(ch.name);
+          }
+        }
+      }
+    }
+    if (used.has(p.id.toLowerCase()) || used.has(p.name.toLowerCase())) {
+      reasons.push(p.name);
+    }
+    if (!reasons.length) continue;
+    out.push({
+      provider: p.provider,
+      id: p.id,
+      name: p.name,
+      version: p.version,
+      state: p.state,
+      matched: [...new Set(reasons)],
+    });
+  }
+  return out;
+});
+
+function openPluginInventory(p: MatchedPlugin): void {
+  void router.push({
+    path: "/",
+    query: {
+      view: "agents",
+      browse: "plugins",
+      plugin: `${p.provider}:${p.id}`,
+    },
+  });
+}
 
 // ---- threadle runs that produced/continued this session (workflow hint) ----
 
@@ -430,9 +545,13 @@ watch(
     }
     void loadTouchingRuns();
     // usage lists come from the (heavier, mtime-cached) blueprint endpoint
-    void fetch(`/api/sessions/${props.provider}/blueprint/${props.sessionId}`)
-      .then((r) => (r.ok ? r.json() : undefined))
-      .then((b) => {
+    void Promise.all([
+      fetch(`/api/sessions/${props.provider}/blueprint/${props.sessionId}`).then((r) =>
+        r.ok ? r.json() : undefined,
+      ),
+      ensurePlugins(),
+    ])
+      .then(([b]) => {
         bp.value = b as BpLite | undefined;
       })
       .catch(() => undefined)
@@ -861,6 +980,15 @@ async function dl(kind: "bundle" | "context" | "reasoning"): Promise<void> {
 }
 .sip-chip.chip-wf-link:hover {
   background: var(--panel-bg-raised);
+}
+.sip-chip.sip-chip-btn {
+  cursor: pointer;
+  font: inherit;
+}
+.sip-chip.chip-plugin:hover {
+  background: var(--panel-bg-raised);
+  border-color: var(--border-strong);
+  color: var(--text);
 }
 .sip-chips {
   display: flex;

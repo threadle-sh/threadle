@@ -9,6 +9,8 @@ import {
 import { useFileViewersStore } from "@/stores/fileViewers";
 import { useSettingsStore } from "@/stores/settings";
 import { vColResize } from "@/lib/colResize";
+import DetailExpandControls from "@/panels/DetailExpandControls.vue";
+import "@/views/dashboard/chrome.css";
 
 export interface MemoryEntry {
   provider: string;
@@ -960,11 +962,11 @@ function closeExpand(): void {
         <button
           v-if="filtered.length"
           type="button"
-          class="vsc-btn mem-expand-btn"
+          class="detail-icon-btn"
           title="Expand icicle"
           @click="openExpand"
         >
-          ↗ expand
+          □
         </button>
       </div>
       <div v-if="!filtered.length" class="mem-aside-empty">
@@ -1088,9 +1090,7 @@ function closeExpand(): void {
             >
               ▸ transcript
             </button>
-            <button type="button" class="mem-modal-close" title="Close" @click="closeExpand">
-              ✕
-            </button>
+            <DetailExpandControls hide-expand @close="closeExpand" />
           </div>
         </header>
         <div class="mem-nav mem-modal-nav">
@@ -1240,10 +1240,11 @@ function closeExpand(): void {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: calc(100vh - 220px);
+  max-height: calc(100vh - 160px);
   overflow: auto;
   position: sticky;
-  top: 0;
+  top: 12px;
+  align-self: flex-start;
 }
 .mem-aside-empty {
   display: flex;
@@ -1260,9 +1261,6 @@ function closeExpand(): void {
 .mem-aside-title {
   font-size: var(--fs-sm);
   color: var(--text);
-}
-.mem-expand-btn {
-  flex-shrink: 0;
 }
 .mem-nav {
   display: flex;
@@ -1419,18 +1417,6 @@ function closeExpand(): void {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-.mem-modal-close {
-  background: none;
-  border: none;
-  color: var(--text-dim);
-  cursor: pointer;
-  font-size: var(--fs-lg);
-  line-height: 1;
-  padding: 4px 6px;
-}
-.mem-modal-close:hover {
-  color: var(--text);
 }
 .mem-modal-hint {
   margin: 0;
