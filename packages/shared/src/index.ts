@@ -47,6 +47,7 @@ export * from "./frames.js";
 export * from "./workflow.js";
 export * from "./workflow-folders.js";
 export * from "./favorites.js";
+export * from "./projects.js";
 export * from "./graphLayout.js";
 export * from "./atlas.js";
 export * from "./mcp-format.js";

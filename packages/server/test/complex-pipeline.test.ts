@@ -11,7 +11,7 @@ import {
 } from "../src/templates/complex-pipeline.js";
 import { getWorkflowTemplate } from "../src/templates/workflows.js";
 import { importGraph, listGraphs, readGraph, saveGraph } from "../src/graphs/store.js";
-import { executeWorkflow } from "../src/workflows/executor.js";
+import { executeWorkflow } from "../src/wire/workflows/executor.js";
 
 function outputText(g: Graph): string | undefined {
   const out = g.nodes.find((n) => n.data.type === "output");

@@ -597,7 +597,7 @@ import ProviderFilterChips from "@/components/ProviderFilterChips.vue";
 import GraphLoadingOverlay from "@/components/GraphLoadingOverlay.vue";
 import DetailExpandControls from "@/panels/DetailExpandControls.vue";
 import DetailExpandModal from "@/panels/DetailExpandModal.vue";
-import "@/views/dashboard/chrome.css";
+import "@/viewer/dashboard/chrome.css";
 
 import "@vue-flow/core/dist/style.css";
 import "@vue-flow/controls/dist/style.css";
@@ -2314,6 +2314,7 @@ function clearDir(): void {
 
 function onNav(id: string): void {
   if (id === "map") return;
+  if (id === "projects") return void router.push("/projects");
   if (id === "lineage") return void router.push("/lineage");
   if (id === "timeline") return void router.push("/timeline");
   void router.push({ path: "/", query: { view: id } });

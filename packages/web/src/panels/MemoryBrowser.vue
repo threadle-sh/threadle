@@ -10,7 +10,7 @@ import { useFileViewersStore } from "@/stores/fileViewers";
 import { useSettingsStore } from "@/stores/settings";
 import { vColResize } from "@/lib/colResize";
 import DetailExpandControls from "@/panels/DetailExpandControls.vue";
-import "@/views/dashboard/chrome.css";
+import "@/viewer/dashboard/chrome.css";
 
 export interface MemoryEntry {
   provider: string;

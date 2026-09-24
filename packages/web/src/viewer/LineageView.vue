@@ -495,7 +495,7 @@ import GraphLoadingOverlay from "@/components/GraphLoadingOverlay.vue";
 import DetailExpandControls from "@/panels/DetailExpandControls.vue";
 import DetailExpandModal from "@/panels/DetailExpandModal.vue";
 import { useFileViewersStore } from "@/stores/fileViewers";
-import "@/views/dashboard/chrome.css";
+import "@/viewer/dashboard/chrome.css";
 
 interface LineagePayload {
   hash: string;
@@ -671,6 +671,7 @@ function onNav(id: string): void {
   if (id === "lineage") return;
   if (id === "timeline") return void router.push("/timeline");
   if (id === "map") return void router.push("/map");
+  if (id === "projects") return void router.push("/projects");
   void router.push({ path: "/", query: { view: id } });
 }
 function provColor(p: string): string {

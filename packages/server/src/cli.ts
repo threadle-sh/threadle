@@ -9,7 +9,7 @@ import { createApp } from "./server.js";
 import { startWatchers } from "./watch.js";
 import { shutdownManagedServer } from "./providers/opencode/inject.js";
 import { importGraph, readGraph, saveGraph, deleteGraph, listGraphs as listLocalGraphs, replaceGraphFromPortable } from "./graphs/store.js";
-import { executeWorkflow } from "./workflows/executor.js";
+import { executeWorkflow } from "./wire/workflows/executor.js";
 import { getRecipe, listRecipes } from "./templates/recipes.js";
 import { getWorkflowTemplate, WORKFLOW_TEMPLATES } from "./templates/workflows.js";
 import { printCheck, runCheck } from "./check.js";

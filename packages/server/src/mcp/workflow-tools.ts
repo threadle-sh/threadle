@@ -2,7 +2,7 @@ import path from "node:path";
 import { assessDetachedReadiness, type WorkflowParam } from "@threadle/shared";
 import { listGraphs, readGraph } from "../graphs/store.js";
 import { isKnownProjectDir } from "../readable-paths.js";
-import { executeWorkflow } from "../workflows/executor.js";
+import { executeWorkflow } from "../wire/workflows/executor.js";
 import { readSettings } from "../routes/settings.js";
 import {
   coerceToolArgsToParams,

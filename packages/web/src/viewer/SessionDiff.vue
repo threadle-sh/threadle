@@ -146,6 +146,7 @@ function goDash(view: string): void {
   if (view === "lineage") return void router.push("/lineage");
   if (view === "timeline") return void router.push("/timeline");
   if (view === "map") return void router.push("/map");
+  if (view === "projects") return void router.push("/projects");
   void router.push({ path: "/", query: { view } });
 }
 

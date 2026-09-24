@@ -39,6 +39,32 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export type ProjectMemberDto = {
+  dir: string;
+  basename: string;
+  providers: string[];
+  sessionCount: number;
+  liveCount: number;
+  lastActivity: number;
+};
+
+export type ProjectRollupDto = {
+  id: string;
+  name: string;
+  dirs: string[];
+  workflowIds: string[];
+  pinned?: boolean;
+  notes?: string;
+  createdAt: number;
+  updatedAt: number;
+  providers: string[];
+  sessionCount: number;
+  liveCount: number;
+  lastActivity: number;
+  workflows: Array<{ id: string; name: string; missing?: boolean }>;
+  members: ProjectMemberDto[];
+};
+
 export const api = {
   providers: () => http<ProviderInfo[]>("/api/providers"),
 
@@ -311,6 +337,42 @@ export const api = {
   pruneFavorites: () =>
     http<{ items: FavoriteEntry[]; removed: number }>("/api/favorites/prune", {
       method: "POST",
+    }),
+
+  projects: () =>
+    http<{ projects: ProjectRollupDto[]; unassigned: ProjectMemberDto[] }>(
+      "/api/projects",
+    ),
+  project: (id: string) =>
+    http<ProjectRollupDto>(`/api/projects/${encodeURIComponent(id)}`),
+  createProject: (body: {
+    name: string;
+    dirs?: string[];
+    workflowIds?: string[];
+    pinned?: boolean;
+    notes?: string;
+  }) =>
+    http<ProjectRollupDto>("/api/projects", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  patchProject: (
+    id: string,
+    body: {
+      name?: string;
+      dirs?: string[];
+      workflowIds?: string[];
+      pinned?: boolean;
+      notes?: string;
+    },
+  ) =>
+    http<ProjectRollupDto>(`/api/projects/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  deleteProject: (id: string) =>
+    http<{ ok: boolean }>(`/api/projects/${encodeURIComponent(id)}`, {
+      method: "DELETE",
     }),
 };
 

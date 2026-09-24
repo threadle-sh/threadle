@@ -7,31 +7,49 @@ export const router = createRouter({
       path: "/",
       name: "graph-list",
       component: () => import("./views/GraphList.vue"),
+      beforeEnter: (to) => {
+        // Viewer-first: bare `/` opens Sessions, not the wire list.
+        if (!to.query.view) {
+          return { path: "/", query: { ...to.query, view: "sessions" } };
+        }
+      },
     },
     {
       path: "/graph/:id?",
       name: "graph-editor",
-      component: () => import("./views/GraphEditor.vue"),
+      component: () => import("./wire/GraphEditor.vue"),
+    },
+    {
+      path: "/wire/:id?",
+      redirect: (to) => ({
+        path: to.params.id ? `/graph/${to.params.id}` : "/",
+        query: to.params.id ? to.query : { ...to.query, view: "workflows" },
+      }),
     },
     {
       path: "/timeline",
       name: "timeline",
-      component: () => import("./views/TimelineView.vue"),
+      component: () => import("./viewer/TimelineView.vue"),
     },
     {
       path: "/diff",
       name: "session-diff",
-      component: () => import("./views/SessionDiff.vue"),
+      component: () => import("./viewer/SessionDiff.vue"),
     },
     {
       path: "/lineage",
       name: "lineage",
-      component: () => import("./views/LineageView.vue"),
+      component: () => import("./viewer/LineageView.vue"),
     },
     {
       path: "/map",
       name: "map",
-      component: () => import("./views/MapView.vue"),
+      component: () => import("./viewer/MapView.vue"),
+    },
+    {
+      path: "/projects/:id?",
+      name: "projects",
+      component: () => import("./viewer/ProjectsView.vue"),
     },
     {
       path: "/atlas",
@@ -40,12 +58,12 @@ export const router = createRouter({
     {
       path: "/blueprint/:provider/:id(.*)",
       name: "session-blueprint",
-      component: () => import("./views/SessionBlueprint.vue"),
+      component: () => import("./viewer/SessionBlueprint.vue"),
     },
     {
       path: "/growth/:provider/:id(.*)",
       name: "session-growth",
-      component: () => import("./views/SessionGrowth.vue"),
+      component: () => import("./viewer/SessionGrowth.vue"),
     },
   ],
 });

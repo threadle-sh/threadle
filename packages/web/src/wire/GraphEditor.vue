@@ -4,7 +4,7 @@
       v-if="!canvasFocus"
       :items="navItems"
       active="workflows"
-      @select="(id) => router.push(id === 'lineage' ? '/lineage' : id === 'timeline' ? '/timeline' : id === 'map' ? '/map' : { path: '/', query: { view: id } })"
+      @select="(id) => router.push(id === 'lineage' ? '/lineage' : id === 'timeline' ? '/timeline' : id === 'map' ? '/map' : id === 'projects' ? '/projects' : { path: '/', query: { view: id } })"
     />
     <Palette
       v-if="!canvasFocus"
@@ -776,31 +776,31 @@ import {
   SKIP_EXEC_TYPES,
   wireMenuBlocks,
 } from "@threadle/shared";
-import SessionNode from "@/canvas/nodes/SessionNode.vue";
-import SubagentNode from "@/canvas/nodes/SubagentNode.vue";
-import AgentDefNode from "@/canvas/nodes/AgentDefNode.vue";
-import ContextNode from "@/canvas/nodes/ContextNode.vue";
-import PromptNode from "@/canvas/nodes/PromptNode.vue";
-import OutputNode from "@/canvas/nodes/OutputNode.vue";
-import PromptConvertNode from "@/canvas/nodes/PromptConvertNode.vue";
-import DelayNode from "@/canvas/nodes/DelayNode.vue";
-import DataNode from "@/canvas/nodes/DataNode.vue";
-import ApprovalNode from "@/canvas/nodes/ApprovalNode.vue";
-import KnotNode from "@/canvas/nodes/KnotNode.vue";
-import TripwireNode from "@/canvas/nodes/TripwireNode.vue";
-import JudgeNode from "@/canvas/nodes/JudgeNode.vue";
-import UntilNode from "@/canvas/nodes/UntilNode.vue";
-import LiveHandoffNode from "@/canvas/nodes/LiveHandoffNode.vue";
-import WaitIdleNode from "@/canvas/nodes/WaitIdleNode.vue";
+import SessionNode from "@/wire/canvas/nodes/SessionNode.vue";
+import SubagentNode from "@/wire/canvas/nodes/SubagentNode.vue";
+import AgentDefNode from "@/wire/canvas/nodes/AgentDefNode.vue";
+import ContextNode from "@/wire/canvas/nodes/ContextNode.vue";
+import PromptNode from "@/wire/canvas/nodes/PromptNode.vue";
+import OutputNode from "@/wire/canvas/nodes/OutputNode.vue";
+import PromptConvertNode from "@/wire/canvas/nodes/PromptConvertNode.vue";
+import DelayNode from "@/wire/canvas/nodes/DelayNode.vue";
+import DataNode from "@/wire/canvas/nodes/DataNode.vue";
+import ApprovalNode from "@/wire/canvas/nodes/ApprovalNode.vue";
+import KnotNode from "@/wire/canvas/nodes/KnotNode.vue";
+import TripwireNode from "@/wire/canvas/nodes/TripwireNode.vue";
+import JudgeNode from "@/wire/canvas/nodes/JudgeNode.vue";
+import UntilNode from "@/wire/canvas/nodes/UntilNode.vue";
+import LiveHandoffNode from "@/wire/canvas/nodes/LiveHandoffNode.vue";
+import WaitIdleNode from "@/wire/canvas/nodes/WaitIdleNode.vue";
 import LiveHandoffDock from "@/panels/LiveHandoffDock.vue";
 import ApprovalDock from "@/panels/ApprovalDock.vue";
-import IteratorNode from "@/canvas/nodes/IteratorNode.vue";
-import GroupNode from "@/canvas/nodes/GroupNode.vue";
-import NoteNode from "@/canvas/nodes/NoteNode.vue";
-import CustomNode from "@/canvas/nodes/CustomNode.vue";
-import McpToolNode from "@/canvas/nodes/McpToolNode.vue";
-import SkillNode from "@/canvas/nodes/SkillNode.vue";
-import RulesNode from "@/canvas/nodes/RulesNode.vue";
+import IteratorNode from "@/wire/canvas/nodes/IteratorNode.vue";
+import GroupNode from "@/wire/canvas/nodes/GroupNode.vue";
+import NoteNode from "@/wire/canvas/nodes/NoteNode.vue";
+import CustomNode from "@/wire/canvas/nodes/CustomNode.vue";
+import McpToolNode from "@/wire/canvas/nodes/McpToolNode.vue";
+import SkillNode from "@/wire/canvas/nodes/SkillNode.vue";
+import RulesNode from "@/wire/canvas/nodes/RulesNode.vue";
 import { useCustomNodes } from "@/stores/custom-nodes";
 import StatusBar from "@/panels/StatusBar.vue";
 import AgentPanel from "@/panels/AgentPanel.vue";

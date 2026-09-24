@@ -1,6 +1,6 @@
 import type { DistillConfig, ProviderId } from "@threadle/shared";
 import type { LogSink } from "../providers/stream.js";
-import { runProviderAgent } from "../workflows/provider-agent.js";
+import { runProviderAgent } from "../wire/workflows/provider-agent.js";
 
 const DISTILL_PROMPT = `Distill the following transcript into a dense context brief for another AI agent. Cover:
 - Goal: what the session set out to do

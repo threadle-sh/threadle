@@ -1,13 +1,13 @@
 import type { InjectResult, ProviderId } from "@threadle/shared";
-import { runClaudeAgent } from "../providers/claude-code/inject.js";
-import { runCursorAgent } from "../providers/cursor/inject.js";
-import { runAntigravityAgent } from "../providers/antigravity/inject.js";
-import { runCodexAgent } from "../providers/codex/inject.js";
-import { runCopilotAgent } from "../providers/copilot/inject.js";
-import { runGrokAgent } from "../providers/grok/inject.js";
-import { runMuseAgent } from "../providers/muse/inject.js";
-import { runOpencodeAgent } from "../providers/opencode/inject.js";
-import type { LogSink } from "../providers/stream.js";
+import { runClaudeAgent } from "../../providers/claude-code/inject.js";
+import { runCursorAgent } from "../../providers/cursor/inject.js";
+import { runAntigravityAgent } from "../../providers/antigravity/inject.js";
+import { runCodexAgent } from "../../providers/codex/inject.js";
+import { runCopilotAgent } from "../../providers/copilot/inject.js";
+import { runGrokAgent } from "../../providers/grok/inject.js";
+import { runMuseAgent } from "../../providers/muse/inject.js";
+import { runOpencodeAgent } from "../../providers/opencode/inject.js";
+import type { LogSink } from "../../providers/stream.js";
 
 export interface ProviderAgentOpts {
   provider: ProviderId;

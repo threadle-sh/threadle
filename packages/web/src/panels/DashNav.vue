@@ -35,7 +35,7 @@
           :key="item.id"
           class="nav-item"
           :class="{ active: active === item.id }"
-          :title="collapsed || compact ? item.label : undefined"
+          :title="collapsed || compact ? itemTitle(item) : undefined"
           @click="emit('select', item.id)"
         >
           <span class="nav-glyph">
@@ -43,7 +43,9 @@
             <FolderMark v-else-if="item.id === 'library'" />
             <template v-else>{{ item.glyph }}</template>
           </span>
-          <span v-if="!collapsed && !compact" class="nav-label">{{ item.label }}</span>
+          <span v-if="!collapsed && !compact" class="nav-label">
+            {{ item.label }}<span v-if="item.badge" class="nav-badge">{{ item.badge }}</span>
+          </span>
           <span v-if="!collapsed && !compact" class="nav-count">{{ item.count ?? "" }}</span>
         </button>
       </template>
@@ -101,6 +103,10 @@ const props = defineProps<{
 
 const emit = defineEmits<{ select: [id: string] }>();
 
+function itemTitle(item: NavItem): string {
+  return item.badge ? `${item.label} (${item.badge})` : item.label;
+}
+
 const reportDlg = ref<ConfirmModel>();
 
 function onReportIssue(): void {
@@ -149,12 +155,18 @@ const sections = computed<NavSection[]>(() => {
   return NAV_SECTIONS.map((sec) => ({
     id: sec.id,
     label: sec.label,
-    items: sec.items
-      .map((base) => {
-        const live = byId.get(base.id);
-        return live ? { ...base, ...live, glyph: base.glyph, label: base.label } : undefined;
-      })
-      .filter((i): i is NavItem => !!i),
+    items: sec.items.flatMap((base): NavItem[] => {
+      const live = byId.get(base.id);
+      if (!live) return [];
+      const item: NavItem = {
+        ...base,
+        ...live,
+        glyph: base.glyph,
+        label: base.label,
+      };
+      if (base.badge !== undefined) item.badge = base.badge;
+      return [item];
+    }),
   })).filter((s) => s.items.length > 0);
 });
 
@@ -299,6 +311,15 @@ onUnmounted(() => window.removeEventListener("resize", onWindowResize));
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.nav-badge {
+  margin-left: 0.35em;
+  font-size: 0.65em;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  vertical-align: 0.15em;
 }
 .nav-count {
   font-family: var(--mono);

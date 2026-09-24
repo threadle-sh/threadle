@@ -24,6 +24,7 @@ const skillsCount = ref<Count>(blank());
 const filesCount = ref<Count>(blank());
 const activityCount = ref<Count>(blank());
 const favoritesCount = ref<Count>(blank());
+const projectsCount = ref<Count>(blank());
 
 let refreshInflight: Promise<void> | null = null;
 let lastRefreshAt = 0;
@@ -79,6 +80,15 @@ async function refreshNavCounts(force = false): Promise<void> {
         .favorites()
         .then((body) => {
           setCount(favoritesCount, body.items?.length ?? 0);
+        })
+        .catch(() => {
+          /* keep prior */
+        }),
+
+      api
+        .projects()
+        .then((body) => {
+          setCount(projectsCount, body.projects?.length ?? 0);
         })
         .catch(() => {
           /* keep prior */
@@ -178,6 +188,7 @@ export function useNavItems(opts?: {
   });
 
   const baseCounts: Record<string, () => string | number> = {
+    projects: () => projectsCount.value,
     workflows: () => workflowCount.value,
     runs: () => runsRunning.value,
     sessions: () =>

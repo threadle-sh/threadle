@@ -28,6 +28,7 @@ import { mcpRoutes } from "./routes/mcp.js";
 import { backupRoutes } from "./routes/backup.js";
 import { gitRoutes } from "./routes/git.js";
 import { favoriteRoutes } from "./routes/favorites.js";
+import { projectRoutes } from "./routes/projects.js";
 import { memoryRoutes } from "./routes/memory.js";
 import { pluginRoutes } from "./routes/plugins.js";
 import { gcTmpFiles } from "./gc.js";
@@ -278,6 +279,7 @@ export function createApp(opts: AppOptions) {
   app.route("/api/git", gitRoutes);
   app.route("/api/backup", backupRoutes);
   app.route("/api/favorites", favoriteRoutes);
+  app.route("/api/projects", projectRoutes);
   app.route("/api/memory", memoryRoutes);
   app.route("/api/plugins", pluginRoutes);
 

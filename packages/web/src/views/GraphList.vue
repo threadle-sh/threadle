@@ -9,7 +9,7 @@
         <div class="wf-chrome">
           <header class="dash-head">
             <div>
-              <h1 class="dash-title">Workflows</h1>
+              <h1 class="dash-title">Wire <span class="wf-beta">beta</span></h1>
             </div>
             <div class="view-controls">
               <button class="threadle-btn" @click="importPicker?.click()">
@@ -834,8 +834,8 @@ import {
   UsageView,
   AgentsView,
   FavoritesView,
-} from "@/views/dashboard";
-import "./dashboard/chrome.css";
+} from "@/viewer/dashboard";
+import "@/viewer/dashboard/chrome.css";
 
 const router = useRouter();
 const sessions = useSessionsStore();
@@ -997,7 +997,7 @@ function viewFromQuery(): ViewId {
   const q = route.query.view;
   return typeof q === "string" && VIEW_IDS.includes(q as ViewId)
     ? (q as ViewId)
-    : "workflows";
+    : "sessions";
 }
 const view = ref<ViewId>(viewFromQuery());
 
@@ -1040,6 +1040,10 @@ function onNav(id: string): void {
   }
   if (id === "map") {
     void router.push("/map");
+    return;
+  }
+  if (id === "projects") {
+    void router.push("/projects");
     return;
   }
   view.value = id as ViewId;
@@ -2139,6 +2143,15 @@ onUnmounted(() => document.removeEventListener("click", onDocClick));
   margin: 0;
   letter-spacing: -0.01em;
   font-weight: 600;
+}
+.wf-beta {
+  font-size: 0.55em;
+  font-weight: 500;
+  color: var(--fg-muted, var(--text-faint));
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-left: 0.4rem;
+  vertical-align: 0.2em;
 }
 .dash-search {
   max-width: 260px;

@@ -36,7 +36,7 @@ vi.mock("../src/providers/registry.js", () => ({
 }));
 vi.mock("../src/watch.js", () => ({ startWatchers: () => undefined }));
 
-import { executeWorkflow } from "../src/workflows/executor.js";
+import { executeWorkflow } from "../src/wire/workflows/executor.js";
 import { saveGraph, deleteGraph } from "../src/graphs/store.js";
 import type { Graph } from "@threadle/shared";
 

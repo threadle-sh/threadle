@@ -34,7 +34,7 @@ import { listCopilotModels, runCopilotAgent } from "../providers/copilot/inject.
 import { listGrokModels, runGrokAgent } from "../providers/grok/inject.js";
 import { listMuseModels, runMuseAgent } from "../providers/muse/inject.js";
 import { registry } from "../providers/registry.js";
-import { executeWorkflow } from "../workflows/executor.js";
+import { executeWorkflow } from "../wire/workflows/executor.js";
 import { readGraph } from "../graphs/store.js";
 import { readSubscription } from "./subscription.js";
 import type { LogSink } from "../providers/stream.js";

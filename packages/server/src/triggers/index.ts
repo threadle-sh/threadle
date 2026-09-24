@@ -5,7 +5,7 @@ import { assessDetachedReadiness } from "@threadle/shared";
 import { threadleConfigDir } from "../paths.js";
 import { readGraph } from "../graphs/store.js";
 import { jobs, appendJobLog } from "../jobs.js";
-import { executeWorkflow } from "../workflows/executor.js";
+import { executeWorkflow } from "../wire/workflows/executor.js";
 import { bus } from "../events.js";
 import {
   cronMatches,

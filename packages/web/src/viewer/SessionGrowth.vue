@@ -593,7 +593,7 @@ import { estimateContextWindow } from "@/lib/contextWindow";
 import { providerColor, providerColorHex } from "@/lib/providers";
 import { useFileViewersStore } from "@/stores/fileViewers";
 import { useSettingsStore } from "@/stores/settings";
-import "@/views/dashboard/chrome.css";
+import "@/viewer/dashboard/chrome.css";
 
 function fmtDuration(ms?: number): string {
   if (ms == null || !Number.isFinite(ms) || ms < 0) return "—";
@@ -1527,6 +1527,7 @@ function goDash(view: string): void {
       query: projectDir ? { dir: projectDir } : undefined,
     });
   }
+  if (view === "projects") return void router.push("/projects");
   void router.push({ path: "/", query: { view } });
 }
 

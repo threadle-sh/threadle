@@ -137,6 +137,11 @@ async function sessionProjectRoots(): Promise<string[]> {
   return [...new Set(out)];
 }
 
+/** Discovered session workspace roots (normalized), for Projects unassigned list. */
+export async function listKnownProjectDirs(): Promise<string[]> {
+  return sessionProjectRoots();
+}
+
 async function real(p: string): Promise<string> {
   try {
     return await fs.promises.realpath(p);

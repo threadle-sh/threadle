@@ -301,7 +301,7 @@ import ProjectFilterSelect from "@/components/ProjectFilterSelect.vue";
 import GraphLoadingOverlay from "@/components/GraphLoadingOverlay.vue";
 import DetailExpandControls from "@/panels/DetailExpandControls.vue";
 import DetailExpandModal from "@/panels/DetailExpandModal.vue";
-import "@/views/dashboard/chrome.css";
+import "@/viewer/dashboard/chrome.css";
 
 const RANGES = [
   { id: "24h", label: "24h", ms: 24 * 3_600_000 },
@@ -575,6 +575,7 @@ function goDash(view: string): void {
       query: dir ? { dir } : undefined,
     });
   }
+  if (view === "projects") return void router.push("/projects");
   void router.push({ path: "/", query: { view } });
 }
 

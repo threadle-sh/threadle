@@ -9,7 +9,7 @@ import { useSettingsStore } from "@/stores/settings";
 import { vColResize } from "@/lib/colResize";
 import DetailExpandControls from "@/panels/DetailExpandControls.vue";
 import DetailExpandModal from "@/panels/DetailExpandModal.vue";
-import "@/views/dashboard/chrome.css";
+import "@/viewer/dashboard/chrome.css";
 
 export type PluginChildKind = "skill" | "agent" | "mcp" | "command";
 

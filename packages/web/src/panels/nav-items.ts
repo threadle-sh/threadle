@@ -2,6 +2,8 @@ export interface NavItem {
   id: string;
   glyph: string;
   label: string;
+  /** Small suffix (e.g. beta) — rendered quieter than the label. */
+  badge?: string;
   count?: string | number;
 }
 
@@ -21,7 +23,7 @@ export const NAV_SECTIONS: NavSection[] = [
     id: "build",
     label: "Build",
     items: [
-      { id: "workflows", glyph: "⌗", label: "Workflows" },
+      { id: "projects", glyph: "▣", label: "Projects" },
       { id: "runs", glyph: "◷", label: "Runs" },
       { id: "logs", glyph: "≣", label: "Logs" },
     ],
@@ -45,6 +47,7 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { id: "favorites", glyph: "★", label: "Favorites" },
       { id: "library", glyph: "", label: "Library" },
+      { id: "workflows", glyph: "⌗", label: "Wire", badge: "beta" },
       { id: "agents", glyph: "⟨/⟩", label: "Agents" },
       { id: "rules", glyph: "§", label: "Rules" },
       { id: "skills", glyph: "✦\uFE0E", label: "Skills" },

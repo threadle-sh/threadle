@@ -37,7 +37,7 @@ vi.mock("../src/providers/antigravity/inject.js", () => ({
 import {
   runSkillInvoke,
   skillInvokePrompt,
-} from "../src/workflows/skill-invoke.js";
+} from "../src/wire/workflows/skill-invoke.js";
 
 beforeEach(() => {
   for (const fn of [

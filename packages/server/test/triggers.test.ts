@@ -14,7 +14,7 @@ import {
 
 const executeWorkflow = vi.fn(async () => ({ outputs: 0, outputTexts: [] }));
 
-vi.mock("../src/workflows/executor.js", () => ({
+vi.mock("../src/wire/workflows/executor.js", () => ({
   executeWorkflow: (...args: unknown[]) => executeWorkflow(...args),
 }));
 

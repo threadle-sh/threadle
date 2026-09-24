@@ -56,12 +56,21 @@ First PR? Something small and self-contained is the fastest way in: a docs fix, 
 
 Providers under `packages/server/src/providers/*` are **read-only** against agent storage. Never write into `~/.claude/projects`, opencode SQLite, `~/.cursor` chats, Antigravity brain logs, `~/.codex`, `~/.copilot`, or `~/.grok`.
 
+## Product posture (viewer first)
+
+threadle is a **local-first multi-provider viewer** (sessions, spend, blueprints, projects, search). Wire is optional beta in the same install — soft-frozen. See [docs/wire.md](docs/wire.md) and [docs/dogfood.md](docs/dogfood.md).
+
+- Prefer Sessions / Projects / Statistics work over canvas features.
+- Ignore Wire except breakage unless launch feedback says otherwise.
+- No new packages, product rename, or Wire extract until launch proves it.
+
 ## Style / product rules
 
 - Vocabulary: UI says *circuit breaker / merge / judge / until / error connector / parallelism / spend ceiling*. Graph JSON may keep historical ids (`tripwire`, `knot`, `judge`, `until`, `out:err`, `ply`, …).
 - List UIs: mono micro-labels, right-aligned numerics, ellipsize names.
 - Shared nav lives in `packages/web/src/panels/nav-items.ts`. Do not fork it.
 - Theme: true-black monochrome (`packages/web/src/theme/theme.css`). Text glyphs only, no emoji.
+- Layout: `packages/web/src/viewer/` vs `packages/web/src/wire/`; `npm run check:boundary`.
 
 ## Security reports
 

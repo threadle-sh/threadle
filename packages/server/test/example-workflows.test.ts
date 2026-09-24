@@ -49,7 +49,7 @@ vi.mock("../src/providers/registry.js", () => ({
   },
 }));
 
-import { executeWorkflow } from "../src/workflows/executor.js";
+import { executeWorkflow } from "../src/wire/workflows/executor.js";
 import { importGraph, readGraph, saveGraph } from "../src/graphs/store.js";
 import {
   WORKFLOW_TEMPLATES,

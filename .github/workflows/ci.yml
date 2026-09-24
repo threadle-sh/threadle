@@ -28,6 +28,9 @@ jobs:
       - name: Audit production deps
         run: npm audit --omit=dev --audit-level=high
 
+      - name: Boundary (viewer/core ↛ wire)
+        run: npm run check:boundary
+
       - name: Typecheck shared
         run: npx tsc -p packages/shared --noEmit
 

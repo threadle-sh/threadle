@@ -39,34 +39,34 @@ import {
   claudeExhaustedForModel,
   formatUsageExhaustionMessage,
 } from "@threadle/shared";
-import { readSubscription } from "../routes/subscription.js";
-import { readGraph, saveGraph } from "../graphs/store.js";
+import { readSubscription } from "../../routes/subscription.js";
+import { readGraph, saveGraph } from "../../graphs/store.js";
 import {
   findLatestGraphOutputs,
   mergeJobNodeOutput,
   readJobOutputs,
   type CachedNodeOutput,
   writeJobOutputs,
-} from "../jobs.js";
-import { registry } from "../providers/registry.js";
-import { isKnownProjectDir } from "../readable-paths.js";
-import { runClaudeAgent } from "../providers/claude-code/inject.js";
-import { runCursorAgent } from "../providers/cursor/inject.js";
-import { runAntigravityAgent } from "../providers/antigravity/inject.js";
-import { runCodexAgent } from "../providers/codex/inject.js";
-import { runCopilotAgent } from "../providers/copilot/inject.js";
-import { runGrokAgent } from "../providers/grok/inject.js";
-import { runMuseAgent } from "../providers/muse/inject.js";
-import { runOpencodeAgent } from "../providers/opencode/inject.js";
-import { formatDuration, shortId } from "../providers/run-metrics.js";
-import { ensureBareWorkspace } from "../providers/bare-workspace.js";
-import { getCustomDef, runCustomDef, LEGACY_PORT } from "../routes/custom-nodes.js";
-import { callMcpTool } from "../mcp/client.js";
-import { coerceParamsToMcpArgs } from "../mcp/schema.js";
-import { materializeContextPayload } from "../context/materialize.js";
-import { readPayload } from "../context/store.js";
-import { recordInject } from "../routes/lineage.js";
-import { formatArtifactInject, readArtifactForNode } from "../routes/rules.js";
+} from "../../jobs.js";
+import { registry } from "../../providers/registry.js";
+import { isKnownProjectDir } from "../../readable-paths.js";
+import { runClaudeAgent } from "../../providers/claude-code/inject.js";
+import { runCursorAgent } from "../../providers/cursor/inject.js";
+import { runAntigravityAgent } from "../../providers/antigravity/inject.js";
+import { runCodexAgent } from "../../providers/codex/inject.js";
+import { runCopilotAgent } from "../../providers/copilot/inject.js";
+import { runGrokAgent } from "../../providers/grok/inject.js";
+import { runMuseAgent } from "../../providers/muse/inject.js";
+import { runOpencodeAgent } from "../../providers/opencode/inject.js";
+import { formatDuration, shortId } from "../../providers/run-metrics.js";
+import { ensureBareWorkspace } from "../../providers/bare-workspace.js";
+import { getCustomDef, runCustomDef, LEGACY_PORT } from "../../routes/custom-nodes.js";
+import { callMcpTool } from "../../mcp/client.js";
+import { coerceParamsToMcpArgs } from "../../mcp/schema.js";
+import { materializeContextPayload } from "../../context/materialize.js";
+import { readPayload } from "../../context/store.js";
+import { recordInject } from "../../routes/lineage.js";
+import { formatArtifactInject, readArtifactForNode } from "../../routes/rules.js";
 
 /**
  * Headless workflow executor: the same semantics as the canvas runner —

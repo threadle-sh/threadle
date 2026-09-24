@@ -835,7 +835,7 @@ import FilterChipMenu from "@/components/FilterChipMenu.vue";
 import GraphLoadingOverlay from "@/components/GraphLoadingOverlay.vue";
 import DetailExpandControls from "@/panels/DetailExpandControls.vue";
 import DetailExpandModal from "@/panels/DetailExpandModal.vue";
-import "@/views/dashboard/chrome.css";
+import "@/viewer/dashboard/chrome.css";
 
 const route = useRoute();
 const router = useRouter();
@@ -910,6 +910,10 @@ function goDash(view: string): void {
       path: "/map",
       query: projectDir ? { dir: projectDir } : undefined,
     });
+    return;
+  }
+  if (view === "projects") {
+    void router.push("/projects");
     return;
   }
   void router.push({ path: "/", query: { view } });

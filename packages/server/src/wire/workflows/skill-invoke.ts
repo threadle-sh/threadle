@@ -1,5 +1,5 @@
 import type { InjectResult, ProviderId } from "@threadle/shared";
-import type { LogSink } from "../providers/stream.js";
+import type { LogSink } from "../../providers/stream.js";
 import { runProviderAgent } from "./provider-agent.js";
 
 export interface SkillInvokeOpts {
