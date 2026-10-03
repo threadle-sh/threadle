@@ -1,6 +1,6 @@
 {
   "name": "@threadle/core",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "type": "module",
   "description": "threadle core: provider discovery, sessions, jobs, context and the viewer API.",

@@ -1,6 +1,6 @@
 {
   "name": "@threadle/workflows-server",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "private": true,
   "type": "module",
   "description": "threadle workflows: graph store, headless executor, triggers, templates and the workflow API.",

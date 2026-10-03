@@ -1,6 +1,6 @@
 {
   "name": "@threadle/web",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "type": "module",
   "description": "threadle viewer app (sessions, blueprints, statistics) — built into packages/server/web-dist, served by `threadle`.",

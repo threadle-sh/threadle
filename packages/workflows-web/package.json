@@ -1,6 +1,6 @@
 {
   "name": "@threadle/workflows-web",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "private": true,
   "type": "module",
   "description": "threadle workflows editor app (canvas, palette, inspector) \u2014 built into packages/server/web-dist-workflows, served by `threadle-workflows`.",
