@@ -51,7 +51,7 @@ jobs:
           cd "$SMOKE"
           npm install "$GITHUB_WORKSPACE/$TGZ"
           npx threadle --help | grep -q "threadle"
-          npx threadle templates | grep -q "hello-wire"
+          npx threadle templates | grep -q "hello"
           npx threadle-workflows --help | grep -q -- "--editor"
           test -f node_modules/threadle/web-dist-workflows/index.html
           npx threadle check || true

@@ -54,6 +54,8 @@ const serverFile = fileURLToPath(import.meta.url);
 const bootMtime = fs.existsSync(serverFile)
   ? fs.statSync(serverFile).mtimeMs
   : Date.now();
+/** Built entry only (`…/dist/…`). `tsx` runs `src/*.ts` where edit mtimes are not "stale". */
+const serverStaleEnabled = /[/\\]dist[/\\]/.test(serverFile);
 
 /** hosts a loopback-bound server should ever be addressed as */
 const ALLOWED_HOST = /^(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/i;
@@ -226,11 +228,13 @@ export function createApp(opts: AppOptions) {
 
   app.get("/api/health", (c) => {
     let serverStale = false;
-    try {
-      serverStale = fs.statSync(serverFile).mtimeMs > bootMtime;
-    } catch {
-      // bundle vanished — treat as stale
-      serverStale = true;
+    if (serverStaleEnabled) {
+      try {
+        serverStale = fs.statSync(serverFile).mtimeMs > bootMtime;
+      } catch {
+        // bundle vanished — treat as stale
+        serverStale = true;
+      }
     }
     let webBuildId: string | undefined;
     try {

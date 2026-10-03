@@ -26,10 +26,10 @@ const dismissed = ref(false);
 const banner = computed(() => {
   if (dismissed.value) return "";
   if (staleServer.value) {
-    return "The running server is an older build than the code on disk — restart it (node packages/server/dist/cli.js).";
+    return "The running server is an older build than the code on disk. Restart it (node packages/server/dist/cli.js).";
   }
   if (staleWeb.value) {
-    return "A newer UI build is available — hard-refresh this page (⇧⌘R).";
+    return "A newer UI build is available. Hard-refresh this page (⇧⌘R).";
   }
   return "";
 });
@@ -42,6 +42,9 @@ onMounted(async () => {
       workflows?: boolean;
     };
     applyHealthFeatures(h);
+    // Vite HMR owns the UI in dev. Disk webBuildId (last `vite build`) and
+    // tsx source mtimes are not comparable to this tab, so never banner there.
+    if (import.meta.env.DEV) return;
     staleServer.value = h.serverStale === true;
     staleWeb.value =
       typeof h.webBuildId === "string" &&
