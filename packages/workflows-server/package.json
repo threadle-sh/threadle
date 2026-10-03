@@ -11,17 +11,17 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@modelcontextprotocol/server": "^2.0.0",
+    "@modelcontextprotocol/server": "^2.2.0",
     "@threadle/core": "*",
     "@threadle/shared": "*",
     "@threadle/workflows-shared": "*",
     "chokidar": "^5.0.0",
     "execa": "^9.5.2",
     "gray-matter": "^4.0.3",
-    "hono": "^4.13.8"
+    "hono": "^4.13.12"
   },
   "devDependencies": {
-    "@types/node": "^26.6.1",
+    "@types/node": "^26.6.3",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vitest": "^4.1.11"
