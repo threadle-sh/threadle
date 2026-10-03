@@ -192,10 +192,10 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from "vue";
-import { api } from "@/api/client";
-import { copyToClipboard } from "@/lib/pathActions";
-import ConfirmModal, { type ConfirmModel } from "@/panels/ConfirmModal.vue";
-import GraphLoadingOverlay from "@/components/GraphLoadingOverlay.vue";
+import { api } from "@ui/api/client";
+import { copyToClipboard } from "@ui/lib/pathActions";
+import ConfirmModal, { type ConfirmModel } from "@ui/panels/ConfirmModal.vue";
+import GraphLoadingOverlay from "@ui/components/GraphLoadingOverlay.vue";
 import {
   collectOutboundFromTools,
   mergeOutboundFromMessages,

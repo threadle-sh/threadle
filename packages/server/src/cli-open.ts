@@ -1,13 +1,11 @@
 /**
- * Build deep-link paths for `threadle open` against the local UI.
- * Paths match packages/web/src/router.ts + GraphList `?view=` tabs.
+ * Build deep-link paths for `threadle open`. Viewer targets match
+ * packages/web/src/router.ts + the dashboard `?view=` tabs; workflow targets
+ * (workflows, graphs, runs, logs, nodes) live in the workflows app.
  */
 
-/** Dashboard tabs under `/?view=…` (GraphList VIEW_IDS). */
+/** Viewer dashboard tabs under `/?view=…` (Dashboard VIEW_IDS). */
 export const OPEN_VIEWS = [
-  "workflows",
-  "runs",
-  "logs",
   "sessions",
   "search",
   "agents",
@@ -35,24 +33,24 @@ const VIEW_ALIASES: Record<string, OpenView | (typeof OPEN_ROUTES)[number] | "ho
   dashboard: "home",
   statistics: "usage",
   stats: "usage",
-  graph: "workflows",
-  graphs: "workflows",
-  workflow: "workflows",
   skill: "skills",
   rule: "rules",
   agent: "agents",
   session: "sessions",
-  job: "runs",
-  jobs: "runs",
-  run: "runs",
   atlas: "map",
 };
 
 export interface OpenTarget {
-  /** Path + query relative to server origin, e.g. `/?view=skills&skill=foo`. */
+  /** Path + query relative to the app origin, e.g. `/?view=skills&skill=foo`. */
   path: string;
   /** Short label for the CLI confirmation line. */
   label: string;
+  /** which app serves it (default: viewer) */
+  app?: "viewer" | "workflows";
+}
+
+function wf(path: string, label: string): OpenTarget {
+  return { path, label, app: "workflows" };
 }
 
 function isView(s: string): s is OpenView {
@@ -95,8 +93,8 @@ export function resolveOpenTarget(args: string[]): OpenTarget {
   // threadle open workflow|graph <id>  ·  workflows|graphs [id]
   if (head === "workflow" || head === "graph" || head === "workflows" || head === "graphs") {
     const id = raw[1];
-    if (!id) return { path: "/?view=workflows", label: "workflows" };
-    return { path: `/graph/${encodeURIComponent(id)}`, label: `workflow ${id}` };
+    if (!id) return wf("/addon/workflows", "workflows addon");
+    return wf(`/addon/workflows/graph/${encodeURIComponent(id)}`, `workflow ${id}`);
   }
 
   // threadle open session <provider> <id> | session <provider:id>
@@ -149,12 +147,13 @@ export function resolveOpenTarget(args: string[]): OpenTarget {
   // threadle open run|job <id>
   if (head === "run" || head === "job" || head === "runs" || head === "jobs") {
     const id = raw[1];
-    if (!id) return { path: "/?view=runs", label: "runs" };
-    return {
-      path: `/?view=runs&job=${encodeURIComponent(id)}`,
-      label: `run ${id}`,
-    };
+    if (!id) return wf("/addon/workflows/runs", "runs");
+    return wf(`/addon/workflows/runs?job=${encodeURIComponent(id)}`, `run ${id}`);
   }
+
+  // threadle open logs | nodes  (workflows addon)
+  if (head === "logs" || head === "log") return wf("/addon/workflows/logs", "logs");
+  if (head === "nodes" || head === "node") return wf("/addon/workflows/nodes", "custom nodes");
 
   // threadle open search [query]
   if (head === "search") {
@@ -184,9 +183,9 @@ export function resolveOpenTarget(args: string[]): OpenTarget {
     return { path: `/?view=${aliased}`, label: aliased };
   }
 
-  // Bare graph id / name heuristic: look like an 8-char id or path-ish → /graph/:id
+  // Bare graph id heuristic: 8-char hex → addon graph editor
   if (raw.length === 1 && /^[a-f0-9]{8}$/i.test(raw[0]!)) {
-    return { path: `/graph/${raw[0]}`, label: `workflow ${raw[0]}` };
+    return wf(`/addon/workflows/graph/${raw[0]}`, `workflow ${raw[0]}`);
   }
 
   throw new Error(

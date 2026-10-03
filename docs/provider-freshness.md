@@ -7,10 +7,10 @@ Agent CLIs (Claude Code, Cursor `agent`, opencode, Antigravity `agy`, Codex, Git
 | Layer | What |
 |---|---|
 | Defensive parsers | Skip unknown JSONL / part types; never throw (`AGENTS.md`) |
-| Golden fixtures | [`packages/server/test/fixtures/providers/`](../packages/server/test/fixtures/providers/) + `provider-fixtures.test.ts` |
+| Golden fixtures | [`packages/core/test/fixtures/providers/`](../packages/core/test/fixtures/providers/) + `provider-fixtures.test.ts` |
 | Local probe | `threadle check --providers` — golden fixtures (repo/CI) + inject-critical tokens in CLI help when the binary exists |
 | Weekly CLI install + flag probe | [`.github/workflows/provider-smoke.yml`](../.github/workflows/provider-smoke.yml) installs npm-published CLIs and fails on `!! flag:` |
-| Weekly version watch | [`.github/workflows/provider-watch.yml`](../.github/workflows/provider-watch.yml) compares npm / GitHub latest to pins in [`upstream.ts`](../packages/server/src/providers/freshness/upstream.ts) |
+| Weekly version watch | [`.github/workflows/provider-watch.yml`](../.github/workflows/provider-watch.yml) compares npm / GitHub latest to pins in [`upstream.ts`](../packages/core/src/providers/freshness/upstream.ts) |
 | Dependabot | [`.github/dependabot.yml`](../.github/dependabot.yml) — threadle's own npm + Actions, not agent CLIs |
 | Human triage | When a `provider-drift` issue opens, walk [CONTRIBUTING.md](../CONTRIBUTING.md#when-upstream-agent-clis-move) |
 
@@ -33,8 +33,8 @@ It does **not** parse transcripts or prove schemas (that’s fixture CI).
 
 ### What `--providers` adds
 
-1. **Golden fixtures** (when `packages/server/test/fixtures/providers` is on disk — repo checkout / CI): parse one sample per provider (`fixture:claude-code`, `fixture:cursor`, … `fixture:grok`, `fixture:muse`). Published installs skip these rows.
-2. **Inject flag probes** for each **installed** CLI — run help and look for inject-critical tokens listed in [`packages/server/src/providers/freshness/inject-flags.ts`](../packages/server/src/providers/freshness/inject-flags.ts):
+1. **Golden fixtures** (when `packages/core/test/fixtures/providers` is on disk — repo checkout / CI): parse one sample per provider (`fixture:claude-code`, `fixture:cursor`, … `fixture:grok`, `fixture:muse`). Published installs skip these rows.
+2. **Inject flag probes** for each **installed** CLI — run help and look for inject-critical tokens listed in [`packages/core/src/providers/freshness/inject-flags.ts`](../packages/core/src/providers/freshness/inject-flags.ts):
 
 | Detail | Behavior |
 |---|---|

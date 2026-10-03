@@ -1,0 +1,30 @@
+{
+  "name": "@threadle/core",
+  "version": "1.2.0",
+  "private": true,
+  "type": "module",
+  "description": "threadle core: provider discovery, sessions, jobs, context and the viewer API.",
+  "exports": {
+    "./*.js": "./src/*.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "check:upstream": "tsx src/providers/freshness/cli-upstream.ts"
+  },
+  "dependencies": {
+    "@threadle/shared": "*",
+    "@modelcontextprotocol/client": "^2.0.0",
+    "chokidar": "^5.0.0",
+    "execa": "^9.5.2",
+    "gray-matter": "^4.0.3",
+    "hono": "^4.13.8",
+    "smol-toml": "^1.8.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^4.1.11"
+  }
+}

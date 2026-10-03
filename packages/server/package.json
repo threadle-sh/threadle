@@ -1,7 +1,7 @@
 {
   "name": "threadle",
-  "version": "1.1.1",
-  "description": "Local-first node-graph patchbay for Claude Code, opencode, Cursor Agent, Antigravity, Codex, Copilot, Grok Build and Muse sessions.",
+  "version": "1.2.0",
+  "description": "Local-first multi-provider viewer for Claude Code, opencode, Cursor Agent, Antigravity, Codex, Copilot, Grok Build and Muse sessions — with an optional Workflows addon.",
   "type": "module",
   "license": "MIT",
   "author": "Fabian Bienk (https://github.com/zFarbp)",
@@ -25,23 +25,26 @@
     "muse",
     "agent",
     "workflow",
-    "patchbay"
+    "viewer",
+    "observability"
   ],
   "bin": {
-    "threadle": "dist/cli.js"
+    "threadle": "dist/cli.js",
+    "threadle-workflows": "dist/workflows-bin.js"
   },
   "files": [
     "dist",
     "web-dist",
+    "web-dist-workflows",
     "data"
   ],
   "scripts": {
-    "dev": "tsx watch src/cli.ts --no-open",
+    "dev": "THREADLE_VIEWER_URL=http://localhost:5173 THREADLE_WORKFLOWS_URL=http://localhost:5174 tsx watch src/cli.ts --no-open --triggers",
     "build": "tsup",
     "test": "vitest run",
-    "check:upstream": "tsx src/providers/freshness/cli-upstream.ts",
+    "check:upstream": "npm run check:upstream -w @threadle/core",
     "update:pricing": "node ../../scripts/update-models-pricing.mjs",
-    "prepublishOnly": "npm run build --prefix ../web && npm run build",
+    "prepublishOnly": "npm run build --prefix ../web && npm run build --prefix ../workflows-web && npm run build",
     "pack:smoke": "npm run prepublishOnly && npm pack --dry-run"
   },
   "publishConfig": {
@@ -60,7 +63,10 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@threadle/core": "*",
     "@threadle/shared": "*",
+    "@threadle/workflows-server": "*",
+    "@threadle/workflows-shared": "*",
     "@types/node": "^26.6.1",
     "tsup": "^8.3.5",
     "tsx": "^4.19.2",

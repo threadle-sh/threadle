@@ -4,21 +4,24 @@ import fs from "node:fs";
 import path from "node:path";
 import readlinePromises from "node:readline/promises";
 import { parseArgs } from "node:util";
-import { validatePortableGraphImport, toPortableGraph, summarizeGraphExecution, type ManifestItem, type PortableGraph } from "@threadle/shared";
+import { validatePortableGraphImport, toPortableGraph, summarizeGraphExecution, type ManifestItem, type PortableGraph } from "@threadle/workflows-shared";
 import { createApp } from "./server.js";
-import { startWatchers } from "./watch.js";
-import { shutdownManagedServer } from "./providers/opencode/inject.js";
-import { importGraph, readGraph, saveGraph, deleteGraph, listGraphs as listLocalGraphs, replaceGraphFromPortable } from "./graphs/store.js";
-import { executeWorkflow } from "./workflows/executor.js";
-import { getRecipe, listRecipes } from "./templates/recipes.js";
-import { getWorkflowTemplate, WORKFLOW_TEMPLATES } from "./templates/workflows.js";
+import { startWatchers } from "@threadle/core/watch.js";
+import { shutdownManagedServer } from "@threadle/core/providers/opencode/inject.js";
+import { importGraph, readGraph, saveGraph, deleteGraph, listGraphs as listLocalGraphs, replaceGraphFromPortable } from "@threadle/workflows-server/graphs/store.js";
+import { executeWorkflow } from "@threadle/workflows-server/workflows/executor.js";
+import { appendJobLog, flushJobWrites, jobs } from "@threadle/core/jobs.js";
+import { getRecipe, listRecipes } from "@threadle/workflows-server/templates/recipes.js";
+import { getWorkflowTemplate, WORKFLOW_TEMPLATES } from "@threadle/workflows-server/templates/workflows.js";
 import { printCheck, runCheck } from "./check.js";
-import { setDefaultProjectDir } from "./routes/agents.js";
+import { registerWorkflows } from "@threadle/workflows-server/workflows/mount.js";
+import { VIEWER_PORT, WORKFLOWS_PORT } from "./app-urls.js";
+import { setDefaultProjectDir } from "@threadle/core/routes/agents.js";
 import {
   resolveGraphSourceFile,
   startRunWatch,
   type RunWatchReason,
-} from "./cli-run-watch.js";
+} from "@threadle/workflows-server/cli-run-watch.js";
 import { openUrl, resolveOpenTarget } from "./cli-open.js";
 import {
   allLogs,
@@ -59,14 +62,15 @@ import {
 } from "./cli-remote.js";
 
 function printHelp(): void {
-  console.log(`threadle — local node-graph patchbay for Claude Code / opencode / Cursor / Antigravity / Codex / Copilot / Grok Build
+  console.log(`threadle — local multi-provider session viewer (+ Workflows addon) for Claude Code / opencode / Cursor / Antigravity / Codex / Copilot / Grok Build
 
 USAGE
   threadle [server-options]                 Start the UI + API (default)
   threadle <command> [args] [options]
 
 SERVER
-  threadle [--port 4570] [--no-open] [--dir <project>]
+  threadle [--port 4570] [--no-open] [--dir <project>]      Viewer
+  threadle-workflows [--port 4571] [--no-open]              Workflows editor + runner (triggers on)
   threadle daemon [--port 4570] [--dir <project>]   Long-lived serve (no browser) + triggers.json
   threadle run <id|file|recipe> [options]           Detached/foreground workflow
   threadle jobs|status|attach|logs|stop             Job control
@@ -111,8 +115,11 @@ INVENTORY  (need a running server; templates / check / recipes / mcp work offlin
   threadle import <file>                            Import graph@1 or restore backup@1
 
 OPTIONS
-  --port <n>         Port (default 4570). Also used by client commands.
+  --port <n>         Port (viewer 4570, workflows editor 4571). Client commands talk to 4570.
   --no-open          Don't open a browser when starting the server
+  --no-workflows     Viewer only: skip the workflows editor/runner API and triggers
+  --editor           Serve the workflows editor app instead of the viewer (what threadle-workflows passes)
+  --triggers         Also fire triggers.json from the viewer process (default: editor/daemon only)
   --dir <path>       Project directory (agents / discovery / agent runs)
   -h, --help         Show this help
   threadle help      Same as --help
@@ -140,17 +147,17 @@ EXAMPLES
   threadle mcp                              # add to .mcp.json — see docs/cli
   threadle services
   threadle run detached-delay --detach
-  threadle run hello-wire --watch           # re-run on graph mtime / git changes
+  threadle run hello --watch           # re-run on graph mtime / git changes
   threadle attach job_….…
   threadle jobs
-  threadle export hello-wire ./hello.json
+  threadle export hello ./hello.json
   threadle import ./hello.json
   threadle export --backup
   threadle skills
   threadle skills import ./review.SKILL.md
   threadle skills toggle review-diff --manual
   threadle open skills
-  threadle open workflow hello-wire
+  threadle open workflow hello
   threadle open session cursor:abc123
   threadle run plan-implement-review --param task="…" --approve-all
 
@@ -446,6 +453,10 @@ async function runWorkflowById(opts: {
   );
 
   const ac = new AbortController();
+  // Record the run like a detached one so it shows up in Runs / Logs.
+  const { jobId } = jobs.create("workflow", `cli: ${opts.name}`.slice(0, 120), opts.graphId);
+  jobs.checkpoint(jobId);
+  appendJobLog(jobId, "meta", `workflow run started from the CLI: ${opts.name}`);
   // ONE process-level handler pair for the whole process, aborting whichever
   // run is currently live — registering per run leaked 2 listeners (and the
   // prior run's AbortController) on every `--watch` kick.
@@ -461,10 +472,14 @@ async function runWorkflowById(opts: {
       log: (lane, line) => {
         const tag = lane === "stderr" ? "!" : lane === "meta" ? "·" : " ";
         console.log(`${tag} ${line}`);
+        appendJobLog(jobId, lane, line.slice(0, 8000));
       },
       signal: ac.signal,
+      jobId,
     });
     console.log(`✓ done — ${res.outputs} output node(s) updated`);
+    appendJobLog(jobId, "meta", `workflow run finished (${res.outputs} output node(s) updated)`);
+    jobs.finish(jobId, { status: "done", result: { type: "job.done", jobId } });
     if (opts.imported && opts.ephemeral) {
       await deleteGraph(opts.graphId);
       console.log(`· ephemeral graph ${opts.graphId} removed`);
@@ -473,13 +488,22 @@ async function runWorkflowById(opts: {
     }
     return 0;
   } catch (err) {
-    console.error(`✗ ${err instanceof Error ? err.message : String(err)}`);
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`✗ ${message}`);
+    appendJobLog(jobId, "stderr", `workflow run failed: ${message}`);
+    jobs.finish(
+      jobId,
+      ac.signal.aborted
+        ? { status: "cancelled", error: "cancelled (signal)" }
+        : { status: "error", error: message.slice(0, 500) },
+    );
     if (opts.imported && opts.ephemeral) {
       await deleteGraph(opts.graphId).catch(() => undefined);
     }
     return 1;
   } finally {
     if (activeRunController === ac) activeRunController = undefined;
+    await flushJobWrites();
     shutdownManagedServer();
   }
 }
@@ -598,8 +622,11 @@ async function followJobLogs(base: string, jobId: string): Promise<number> {
 const { values, positionals } = parseArgs({
   allowPositionals: true,
   options: {
-    port: { type: "string", default: "4570" },
+    port: { type: "string" },
     "no-open": { type: "boolean", default: false },
+    "no-workflows": { type: "boolean", default: false },
+    editor: { type: "boolean", default: false },
+    triggers: { type: "boolean", default: false },
     dir: { type: "string" },
     help: { type: "boolean", short: "h", default: false },
     param: { type: "string", multiple: true },
@@ -670,6 +697,13 @@ const KNOWN = new Set([
   "help",
 ]);
 
+const withWorkflows = !values["no-workflows"];
+if (values.editor && !withWorkflows) {
+  console.error("--editor needs workflows (drop --no-workflows)");
+  process.exit(2);
+}
+if (withWorkflows) registerWorkflows();
+
 if (cmd === "check") {
   const result = await runCheck({
     providers: Boolean(values.providers),
@@ -680,7 +714,7 @@ if (cmd === "check") {
 }
 
 if (cmd === "mcp") {
-  const { startMcpStdio } = await import("./mcp/stdio.js");
+  const { startMcpStdio } = await import("@threadle/workflows-server/workflows/mcp-stdio.js");
   startMcpStdio();
   // transport owns the process — never start Hono/browser
   await new Promise(() => undefined);
@@ -869,21 +903,26 @@ if (cmd === "open") {
       const raw = decodeURIComponent(graphMatch[1]!);
       const id = await resolveWorkflowOpenId(raw);
       if (id !== raw) {
-        target = { path: `/graph/${encodeURIComponent(id)}`, label: `workflow ${id} (${raw})` };
+        target = { path: `/addon/workflows/graph/${encodeURIComponent(id)}`, label: `workflow ${id} (${raw})` };
       }
     }
 
-    const url = openUrl(base, target);
+    // Workflow targets live in the workflows app (its own port).
+    const appBase =
+      target.app === "workflows" ? serverBase(values.port ?? String(WORKFLOWS_PORT)) : base;
+    const url = openUrl(appBase, target);
     if (values.print) {
       console.log(url);
       return;
     }
 
     try {
-      await getHealth(base);
+      await getHealth(appBase);
     } catch {
       throw new Error(
-        `threadle server not reachable at ${base} — start it with: threadle --no-open`,
+        target.app === "workflows"
+          ? `workflows app not reachable at ${appBase} — start it with: threadle-workflows --no-open`
+          : `threadle server not reachable at ${appBase} — start it with: threadle --no-open`,
       );
     }
 
@@ -972,7 +1011,7 @@ if (cmd === "export") {
       }
     }
 
-    const { packBackup } = await import("./routes/backup.js");
+    const { packBackup } = await import("@threadle/core/routes/backup.js");
     const bundle = await packBackup();
     const out =
       backupOut ??
@@ -1004,7 +1043,7 @@ if (cmd === "import") {
         : "";
 
     if (schema === "threadle/backup@1") {
-      const { parseBackupBundle, restoreBackup } = await import("./routes/backup.js");
+      const { parseBackupBundle, restoreBackup } = await import("@threadle/core/routes/backup.js");
       const bundle = parseBackupBundle(raw);
       const { written } = await restoreBackup(bundle);
       console.log(`✓ restored backup ${written} file(s) from ${arg} (${bundle.exportedAt})`);
@@ -1130,17 +1169,26 @@ if (cmd && cmd !== "serve" && cmd !== "daemon") {
   process.exit(2);
 }
 
-const port = Number(values.port);
+// Two apps: the viewer (`threadle`, :4570) and the workflows editor
+// (`threadle-workflows`, :4571). Both serve the full API on the same state.
+const ui = values.editor ? "workflows" : "viewer";
+const port = Number(values.port ?? (ui === "workflows" ? WORKFLOWS_PORT : VIEWER_PORT));
 const projectDir = values.dir ?? process.cwd();
+// Triggers fire from exactly one process: the workflows app or the daemon
+// (or `threadle --triggers`), never from both apps at once.
+const runTriggers = withWorkflows && (ui === "workflows" || cmd === "daemon" || values.triggers);
 
-const app = createApp({ projectDir });
+const app = createApp({ projectDir, workflows: withWorkflows, ui });
 
 serve({ fetch: app.fetch, port, hostname: "127.0.0.1" }, async (info) => {
   const url = `http://127.0.0.1:${info.port}`;
-  console.log(`threadle listening on ${url}${cmd === "daemon" ? " (daemon)" : ""}`);
+  const what = ui === "workflows" ? "threadle-workflows (editor)" : "threadle";
+  console.log(`${what} listening on ${url}${cmd === "daemon" ? " (daemon)" : ""}${runTriggers ? " · triggers on" : ""}`);
   startWatchers();
-  const { startTriggers } = await import("./triggers/index.js");
-  void startTriggers();
+  if (runTriggers) {
+    const { startTriggers } = await import("@threadle/workflows-server/triggers/index.js");
+    void startTriggers();
+  }
   if (!values["no-open"]) {
     const { default: open } = await import("open");
     await open(url).catch(() => {

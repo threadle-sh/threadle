@@ -12,11 +12,11 @@ import {
 } from "@vue-flow/core";
 import { Background } from "@vue-flow/background";
 import { Controls } from "@vue-flow/controls";
-import { basename, shortId } from "@/lib/format";
-import { providerColor, providerShort } from "@/lib/providers";
-import { useSessionsStore } from "@/stores/sessions";
-import SessionLivePill from "@/panels/SessionLivePill.vue";
-import { useJobPhases } from "@/lib/useJobPhases";
+import { basename, shortId } from "@ui/lib/format";
+import { providerColor, providerShort } from "@ui/lib/providers";
+import { useSessionsStore } from "@ui/stores/sessions";
+import SessionLivePill from "@ui/panels/SessionLivePill.vue";
+import { useJobPhases } from "@ui/lib/useJobPhases";
 
 const INST_CAP = 8;
 const COL_DEF = 40;

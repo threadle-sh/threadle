@@ -45,7 +45,7 @@ jobs:
         run: |
           export PATH="$HOME/.local/bin:$PATH"
           threadle --help | grep -qi threadle
-          threadle templates | grep -q hello-wire
+          threadle templates | grep -q hello
           threadle check || true
 
       - name: Boot server and hit /api/health
@@ -95,5 +95,5 @@ jobs:
             echo "npm not ready yet, retry $i"; sleep 15
           done
           if [ "$ok" != 1 ]; then echo "npx smoke failed for $spec"; exit 1; fi
-          npx --yes "$spec" templates | grep -q hello-wire
+          npx --yes "$spec" templates | grep -q hello
           echo "npx ok"

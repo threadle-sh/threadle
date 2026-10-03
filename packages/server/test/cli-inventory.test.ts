@@ -6,42 +6,42 @@ import os from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
-vi.mock("../src/providers/opencode/inject.js", () => ({
+vi.mock("@threadle/core/providers/opencode/inject.js", () => ({
   runOpencodeAgent: vi.fn(),
   listOpencodeModels: async () => ["opencode/mock"],
   shutdownManagedServer: () => undefined,
 }));
-vi.mock("../src/providers/cursor/inject.js", () => ({
+vi.mock("@threadle/core/providers/cursor/inject.js", () => ({
   runCursorAgent: vi.fn(),
   listCursorModels: async () => ["cursor-mock"],
 }));
-vi.mock("../src/providers/antigravity/inject.js", () => ({
+vi.mock("@threadle/core/providers/antigravity/inject.js", () => ({
   runAntigravityAgent: vi.fn(),
   listAntigravityModels: async () => ["agy-mock"],
 }));
-vi.mock("../src/providers/codex/inject.js", () => ({
+vi.mock("@threadle/core/providers/codex/inject.js", () => ({
   runCodexAgent: vi.fn(),
   listCodexModels: async () => ["codex-mock"],
 }));
-vi.mock("../src/providers/copilot/inject.js", () => ({
+vi.mock("@threadle/core/providers/copilot/inject.js", () => ({
   runCopilotAgent: vi.fn(),
   listCopilotModels: async () => ["copilot-mock"],
 }));
-vi.mock("../src/providers/grok/inject.js", () => ({
+vi.mock("@threadle/core/providers/grok/inject.js", () => ({
   runGrokAgent: vi.fn(),
   listGrokModels: async () => ["grok-mock"],
 }));
-vi.mock("../src/providers/muse/inject.js", () => ({
+vi.mock("@threadle/core/providers/muse/inject.js", () => ({
   runMuseAgent: vi.fn(),
   listMuseModels: async () => ["muse-mock"],
 }));
-vi.mock("../src/providers/claude-code/inject.js", () => ({
+vi.mock("@threadle/core/providers/claude-code/inject.js", () => ({
   runClaudeAgent: vi.fn(),
 }));
-vi.mock("../src/watch.js", () => ({
+vi.mock("@threadle/core/watch.js", () => ({
   startWatchers: () => undefined,
 }));
-vi.mock("../src/providers/registry.js", () => ({
+vi.mock("@threadle/core/providers/registry.js", () => ({
   registry: {
     info: async () => [
       { id: "cursor", available: true, version: "test" },
@@ -89,8 +89,8 @@ vi.mock("../src/providers/registry.js", () => ({
 }));
 
 import { createApp } from "../src/server.js";
-import { importGraph } from "../src/graphs/store.js";
-import { getWorkflowTemplate } from "../src/templates/workflows.js";
+import { importGraph } from "@threadle/workflows-server/graphs/store.js";
+import { getWorkflowTemplate } from "@threadle/workflows-server/templates/workflows.js";
 
 let dir: string;
 let app: ReturnType<typeof createApp>;
@@ -105,7 +105,7 @@ beforeAll(async () => {
   dir = fs.mkdtempSync(path.join(os.tmpdir(), "threadle-cli-list-"));
   process.env.THREADLE_CONFIG_DIR = dir;
   app = createApp({ projectDir: dir });
-  await importGraph(getWorkflowTemplate("hello-wire")!.graph);
+  await importGraph(getWorkflowTemplate("hello")!.graph);
 });
 
 afterAll(() => {
@@ -157,7 +157,7 @@ describe("CLI inventory APIs", () => {
     const templates = await get("/api/graphs/templates");
     expect(templates.status).toBe(200);
     expect(templates.json).toEqual(
-      expect.arrayContaining([expect.objectContaining({ id: "hello-wire" })]),
+      expect.arrayContaining([expect.objectContaining({ id: "hello" })]),
     );
 
     const recipes = await get("/api/graphs/recipes");

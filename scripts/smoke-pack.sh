@@ -15,6 +15,8 @@ trap cleanup EXIT
 cd "$SMOKE"
 npm install "$ROOT/$TGZ"
 npx threadle --help | grep -q threadle
-npx threadle templates | grep -q hello-wire
+npx threadle templates | grep -q hello
+npx threadle-workflows --help | grep -q -- "--editor"
+test -f node_modules/threadle/web-dist-workflows/index.html
 npx threadle check || true
 echo "ok — pack smoke passed ($TGZ)"

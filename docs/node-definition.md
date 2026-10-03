@@ -1,7 +1,7 @@
 # NodeDefinition
 
 Built-in graph types are registered as a `NodeDefinition` in
-`packages/shared/src/nodes/`. Menus, wiring, ports, and mute/run flags are
+`packages/workflows-shared/src/nodes/`. Menus, wiring, ports, and mute/run flags are
 derived from that catalog.
 
 Full write-up: docs site **Extend → NodeDefinition**.  

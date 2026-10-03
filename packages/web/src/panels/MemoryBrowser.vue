@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
-import { relativeTime } from "@/lib/format";
+import { relativeTime } from "@ui/lib/format";
 import {
   providerColor,
   providerColorHex,
   providerLabel,
-} from "@/lib/providers";
-import { useFileViewersStore } from "@/stores/fileViewers";
-import { useSettingsStore } from "@/stores/settings";
-import { vColResize } from "@/lib/colResize";
+} from "@ui/lib/providers";
+import { useFileViewersStore } from "@ui/stores/fileViewers";
+import { useSettingsStore } from "@ui/stores/settings";
+import { vColResize } from "@ui/lib/colResize";
 import DetailExpandControls from "@/panels/DetailExpandControls.vue";
-import "@/views/dashboard/chrome.css";
+import "@ui/theme/chrome.css";
 
 export interface MemoryEntry {
   provider: string;

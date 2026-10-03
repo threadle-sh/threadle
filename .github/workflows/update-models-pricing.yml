@@ -2,7 +2,7 @@ name: Update models pricing
 
 # Fetch models.dev list prices, validate shape/costs, open a PR with the
 # refreshed packages/server/data/models-pricing.json snapshot. Runtime never
-# phones home — see packages/server/src/routes/pricing.ts.
+# phones home — see packages/core/src/routes/pricing.ts.
 
 on:
   schedule:

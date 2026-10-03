@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
-import { providerShort } from "@/lib/providers";
+import { providerShort } from "@ui/lib/providers";
 
 const props = defineProps<{
   modelValue: string;

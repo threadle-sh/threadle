@@ -120,8 +120,8 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { ProviderId, SessionRef } from "@threadle/shared";
-import { PROVIDER_IDS, providerColor, providerShort } from "@/lib/providers";
-import { fmtTokens } from "@/lib/format";
+import { PROVIDER_IDS, providerColor, providerShort } from "@ui/lib/providers";
+import { fmtTokens } from "@ui/lib/format";
 
 const props = defineProps<{ sessions: SessionRef[] }>();
 

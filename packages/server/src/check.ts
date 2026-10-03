@@ -3,18 +3,18 @@ import os from "node:os";
 import path from "node:path";
 import { execa } from "execa";
 import { fileURLToPath } from "node:url";
-import { registry } from "./providers/registry.js";
-import { WORKFLOW_TEMPLATES } from "./templates/workflows.js";
-import { threadleConfigDir } from "./graphs/store.js";
-import { agentBin } from "./providers/cursor/agent-bin.js";
-import { agyBin } from "./providers/antigravity/agy-bin.js";
-import { probeInjectFlags } from "./providers/freshness/probe.js";
-import { probeGoldenFixtures } from "./providers/freshness/fixtures.js";
-import { probeUpstream } from "./providers/freshness/upstream.js";
-import { grokBin } from "./providers/grok/paths.js";
-import { museBin } from "./providers/muse/paths.js";
-import { codexBin } from "./providers/codex/paths.js";
-import { copilotBin } from "./providers/copilot/paths.js";
+import { registry } from "@threadle/core/providers/registry.js";
+import { workflowsEnabled, workflowsPort } from "@threadle/core/workflows-port.js";
+import { threadleConfigDir } from "@threadle/core/paths.js";
+import { agentBin } from "@threadle/core/providers/cursor/agent-bin.js";
+import { agyBin } from "@threadle/core/providers/antigravity/agy-bin.js";
+import { probeInjectFlags } from "@threadle/core/providers/freshness/probe.js";
+import { probeGoldenFixtures } from "@threadle/core/providers/freshness/fixtures.js";
+import { probeUpstream } from "@threadle/core/providers/freshness/upstream.js";
+import { grokBin } from "@threadle/core/providers/grok/paths.js";
+import { museBin } from "@threadle/core/providers/muse/paths.js";
+import { codexBin } from "@threadle/core/providers/codex/paths.js";
+import { copilotBin } from "@threadle/core/providers/copilot/paths.js";
 
 export interface EnvCheck {
   id: string;
@@ -141,11 +141,27 @@ export async function runCheck(
     detail: webOk ? webDist : `${webDist} missing index.html — run npm run build`,
   });
 
-  checks.push({
-    id: "templates",
-    ok: WORKFLOW_TEMPLATES.length > 0,
-    detail: `${WORKFLOW_TEMPLATES.length} bundled templates`,
-  });
+  if (workflowsEnabled()) {
+    const wfDist = path.resolve(path.dirname(webDist), "web-dist-workflows");
+    let wfOk = false;
+    try {
+      await fs.promises.access(path.join(wfDist, "index.html"));
+      wfOk = true;
+    } catch {
+      /* missing */
+    }
+    checks.push({
+      id: "web-dist-workflows",
+      ok: wfOk,
+      detail: wfOk ? wfDist : `${wfDist} missing index.html — run npm run build`,
+    });
+    const n = workflowsPort().templateCount();
+    checks.push({
+      id: "templates",
+      ok: n > 0,
+      detail: `${n} bundled templates`,
+    });
+  }
 
   const cliChecks = await Promise.all([
     checkPathCli("cli:claude", "claude"),

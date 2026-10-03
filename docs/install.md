@@ -48,7 +48,7 @@ Platforms: `darwin-arm64`, `darwin-x64`, `linux-x64`, `linux-arm64`.
 ## Uninstall
 
 ```sh
-rm -rf ~/.local/share/threadle ~/.local/bin/threadle   # portable install
+rm -rf ~/.local/share/threadle ~/.local/bin/threadle ~/.local/bin/threadle-workflows   # portable install
 rm -rf ~/.config/threadle                              # optional: workflows, runs, library
 ```
 

@@ -4,38 +4,43 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import fs from "node:fs";
 import os from "node:os";
-import { registry } from "./providers/registry.js";
-import { sessionRoutes } from "./routes/sessions.js";
-import { agentRoutes, setDefaultProjectDir } from "./routes/agents.js";
-import { graphRoutes } from "./routes/graphs.js";
-import { contextRoutes, payloadRoutes } from "./routes/context.js";
-import { eventRoutes } from "./routes/events.js";
-import { injectRoutes } from "./routes/inject.js";
-import { modelRoutes, runRoutes } from "./routes/run.js";
-import { fileRoutes } from "./routes/files.js";
-import { openRoutes, settingsRoutes } from "./routes/settings.js";
-import { jobRoutes } from "./routes/run.js";
-import { bundleRoutes } from "./routes/bundle.js";
-import { ruleRoutes } from "./routes/rules.js";
-import { searchRoutes } from "./routes/search.js";
-import { lineageRoutes } from "./routes/lineage.js";
-import { atlasRoutes } from "./routes/atlas.js";
-import { pricingRoutes } from "./routes/pricing.js";
-import { subscriptionRoutes } from "./routes/subscription.js";
-import { internalsRoutes } from "./routes/internals.js";
-import { customNodeRoutes } from "./routes/custom-nodes.js";
-import { mcpRoutes } from "./routes/mcp.js";
-import { backupRoutes } from "./routes/backup.js";
-import { gitRoutes } from "./routes/git.js";
-import { favoriteRoutes } from "./routes/favorites.js";
-import { memoryRoutes } from "./routes/memory.js";
-import { pluginRoutes } from "./routes/plugins.js";
-import { gcTmpFiles } from "./gc.js";
-import { appLog, captureConsole, compactJobHistory } from "./jobs.js";
-import { museShare } from "./providers/muse/paths.js";
+import { registry } from "@threadle/core/providers/registry.js";
+import { sessionRoutes } from "@threadle/core/routes/sessions.js";
+import { agentRoutes, setDefaultProjectDir } from "@threadle/core/routes/agents.js";
+import { contextRoutes, payloadRoutes } from "@threadle/core/routes/context.js";
+import { eventRoutes } from "@threadle/core/routes/events.js";
+import { injectRoutes } from "@threadle/core/routes/inject.js";
+import { modelRoutes, runRoutes } from "@threadle/core/routes/run.js";
+import { fileRoutes } from "@threadle/core/routes/files.js";
+import { openRoutes, settingsRoutes } from "@threadle/core/routes/settings.js";
+import { jobRoutes } from "@threadle/core/routes/run.js";
+import { bundleRoutes } from "@threadle/core/routes/bundle.js";
+import { ruleRoutes } from "@threadle/core/routes/rules.js";
+import { searchRoutes } from "@threadle/core/routes/search.js";
+import { lineageRoutes } from "@threadle/core/routes/lineage.js";
+import { atlasRoutes } from "@threadle/core/routes/atlas.js";
+import { pricingRoutes } from "@threadle/core/routes/pricing.js";
+import { subscriptionRoutes } from "@threadle/core/routes/subscription.js";
+import { internalsRoutes } from "@threadle/core/routes/internals.js";
+import { mcpRoutes } from "@threadle/core/routes/mcp.js";
+import { backupRoutes } from "@threadle/core/routes/backup.js";
+import { gitRoutes } from "@threadle/core/routes/git.js";
+import { favoriteRoutes } from "@threadle/core/routes/favorites.js";
+import { memoryRoutes } from "@threadle/core/routes/memory.js";
+import { pluginRoutes } from "@threadle/core/routes/plugins.js";
+import { gcTmpFiles } from "@threadle/core/gc.js";
+import { appLog, captureConsole, compactJobHistory } from "@threadle/core/jobs.js";
+import { museShare } from "@threadle/core/providers/muse/paths.js";
+import { workflowsEnabled } from "@threadle/core/workflows-port.js";
+import { appsStatus, appUrls, webDistDir, type UiMode } from "./app-urls.js";
+import { mountWorkflows } from "@threadle/workflows-server/workflows/mount.js";
 
 export interface AppOptions {
   projectDir: string;
+  /** mount the workflows package (editor + runner API); default true */
+  workflows?: boolean;
+  /** which built UI to serve: the viewer (default) or the workflows editor */
+  ui?: UiMode;
 }
 
 /**
@@ -49,6 +54,8 @@ const serverFile = fileURLToPath(import.meta.url);
 const bootMtime = fs.existsSync(serverFile)
   ? fs.statSync(serverFile).mtimeMs
   : Date.now();
+/** Built entry only (`…/dist/…`). `tsx` runs `src/*.ts` where edit mtimes are not "stale". */
+const serverStaleEnabled = /[/\\]dist[/\\]/.test(serverFile);
 
 /** hosts a loopback-bound server should ever be addressed as */
 const ALLOWED_HOST = /^(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/i;
@@ -216,15 +223,18 @@ export function createApp(opts: AppOptions) {
   }
 
   const here = path.dirname(fileURLToPath(import.meta.url));
-  const webDist = path.resolve(here, "../web-dist");
+  const ui: UiMode = opts.ui ?? "viewer";
+  const webDist = path.resolve(webDistDir(here, ui));
 
   app.get("/api/health", (c) => {
     let serverStale = false;
-    try {
-      serverStale = fs.statSync(serverFile).mtimeMs > bootMtime;
-    } catch {
-      // bundle vanished — treat as stale
-      serverStale = true;
+    if (serverStaleEnabled) {
+      try {
+        serverStale = fs.statSync(serverFile).mtimeMs > bootMtime;
+      } catch {
+        // bundle vanished — treat as stale
+        serverStale = true;
+      }
     }
     let webBuildId: string | undefined;
     try {
@@ -242,8 +252,13 @@ export function createApp(opts: AppOptions) {
       webBuildId,
       mem: process.memoryUsage().rss,
       uptime: Math.round(process.uptime()),
+      workflows: workflowsEnabled(),
+      ui,
+      ...appUrls(),
     });
   });
+  /** Where the viewer / workflows apps live and whether they are running. */
+  app.get("/api/apps", async (c) => c.json(await appsStatus(ui)));
   app.get("/api/providers", async (c) => {
     const info = await registry.info();
     return c.json(
@@ -252,9 +267,10 @@ export function createApp(opts: AppOptions) {
       ),
     );
   });
+  // Workflows first: they share /api/run and /api/jobs prefixes with core.
+  if (opts.workflows !== false) mountWorkflows(app);
   app.route("/api/sessions", sessionRoutes);
   app.route("/api/agents", agentRoutes);
-  app.route("/api/graphs", graphRoutes);
   app.route("/api/context", contextRoutes);
   app.route("/api/payloads", payloadRoutes);
   app.route("/api/events", eventRoutes);
@@ -273,7 +289,6 @@ export function createApp(opts: AppOptions) {
   app.route("/api/pricing", pricingRoutes);
   app.route("/api/subscription", subscriptionRoutes);
   app.route("/api/internals", internalsRoutes);
-  app.route("/api/custom-nodes", customNodeRoutes);
   app.route("/api/mcp", mcpRoutes);
   app.route("/api/git", gitRoutes);
   app.route("/api/backup", backupRoutes);
@@ -300,14 +315,22 @@ export function createApp(opts: AppOptions) {
 
   // Static frontend: web-dist sits next to dist/ in the published package,
   // and at packages/server/web-dist during development.
+  // Unknown API paths (e.g. /api/graphs with --no-workflows) must not fall
+  // through to the SPA index.html.
+  app.all("/api/*", (c) => c.json({ error: "not found" }, 404));
+
   if (fs.existsSync(webDist)) {
     const root = path.relative(process.cwd(), webDist) || ".";
     app.use("/*", serveStatic({ root }));
+    // SPA fallback. The workflows editor is its own app (own port, own
+    // web-dist-workflows); its router owns /, /workflows, /graph.
     app.get("*", serveStatic({ root, path: "index.html" }));
   } else {
     app.get("/", (c) =>
       c.text(
-        "threadle: frontend not built. Run `npm run build -w @threadle/web` (or use the Vite dev server on :5173).",
+        ui === "workflows"
+          ? "threadle-workflows: editor not built. Run `npm run build` (or use the Vite dev server on :5174)."
+          : "threadle: frontend not built. Run `npm run build` (or use the Vite dev server on :5173).",
       ),
     );
   }
