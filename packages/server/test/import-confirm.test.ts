@@ -8,7 +8,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { summarizeGraphExecution, type Graph, type PortableGraph } from "@threadle/shared";
+import { summarizeGraphExecution, type Graph, type PortableGraph } from "@threadle/workflows-shared";
 import { createApp } from "../src/server.js";
 
 let dir: string;
@@ -107,7 +107,7 @@ describe("imported workflow first-run gate", () => {
   });
 
   it("confirm-import is idempotent and a no-op on non-imported graphs", async () => {
-    const tpl = await api("POST", "/api/graphs/templates/hello-wire");
+    const tpl = await api("POST", "/api/graphs/templates/hello");
     expect(tpl.status).toBe(201);
     const g = tpl.json as Graph;
     expect(g.origin).toBeUndefined();
@@ -117,7 +117,7 @@ describe("imported workflow first-run gate", () => {
   });
 
   it("template imports are trusted — no confirmation needed to run", async () => {
-    const tpl = await api("POST", "/api/graphs/templates/hello-wire");
+    const tpl = await api("POST", "/api/graphs/templates/hello");
     expect(tpl.status).toBe(201);
     const g = tpl.json as Graph;
     const run = await api("POST", "/api/run/workflow", { graphId: g.id });

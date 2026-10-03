@@ -7,7 +7,7 @@ utilities from the [stdlib pack](../examples/nodes/stdlib/PACK.md) (`jq`, `diff`
 **Freeze:** do not add new built-in node types until canvas + server runners share
 one execute path for control-flow (see `AGENTS.md`). Prefer stdlib / recipes.
 
-Built-ins are registered in `packages/shared/src/nodes/builtins.ts` as a
+Built-ins are registered in `packages/workflows-shared/src/nodes/builtins.ts` as a
 `NodeDefinition`. Palette, wire menu, connection product, port limits, mute,
 and “can run” flags are **derived** from that catalog.
 
@@ -20,8 +20,8 @@ fresh agent sessions under ply (join with Merge).
 
 ## Checklist
 
-1. **Catalog** — add a `NodeDefinition` in `packages/shared/src/nodes/builtins.ts`
-2. **Shape** — `NodeType` + data interface + zod in `packages/shared/src/graph.ts`
+1. **Catalog** — add a `NodeDefinition` in `packages/workflows-shared/src/nodes/builtins.ts`
+2. **Shape** — `NodeType` + data interface + zod in `packages/workflows-shared/src/graph.ts`
 3. **Defaults** — `buildNode` branch in `GraphEditor.vue`
 4. **Card** — `canvas/nodes/YourNode.vue` + `#node-…` Vue Flow slot
 5. **Run** — canvas `execNode` **and** `workflows/executor.ts` (keep in sync)
@@ -33,6 +33,6 @@ Full walkthrough with flag reference: docs site
 ## Verify
 
 ```bash
-cd packages/server && npm test -- node-definitions
-cd packages/web && npm run typecheck
+cd packages/workflows-server && npm test -- node-definitions
+cd packages/workflows-web && npm run typecheck
 ```

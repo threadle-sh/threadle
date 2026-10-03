@@ -20,24 +20,24 @@ const runCursorAgent = vi.fn();
 const runClaudeAgent = vi.fn();
 const runOpencodeAgent = vi.fn();
 
-vi.mock("../src/providers/cursor/inject.js", () => ({
+vi.mock("@threadle/core/providers/cursor/inject.js", () => ({
   runCursorAgent: (...args: unknown[]) => runCursorAgent(...args),
 }));
-vi.mock("../src/providers/claude-code/inject.js", () => ({
+vi.mock("@threadle/core/providers/claude-code/inject.js", () => ({
   runClaudeAgent: (...args: unknown[]) => runClaudeAgent(...args),
 }));
-vi.mock("../src/providers/opencode/inject.js", () => ({
+vi.mock("@threadle/core/providers/opencode/inject.js", () => ({
   runOpencodeAgent: (...args: unknown[]) => runOpencodeAgent(...args),
   shutdownManagedServer: () => undefined,
 }));
-vi.mock("../src/routes/lineage.js", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../src/routes/lineage.js")>();
+vi.mock("@threadle/core/routes/lineage.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@threadle/core/routes/lineage.js")>();
   return {
     ...actual,
     recordInject: vi.fn(),
   };
 });
-vi.mock("../src/providers/registry.js", () => ({
+vi.mock("@threadle/core/providers/registry.js", () => ({
   registry: {
     get: () => ({
       getSession: async () => undefined,
@@ -50,15 +50,15 @@ vi.mock("../src/providers/registry.js", () => ({
     }),
   },
 }));
-vi.mock("../src/watch.js", () => ({
+vi.mock("@threadle/core/watch.js", () => ({
   startWatchers: () => undefined,
 }));
 
 import { createApp } from "../src/server.js";
-import { jobs, readJobLogs } from "../src/jobs.js";
-import { importGraph, readGraph, saveGraph } from "../src/graphs/store.js";
-import { getWorkflowTemplate } from "../src/templates/workflows.js";
-import type { Graph } from "@threadle/shared";
+import { jobs, readJobLogs } from "@threadle/core/jobs.js";
+import { importGraph, readGraph, saveGraph } from "@threadle/workflows-server/graphs/store.js";
+import { getWorkflowTemplate } from "@threadle/workflows-server/templates/workflows.js";
+import type { Graph } from "@threadle/workflows-shared";
 
 let dir: string;
 let app: ReturnType<typeof createApp>;
@@ -135,7 +135,7 @@ beforeEach(() => {
 
 describe("server workflow jobs (heavy lifting on the server)", () => {
   it("POST /api/run/workflow creates a job, executes on the server, persists output", async () => {
-    const tpl = getWorkflowTemplate("hello-wire")!;
+    const tpl = getWorkflowTemplate("hello")!;
     const g = await importGraph(tpl.graph, { trusted: true });
 
     const start = await api("POST", "/api/run/workflow", {
@@ -182,7 +182,7 @@ describe("server workflow jobs (heavy lifting on the server)", () => {
   });
 
   it("runs parallel server jobs for different graphs", async () => {
-    const a = await importGraph(getWorkflowTemplate("hello-wire")!.graph, { trusted: true });
+    const a = await importGraph(getWorkflowTemplate("hello")!.graph, { trusted: true });
     const b = await importGraph(getWorkflowTemplate("knot-concat")!.graph, { trusted: true });
 
     const [ra, rb] = await Promise.all([
@@ -209,7 +209,7 @@ describe("server workflow jobs (heavy lifting on the server)", () => {
   });
 
   it("POST /api/run/workflow accepts a partial scope", async () => {
-    const g = await importGraph(getWorkflowTemplate("hello-wire")!.graph, { trusted: true });
+    const g = await importGraph(getWorkflowTemplate("hello")!.graph, { trusted: true });
     const start = await api("POST", "/api/run/workflow", {
       graphId: g.id,
       projectDir: dir,
@@ -225,7 +225,7 @@ describe("server workflow jobs (heavy lifting on the server)", () => {
   });
 
   it("POST /api/jobs/start alone does not execute the graph (client shell only)", async () => {
-    const g = await importGraph(getWorkflowTemplate("hello-wire")!.graph, { trusted: true });
+    const g = await importGraph(getWorkflowTemplate("hello")!.graph, { trusted: true });
     const before = await readGraph(g.id);
     const outBefore = before?.nodes.find((n) => n.data.type === "output");
     expect(outBefore?.data.type === "output" ? outBefore.data.content : undefined).toBeUndefined();
@@ -270,7 +270,7 @@ describe("server workflow jobs (heavy lifting on the server)", () => {
   });
 
   it("GET /api/jobs/:id resolves finished jobs from history", async () => {
-    const g = await importGraph(getWorkflowTemplate("hello-wire")!.graph, { trusted: true });
+    const g = await importGraph(getWorkflowTemplate("hello")!.graph, { trusted: true });
     const start = await api("POST", "/api/run/workflow", {
       graphId: g.id,
       projectDir: dir,

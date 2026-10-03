@@ -165,14 +165,14 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { isAbsolutePath, validateSkillImport } from "@threadle/shared";
-import { relativeTime } from "@/lib/format";
-import { useSessionsStore } from "@/stores/sessions";
-import { useFavoritesStore } from "@/stores/favorites";
+import { relativeTime } from "@ui/lib/format";
+import { useSessionsStore } from "@ui/stores/sessions";
+import { useFavoritesStore } from "@ui/stores/favorites";
 import ArtifactPreview from "@/panels/ArtifactPreview.vue";
 import RuleCreateModal from "@/panels/RuleCreateModal.vue";
-import GraphLoadingOverlay from "@/components/GraphLoadingOverlay.vue";
+import GraphLoadingOverlay from "@ui/components/GraphLoadingOverlay.vue";
 import type { RuleArtifact, RuleGroup } from "./MetaView.vue";
-import "./chrome.css";
+import "@ui/theme/chrome.css";
 
 const props = defineProps<{
   ruleGroups: RuleGroup[] | undefined;

@@ -19,7 +19,7 @@ OUT="$ROOT/dist/portable/smoke-threadle-${VERSION}-${PLATFORM}"
 bash "$ROOT/scripts/pack-portable.sh" --platform "$PLATFORM" --version "$VERSION" --out "$OUT"
 
 "$OUT/bin/threadle" --help | grep -q threadle
-"$OUT/bin/threadle" templates | grep -q hello-wire
+"$OUT/bin/threadle" templates | grep -q hello
 "$OUT/bin/threadle" check || true
 
 # Simulate install layout: symlink into a temp bin dir

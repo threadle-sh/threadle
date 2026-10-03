@@ -289,9 +289,9 @@ import {
   estimateTokenBaseline,
   formatTokCompact,
 } from "@threadle/shared";
-import { api, subscribeEvents } from "@/api/client";
-import { providerLabel } from "@/lib/providers";
-import { vColResize } from "@/lib/colResize";
+import { api, subscribeEvents } from "@ui/api/client";
+import { providerLabel } from "@ui/lib/providers";
+import { vColResize } from "@ui/lib/colResize";
 
 type PilotState = "idle" | "skip" | "queued" | "running" | "ok" | "error";
 type DetailTab = "diagram" | "metrics" | "logs";

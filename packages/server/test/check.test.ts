@@ -3,13 +3,14 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { runCheck, printCheck } from "../src/check.js";
+import { registerWorkflows } from "@threadle/workflows-server/workflows/mount.js";
 import {
   goldenFixturesRoot,
   probeGoldenFixtures,
-} from "../src/providers/freshness/fixtures.js";
-import { INJECT_FLAG_PROBES } from "../src/providers/freshness/inject-flags.js";
+} from "@threadle/core/providers/freshness/fixtures.js";
+import { INJECT_FLAG_PROBES } from "@threadle/core/providers/freshness/inject-flags.js";
 
-vi.mock("../src/providers/registry.js", () => ({
+vi.mock("@threadle/core/providers/registry.js", () => ({
   registry: {
     info: async () => [
       { id: "claude-code", available: true, version: "mock" },
@@ -60,6 +61,7 @@ async function ensureWebDist(): Promise<void> {
 
 describe("threadle check", () => {
   beforeAll(async () => {
+    registerWorkflows();
     await ensureWebDist();
   });
 

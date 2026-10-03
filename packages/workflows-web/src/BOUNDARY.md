@@ -1,0 +1,1 @@
+Workflows **addon** editor — canvas / GraphEditor / Workflows list. Soft-frozen: fix breakage only; no new node types. May import `@ui/` and `@threadle/workflows-shared`; never the viewer (`@/`). App routes live under `/addon/workflows`. Built by `packages/workflows-web` → `server/web-dist-workflows`.

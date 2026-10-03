@@ -1,1 +1,1 @@
-Viewer surfaces (sessions, projects, map, blueprints, dashboard). Must not import `../wire/**`. `npm run check:boundary`.
+Viewer surfaces (sessions, map, blueprints, dashboard). Never import the editor (`@wf/`, `@threadle/workflows-*`); link with `@ui/panels/app-links` and seed via `@ui/lib/convert`. `npm run check:boundary`.

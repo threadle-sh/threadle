@@ -74,7 +74,7 @@ jobs:
               '```',
               '',
               'Confirm with the real CLI before changing adapters (help text can lie).',
-              'See `packages/server/src/providers/freshness/inject-flags.ts` and CONTRIBUTING.md.',
+              'See `packages/core/src/providers/freshness/inject-flags.ts` and CONTRIBUTING.md.',
             ].join('\n');
             try {
               await github.rest.issues.createLabel({

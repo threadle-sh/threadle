@@ -2,7 +2,7 @@ name: Provider watch
 
 # Compare pinned CLI versions (npm + GitHub releases) to live latest.
 # Version drift ≠ a broken parser — it means walk inject.ts / fixtures
-# and then bump `seen` in packages/server/src/providers/freshness/upstream.ts.
+# and then bump `seen` in packages/core/src/providers/freshness/upstream.ts.
 
 on:
   schedule:
@@ -35,7 +35,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          npx tsx packages/server/src/providers/freshness/cli-upstream.ts | tee upstream.txt
+          npx tsx packages/core/src/providers/freshness/cli-upstream.ts | tee upstream.txt
           echo "exit=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
           if grep -qE '^\s*!!' upstream.txt; then
             echo "drift=true" >> "$GITHUB_OUTPUT"
@@ -59,8 +59,8 @@ jobs:
               '```',
               '',
               'This is a **version** signal, not a proof that parsers broke.',
-              'Walk `packages/server/src/providers/*/inject.ts` and the golden fixtures,',
-              'then bump `seen` in `packages/server/src/providers/freshness/upstream.ts`.',
+              'Walk `packages/core/src/providers/*/inject.ts` and the golden fixtures,',
+              'then bump `seen` in `packages/core/src/providers/freshness/upstream.ts`.',
               '',
               'See CONTRIBUTING.md (When upstream agent CLIs move).',
             ].join('\n');

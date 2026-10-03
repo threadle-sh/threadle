@@ -352,19 +352,19 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
-import { bidiPath, relativeTime, tildePath } from "@/lib/format";
-import { providerColor, providerShort } from "@/lib/providers";
-import { copyToClipboard } from "@/lib/pathActions";
+import { bidiPath, relativeTime, tildePath } from "@ui/lib/format";
+import { providerColor, providerShort } from "@ui/lib/providers";
+import { copyToClipboard } from "@ui/lib/pathActions";
 import ProviderFilterChips from "@/components/ProviderFilterChips.vue";
-import GraphLoadingOverlay from "@/components/GraphLoadingOverlay.vue";
-import FileMark from "@/panels/FileMark.vue";
-import FolderMark from "@/panels/FolderMark.vue";
-import { useSettingsStore } from "@/stores/settings";
-import { useFileViewersStore, isLikelyTextPath } from "@/stores/fileViewers";
-import { useFavoritesStore } from "@/stores/favorites";
+import GraphLoadingOverlay from "@ui/components/GraphLoadingOverlay.vue";
+import FileMark from "@ui/panels/FileMark.vue";
+import FolderMark from "@ui/panels/FolderMark.vue";
+import { useSettingsStore } from "@ui/stores/settings";
+import { useFileViewersStore, isLikelyTextPath } from "@ui/stores/fileViewers";
+import { useFavoritesStore } from "@ui/stores/favorites";
 import DetailExpandControls from "@/panels/DetailExpandControls.vue";
 import DetailExpandModal from "@/panels/DetailExpandModal.vue";
-import "./chrome.css";
+import "@ui/theme/chrome.css";
 
 interface FileEntry {
   path: string;

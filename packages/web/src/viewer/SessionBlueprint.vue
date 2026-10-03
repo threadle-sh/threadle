@@ -805,6 +805,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { openWorkflowsPath } from "@ui/panels/app-links";
 import {
   VueFlow,
   Handle,
@@ -815,27 +816,27 @@ import {
 import { Background } from "@vue-flow/background";
 import { Controls } from "@vue-flow/controls";
 import type { NormalizedMessage, SessionRef, SessionStatus, TouchedFile } from "@threadle/shared";
-import DashNav from "@/panels/DashNav.vue";
-import StatusBar from "@/panels/StatusBar.vue";
+import DashNav from "@ui/panels/DashNav.vue";
+import StatusBar from "@ui/panels/StatusBar.vue";
 import OutboundUrlsModal from "@/panels/OutboundUrlsModal.vue";
-import { useNavItems } from "@/panels/useNavItems";
-import { bidiPath, relativeTime, shortId, fmtTokens, isTokenEstimate } from "@/lib/format";
-import { providerShort } from "@/lib/providers";
-import { useSettingsStore } from "@/stores/settings";
-import { useFileViewersStore, isLikelyTextPath } from "@/stores/fileViewers";
-import { useSessionsStore } from "@/stores/sessions";
-import { subscribeEvents } from "@/api/client";
-import { copyToClipboard, fetchFileText } from "@/lib/pathActions";
-import { api } from "@/api/client";
-import { downloadUrl, sessionsToWorkflow, referenceContextToWorkflow, referenceContextToLibrary } from "@/lib/convert";
-import { useHorizontalResize } from "@/lib/useHorizontalResize";
+import { useNavItems } from "@ui/panels/useNavItems";
+import { bidiPath, relativeTime, shortId, fmtTokens, isTokenEstimate } from "@ui/lib/format";
+import { providerShort } from "@ui/lib/providers";
+import { useSettingsStore } from "@ui/stores/settings";
+import { useFileViewersStore, isLikelyTextPath } from "@ui/stores/fileViewers";
+import { useSessionsStore } from "@ui/stores/sessions";
+import { subscribeEvents } from "@ui/api/client";
+import { copyToClipboard, fetchFileText } from "@ui/lib/pathActions";
+import { api } from "@ui/api/client";
+import { downloadUrl, sessionsToWorkflow, referenceContextToWorkflow, referenceContextToLibrary } from "@ui/lib/convert";
+import { useHorizontalResize } from "@ui/lib/useHorizontalResize";
 import { useFilterChipMenu } from "@/lib/useFilterChipMenu";
-import { displayMessageRole } from "@/lib/messageRole";
+import { displayMessageRole } from "@ui/lib/messageRole";
 import FilterChipMenu from "@/components/FilterChipMenu.vue";
-import GraphLoadingOverlay from "@/components/GraphLoadingOverlay.vue";
+import GraphLoadingOverlay from "@ui/components/GraphLoadingOverlay.vue";
 import DetailExpandControls from "@/panels/DetailExpandControls.vue";
 import DetailExpandModal from "@/panels/DetailExpandModal.vue";
-import "@/viewer/dashboard/chrome.css";
+import "@ui/theme/chrome.css";
 
 const route = useRoute();
 const router = useRouter();
@@ -910,10 +911,6 @@ function goDash(view: string): void {
       path: "/map",
       query: projectDir ? { dir: projectDir } : undefined,
     });
-    return;
-  }
-  if (view === "projects") {
-    void router.push("/projects");
     return;
   }
   void router.push({ path: "/", query: { view } });
@@ -1779,7 +1776,7 @@ async function referenceToWorkflow(ref: { provider: string; id: string }): Promi
   ctxRefNote.value = undefined;
   try {
     const { graphId } = await referenceContextToWorkflow(ref.provider, ref.id);
-    await router.push(`/graph/${graphId}`);
+    openWorkflowsPath(`/addon/workflows/graph/${graphId}`);
   } catch (err) {
     ctxRefNote.value = err instanceof Error ? err.message : String(err);
   } finally {
@@ -1932,7 +1929,7 @@ async function convertToWorkflow(): Promise<void> {
       `${d.ref.title?.slice(0, 40) ?? shortId(d.ref.id)} (from blueprint)`,
       [d.ref],
     );
-    await router.push(`/graph/${id}`);
+    openWorkflowsPath(`/addon/workflows/graph/${id}`);
   } catch (err) {
     error.value = err instanceof Error ? err.message : String(err);
   } finally {

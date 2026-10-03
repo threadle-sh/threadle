@@ -28,16 +28,13 @@ jobs:
       - name: Audit production deps
         run: npm audit --omit=dev --audit-level=high
 
-      - name: Boundary (viewer/core ↛ wire)
+      - name: Boundary (viewer/core ↛ workflows)
         run: npm run check:boundary
 
-      - name: Typecheck shared
-        run: npx tsc -p packages/shared --noEmit
+      - name: Typecheck (server packages + web packages)
+        run: npm run typecheck
 
-      - name: Typecheck web
-        run: npm run typecheck -w @threadle/web
-
-      - name: Build (web → web-dist + server bundle)
+      - name: Build (viewer → web-dist, workflows editor → web-dist-workflows, server bundle)
         run: npm run build
 
       - name: Test
@@ -55,6 +52,8 @@ jobs:
           npm install "$GITHUB_WORKSPACE/$TGZ"
           npx threadle --help | grep -q "threadle"
           npx threadle templates | grep -q "hello-wire"
+          npx threadle-workflows --help | grep -q -- "--editor"
+          test -f node_modules/threadle/web-dist-workflows/index.html
           npx threadle check || true
           # check may soft-fail without provider storage; critical bits still print
           npx threadle --help >/dev/null

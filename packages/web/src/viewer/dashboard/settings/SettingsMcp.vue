@@ -144,9 +144,9 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
-import { vColResize } from "@/lib/colResize";
-import { useSettingsStore } from "@/stores/settings";
-import "../chrome.css";
+import { vColResize } from "@ui/lib/colResize";
+import { useSettingsStore } from "@ui/stores/settings";
+import "@ui/theme/chrome.css";
 
 interface McpServerRow {
   id: string;

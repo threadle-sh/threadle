@@ -1,8 +1,8 @@
 <p align="center">
   <img src="https://raw.githubusercontent.com/threadle-sh/threadle/main/images/header.jpg" alt="threadle" width="920" />
 </p>
-<p align="center"><strong>See every local AI coding session — across tools, with spend.</strong></p>
-<p align="center"><em>Nothing to import. Hand context to the next run when you need to.</em></p>
+<p align="center"><strong>See what your agents did.</strong></p>
+<p align="center"><em>Local multi-provider session viewer. Nothing to import.</em></p>
 <p align="center">
   <a href="https://github.com/threadle-sh/threadle/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-white?style=flat-square&labelColor=0a0a0c" alt="MIT" /></a>
   <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%E2%89%A5%2022.12-white?style=flat-square&labelColor=0a0a0c" alt="Node ≥ 22.12" /></a>
@@ -12,11 +12,13 @@
   <a href="https://github.com/threadle-sh/threadle/releases"><img src="https://img.shields.io/github/v/release/threadle-sh/threadle?style=flat-square&labelColor=0a0a0c&color=white" alt="release" /></a>
 </p>
 
-Your agents write everything down: transcripts, tool calls, files touched, spend. Then nobody reads it — and the story splits across Claude Code, Codex, Cursor, and the rest. threadle reads the storage you already have and puts it in one place: sessions, blueprints, search, statistics, projects. Distill a brief and hand it to the next tool when you need continuity.
+threadle turns every AI coding session on your machine into something you can inspect, search, and reuse locally.
 
-**Yours, with no catch.** Discovery is read-only. threadle binds `127.0.0.1`, has no account and no telemetry, and does not upload transcripts. Runs use each tool’s own CLI under your credentials. If threadle disappears tomorrow, your sessions are exactly where they always were.
+Your agents already write everything down: transcripts, tool calls, token counts, the files they touched. Almost nobody reads it. threadle reads the storage you already have and draws it as sessions, blueprints, map, timeline, search, and statistics.
 
-Supported today: [Claude Code](https://claude.com/claude-code), [opencode](https://opencode.ai), [Cursor](https://cursor.com) `agent`, [Antigravity](https://antigravity.google) `agy`, [Codex](https://github.com/openai/codex), [GitHub Copilot](https://github.com/features/copilot) CLI, [Grok Build](https://x.ai/cli), and [Muse Code](https://dev.meta.ai).
+**Yours, with no catch.** Discovery is read-only. threadle binds `127.0.0.1`, has no account and no telemetry, and does not upload transcripts. If threadle disappears tomorrow, your sessions stay exactly where they always were.
+
+From the tools you already run: [Claude Code](https://claude.com/claude-code), [opencode](https://opencode.ai), [Cursor](https://cursor.com) `agent`, [Antigravity](https://antigravity.google) `agy`, [Codex](https://github.com/openai/codex), [GitHub Copilot](https://github.com/features/copilot) CLI, [Grok Build](https://x.ai/cli), and [Muse Code](https://dev.meta.ai).
 
 [Website](https://threadle.sh) · [Docs](https://docs.threadle.sh) · [Install](https://github.com/threadle-sh/threadle/blob/main/docs/install.md) · [CLI](https://github.com/threadle-sh/threadle/tree/main/docs/cli) · [MCP](https://github.com/threadle-sh/threadle/blob/main/docs/mcp.md) · [Security](https://github.com/threadle-sh/threadle/blob/main/SECURITY.md)
 
@@ -25,27 +27,27 @@ Supported today: [Claude Code](https://claude.com/claude-code), [opencode](https
     <img src="https://raw.githubusercontent.com/threadle-sh/threadle/main/docs/screenshots/sessions.png" alt="Sessions: every local session with tokens, cache, and spend" width="920" />
   </a>
 </p>
-<p align="center"><em>Every session on disk. Tokens, cache, spend — nothing to import.</em></p>
+<p align="center"><em>Every session on disk. Tokens, cache, and spend. Nothing to import.</em></p>
 
 <p align="center">
   <a href="https://docs.threadle.sh">
     <img src="https://raw.githubusercontent.com/threadle-sh/threadle/main/docs/screenshots/blueprint.png" alt="Session blueprint: turns, tool calls, files touched, and subagents for one session" width="920" />
   </a>
 </p>
-<p align="center"><em>Every session, drawn. See what your agents did while you weren't looking.</em></p>
+<p align="center"><em>Every session, drawn.</em></p>
 
 ---
 
 ## Install
 
-**Curl portable.** macOS or Linux (arm64 / x64), bundled Node 26:
+**Curl portable** (macOS or Linux, arm64 / x64, bundled Node 26):
 
 ```bash
 curl -fsSL https://threadle.sh/install.sh | bash
 threadle                                 # http://127.0.0.1:4570 → Sessions
 ```
 
-**Windows, and anywhere with Node ≥ 22.12.** Use npm:
+**Windows, or anywhere with Node ≥ 22.12:**
 
 ```bash
 npx threadle
@@ -57,26 +59,24 @@ npm install && npm run build && npm start
 Prefer **WSL** on Windows if you want the curl installer and Linux agent paths (`~/.claude`, …). Native Windows threadle sees native Windows agent homes (`%USERPROFILE%\.…`). It does not bridge into WSL storage.
 
 > [!TIP]
-> Sessions appear on first launch, nothing to import. `threadle check` verifies PATH, provider storage, and UI assets. `threadle check --providers` probes inject-critical CLI flags.
+> Sessions appear on first launch. Nothing to import. `threadle check` verifies PATH, provider storage, and UI assets. `threadle check --providers` probes inject-critical CLI flags.
 
-Pin a curl release with `THREADLE_VERSION=1.0.2`. Uninstall as cleanly as you installed: `rm -rf ~/.local/share/threadle ~/.local/bin/threadle`. Everything threadle wrote lives in `~/.config/threadle`. [Install notes](https://github.com/threadle-sh/threadle/blob/main/docs/install.md) · [provider freshness](https://github.com/threadle-sh/threadle/blob/main/docs/provider-freshness.md)
+Pin a curl release with `THREADLE_VERSION=1.0.2`. Uninstall as cleanly as you installed: `rm -rf ~/.local/share/threadle ~/.local/bin/threadle ~/.local/bin/threadle-workflows`. Everything threadle wrote lives in `~/.config/threadle`. [Install notes](https://github.com/threadle-sh/threadle/blob/main/docs/install.md) · [provider freshness](https://github.com/threadle-sh/threadle/blob/main/docs/provider-freshness.md)
 
 ## Quick start
 
 ```bash
-threadle                                 # UI (Sessions by default)
+threadle                                 # viewer, Sessions by default (:4570)
 threadle check                           # PATH + provider storage
-# optional Wire (beta) recipes:
-threadle run hello-wire
-threadle run plan-implement-review --param task="…" --approve-all
 ```
 
-## How it fits together
+Open a session. Open its blueprint. Check Statistics when you care about spend.
 
-- **See.** Every local session across providers — spend, cache, context pressure. Blueprints for turns, tools, files, subagents. Projects group related repos. Map, timeline, search, statistics.
-- **Connect.** Distill a session into a brief and inject it into another tool. Payloads stay tagged and show up in lineage.
-- **Wire (beta).** Optional canvas for short recipes (agents, gates, handoffs). ▶ is a server job. Not required for the viewer.
-- **Ask.** `threadle mcp` exposes sessions (and saved workflows) as MCP tools, so your agent can answer *"what did I spend on this last week?"* without leaving the session.
+## Viewer
+
+**See.** Every local session across providers with spend, cache, and context pressure. Blueprints for turns, tools, files, and subagents. Map, timeline, search, and statistics.
+
+**Connect.** Distill a session into a brief and inject it into another tool. Payloads stay tagged and show up in lineage.
 
 A handoff, concretely:
 
@@ -88,7 +88,7 @@ Lineage: session → brief → session   →  nothing lost at the boundary
 ```
 
 <details>
-<summary><strong>More views</strong> · lineage · map · timeline · library · statistics · files · wire</summary>
+<summary><strong>More views</strong> · lineage · map · timeline · library · statistics · files · search</summary>
 <br />
 <p align="center">
   <img src="https://raw.githubusercontent.com/threadle-sh/threadle/main/docs/screenshots/lineage.png" alt="Lineage: a brief traced from the session that made it to every run it fed" width="920" />
@@ -103,12 +103,34 @@ Lineage: session → brief → session   →  nothing lost at the boundary
   <br /><br />
   <img src="https://raw.githubusercontent.com/threadle-sh/threadle/main/docs/screenshots/files.png" alt="Files: every file a session touched, diffable and traceable" width="920" />
   <br /><br />
-  <img src="https://raw.githubusercontent.com/threadle-sh/threadle/main/docs/screenshots/canvas.png" alt="Wire (beta): agents, sessions, and context on a canvas" width="920" />
+  <img src="https://raw.githubusercontent.com/threadle-sh/threadle/main/docs/screenshots/search.png" alt="Search: full-text across transcripts and payloads" width="920" />
 </p>
-<p align="center"><em>Wire (beta) — optional canvas, same local install.</em></p>
 
-The full set lives in [`docs/screenshots/`](https://github.com/threadle-sh/threadle/tree/main/docs/screenshots). Recipes (`best-of-n`, `handover-brief`, …) live in [`examples/recipes/`](https://github.com/threadle-sh/threadle/tree/main/examples/recipes).
+The full set lives in [`docs/screenshots/`](https://github.com/threadle-sh/threadle/tree/main/docs/screenshots).
 </details>
+
+## Addon: Workflows
+
+Optional. Soft-frozen. Not required for the viewer.
+
+Workflows is a separate app for short, repeatable jobs across agents. Approvals, spend limits, and handoffs stay on your machine. Install once with threadle, then start the canvas when you want it:
+
+```bash
+threadle-workflows                       # editor + runner (:4571), UI under /addon/workflows
+threadle run hello                       # bundled teaching graph
+threadle run plan-implement-review --param task="…" --approve-all
+```
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/threadle-sh/threadle/main/docs/screenshots/canvas.png" alt="Workflows addon: agents, sessions, and context on a canvas" width="920" />
+</p>
+<p align="center"><em>Workflows addon. Optional canvas, same local install.</em></p>
+
+Hold rules and package layout: [docs/workflows.md](https://github.com/threadle-sh/threadle/blob/main/docs/workflows.md). Recipes such as `best-of-n` and `handover-brief` live in [`examples/recipes/`](https://github.com/threadle-sh/threadle/tree/main/examples/recipes).
+
+## Ask (MCP)
+
+`threadle mcp` answers spend and session questions from inside a coding session. It can also expose saved Workflows graphs as tools when you use the addon.
 
 ## Trust
 
@@ -116,19 +138,18 @@ Parsers never mutate `~/.claude`, opencode’s SQLite, `~/.cursor`, `~/.gemini/a
 
 The server rejects foreign `Host` (DNS rebinding) and cross-site write `Origin` (CSRF). There is no remote mode and no auth token. List prices ship bundled (CI-refreshed from [models.dev](https://models.dev)). The process does not fetch them at runtime. Everything threadle persists is under `~/.config/threadle/`.
 
-Detached / CLI runs cannot splice a parked gate or distill mid-run. They need `--approve-all` or a pre-materialized payload. Live chat stays on the canvas. [Constraints](https://github.com/threadle-sh/threadle/blob/main/docs/cli/manual.md#detached-run-constraints-cli-and-).
+Detached CLI runs of Workflows graphs cannot splice a parked gate or distill mid-run. They need `--approve-all` or a pre-materialized payload. [Constraints](https://github.com/threadle-sh/threadle/blob/main/docs/cli/manual.md#detached-run-constraints-cli-and-).
 
 ## Documentation
 
 | Goal | Start here |
 | --- | --- |
 | Tour, learning path, recipes | [docs.threadle.sh](https://docs.threadle.sh) |
-| CLI, jobs, detached runs | [docs/cli](https://github.com/threadle-sh/threadle/tree/main/docs/cli), also `skills`, `open`, `run --watch` |
-| MCP server + canvas client | [docs/mcp.md](https://github.com/threadle-sh/threadle/blob/main/docs/mcp.md) · [examples/mcp](https://github.com/threadle-sh/threadle/tree/main/examples/mcp) |
+| CLI, jobs, detached runs | [docs/cli](https://github.com/threadle-sh/threadle/tree/main/docs/cli) |
+| MCP | [docs/mcp.md](https://github.com/threadle-sh/threadle/blob/main/docs/mcp.md) · [examples/mcp](https://github.com/threadle-sh/threadle/tree/main/examples/mcp) |
 | Custom nodes | [docs/custom-nodes.md](https://github.com/threadle-sh/threadle/blob/main/docs/custom-nodes.md) · [stdlib pack](https://github.com/threadle-sh/threadle/tree/main/examples/nodes/stdlib) |
 | File viewer | [docs/file-viewer.md](https://github.com/threadle-sh/threadle/blob/main/docs/file-viewer.md) |
-| Viewer dogfood | [docs/dogfood.md](https://github.com/threadle-sh/threadle/blob/main/docs/dogfood.md) |
-| Wire (beta) hold | [docs/wire.md](https://github.com/threadle-sh/threadle/blob/main/docs/wire.md) |
+| Workflows addon hold | [docs/workflows.md](https://github.com/threadle-sh/threadle/blob/main/docs/workflows.md) |
 
 ## Development
 
@@ -136,14 +157,19 @@ Detached / CLI runs cannot splice a parked gate or distill mid-run. They need `-
 git clone https://github.com/threadle-sh/threadle.git
 cd threadle
 npm install
-npm run dev                              # API :4570 + Vite :5173
-npm run check:boundary                   # viewer/core must not import wire
+npm run dev                              # API :4570 + viewer :5173 + workflows :5174
+npm run check:boundary                   # package dependency direction (viewer/core ↛ workflows)
 ```
 
 ```
-packages/shared   types, zod, node catalog
-packages/server   Hono API + `threadle` bin (core providers; wire/workflows)
-packages/web      Vue 3 — src/viewer, src/wire (beta), app shell
+packages/shared             core types + zod
+packages/core               providers, sessions, runs, viewer API
+packages/server             threadle + threadle-workflows bins (composition root)
+packages/ui                 shared Vue shell (nav, stores, theme)
+packages/web                viewer app (threadle)
+packages/workflows-shared   graph schema, node catalog, runner helpers
+packages/workflows-server   graph store, executor, triggers, templates
+packages/workflows-web      workflows addon app (threadle-workflows)
 ```
 
 See [CONTRIBUTING.md](https://github.com/threadle-sh/threadle/blob/main/CONTRIBUTING.md) and [AGENTS.md](https://github.com/threadle-sh/threadle/blob/main/AGENTS.md). The fastest bug report is an issue with a session bundle attached (*Sessions → ⇓ bundle*).

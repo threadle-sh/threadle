@@ -95,8 +95,8 @@ import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import type { AgentDef, ModelInfo, ProviderId } from "@threadle/shared";
 import { defaultConfigFor } from "@threadle/shared";
-import { api } from "@/api/client";
-import { defaultHandoffTarget, PROVIDER_IDS, providerShort } from "@/lib/providers";
+import { api } from "@ui/api/client";
+import { defaultHandoffTarget, PROVIDER_IDS, providerShort } from "@ui/lib/providers";
 
 const props = defineProps<{
   source: { provider: string; sessionId: string; title?: string; projectDir?: string };

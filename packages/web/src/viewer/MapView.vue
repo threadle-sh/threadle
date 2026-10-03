@@ -556,6 +556,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { openWorkflowsPath } from "@ui/panels/app-links";
 import {
   VueFlow,
   useVueFlow,
@@ -583,21 +584,21 @@ import {
   type AtlasDocument,
   type AtlasHubId,
 } from "@threadle/shared";
-import DashNav from "@/panels/DashNav.vue";
-import StatusBar from "@/panels/StatusBar.vue";
-import { useNavItems } from "@/panels/useNavItems";
-import { useSessionsStore } from "@/stores/sessions";
-import { useSettingsStore } from "@/stores/settings";
-import { useFileViewersStore, isLikelyTextPath } from "@/stores/fileViewers";
-import { providerColor, providerShort, type SessionFilter } from "@/lib/providers";
-import { relativeTime, shortId, fmtTokens } from "@/lib/format";
+import DashNav from "@ui/panels/DashNav.vue";
+import StatusBar from "@ui/panels/StatusBar.vue";
+import { useNavItems } from "@ui/panels/useNavItems";
+import { useSessionsStore } from "@ui/stores/sessions";
+import { useSettingsStore } from "@ui/stores/settings";
+import { useFileViewersStore, isLikelyTextPath } from "@ui/stores/fileViewers";
+import { providerColor, providerShort, type SessionFilter } from "@ui/lib/providers";
+import { relativeTime, shortId, fmtTokens } from "@ui/lib/format";
 import { useFilterChipMenu } from "@/lib/useFilterChipMenu";
 import FilterChipMenu from "@/components/FilterChipMenu.vue";
 import ProviderFilterChips from "@/components/ProviderFilterChips.vue";
-import GraphLoadingOverlay from "@/components/GraphLoadingOverlay.vue";
+import GraphLoadingOverlay from "@ui/components/GraphLoadingOverlay.vue";
 import DetailExpandControls from "@/panels/DetailExpandControls.vue";
 import DetailExpandModal from "@/panels/DetailExpandModal.vue";
-import "@/viewer/dashboard/chrome.css";
+import "@ui/theme/chrome.css";
 
 import "@vue-flow/core/dist/style.css";
 import "@vue-flow/controls/dist/style.css";
@@ -1827,7 +1828,7 @@ function onWorkflowCtx(
     {
       glyph: "☰",
       label: "Workflows",
-      run: () => void router.push({ path: "/", query: { view: "workflows" } }),
+      run: () => openWorkflowsPath("/addon/workflows"),
     },
     {
       glyph: "⊡",
@@ -2314,7 +2315,6 @@ function clearDir(): void {
 
 function onNav(id: string): void {
   if (id === "map") return;
-  if (id === "projects") return void router.push("/projects");
   if (id === "lineage") return void router.push("/lineage");
   if (id === "timeline") return void router.push("/timeline");
   void router.push({ path: "/", query: { view: id } });
@@ -2329,7 +2329,7 @@ function openLineage(hash: string): void {
 }
 
 function openGraph(id: string): void {
-  void router.push(`/graph/${id}`);
+  openWorkflowsPath(`/addon/workflows/graph/${id}`);
 }
 
 /** Open Sessions with this session already selected (not the bare list). */

@@ -469,22 +469,23 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import { useRouter } from "vue-router";
+import { openWorkflowsPath } from "@ui/panels/app-links";
 import type { ProviderId, SessionRef } from "@threadle/shared";
-import { bidiPath, relativeTime, shortId, tildePath } from "@/lib/format";
+import { bidiPath, relativeTime, shortId, tildePath } from "@ui/lib/format";
 import {
   providerColor,
   providerShort,
   type SessionFilter,
-} from "@/lib/providers";
+} from "@ui/lib/providers";
 import ProviderFilterChips from "@/components/ProviderFilterChips.vue";
 import ProjectFilterSelect from "@/components/ProjectFilterSelect.vue";
-import GraphLoadingOverlay from "@/components/GraphLoadingOverlay.vue";
-import { vColResize } from "@/lib/colResize";
-import { downloadUrl, sessionsToWorkflow } from "@/lib/convert";
-import { useSettingsStore } from "@/stores/settings";
-import { useSessionsStore } from "@/stores/sessions";
-import { useFileViewersStore, isLikelyTextPath } from "@/stores/fileViewers";
-import "./chrome.css";
+import GraphLoadingOverlay from "@ui/components/GraphLoadingOverlay.vue";
+import { vColResize } from "@ui/lib/colResize";
+import { downloadUrl, sessionsToWorkflow } from "@ui/lib/convert";
+import { useSettingsStore } from "@ui/stores/settings";
+import { useSessionsStore } from "@ui/stores/sessions";
+import { useFileViewersStore, isLikelyTextPath } from "@ui/stores/fileViewers";
+import "@ui/theme/chrome.css";
 
 interface SessionActivity {
   provider: ProviderId;
@@ -628,7 +629,7 @@ async function sessionToWorkflow(t: ActSessTarget): Promise<void> {
       `${s.title ?? shortId(s.id)} (from session)`,
       [s],
     );
-    await router.push(`/graph/${id}`);
+    openWorkflowsPath(`/addon/workflows/graph/${id}`);
   } catch (err) {
     alert(`Convert failed: ${err instanceof Error ? err.message : String(err)}`);
   }

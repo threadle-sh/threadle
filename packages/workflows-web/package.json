@@ -1,0 +1,31 @@
+{
+  "name": "@threadle/workflows-web",
+  "version": "0.5.0",
+  "private": true,
+  "type": "module",
+  "description": "threadle workflows editor app (canvas, palette, inspector) \u2014 built into packages/server/web-dist-workflows, served by `threadle-workflows`.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "@threadle/shared": "*",
+    "@threadle/ui": "*",
+    "@threadle/workflows-shared": "*",
+    "@vue-flow/background": "^1.3.2",
+    "@vue-flow/controls": "^1.1.2",
+    "@vue-flow/core": "^1.42.1",
+    "@vue-flow/minimap": "^1.5.2",
+    "@vue-flow/node-resizer": "^1.5.1",
+    "pinia": "^2.3.0",
+    "vue": "^3.5.43",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "vue-tsc": "^2.2.0",
+    "@vitejs/plugin-vue": "^6.0.9",
+    "vite": "^8.3.0"
+  }
+}

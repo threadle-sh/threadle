@@ -2,13 +2,15 @@
 # Launcher for a portable threadle install (node + app next to this script's parent).
 # Layout:
 #   <prefix>/bin/threadle   (this file — may be symlinked from ~/.local/bin)
+#   <prefix>/bin/threadle-workflows (same file — starts the workflows editor app)
 #   <prefix>/node/bin/node
 #   <prefix>/app/dist/cli.js
-#   <prefix>/app/web-dist/
+#   <prefix>/app/web-dist/  <prefix>/app/web-dist-workflows/
 set -euo pipefail
 
 # Resolve symlinks so PATH links (e.g. ~/.local/bin/threadle) still find the tree.
 SOURCE="${BASH_SOURCE[0]:-$0}"
+INVOKED="$(basename "$SOURCE")"
 while [[ -L "$SOURCE" ]]; do
   DIR="$(cd "$(dirname "$SOURCE")" && pwd)"
   LINK="$(readlink "$SOURCE")"
@@ -34,4 +36,7 @@ if [[ ! -f "$CLI" ]]; then
   exit 1
 fi
 
+if [[ "$INVOKED" == "threadle-workflows" ]]; then
+  exec "$NODE" "$CLI" --editor "$@"
+fi
 exec "$NODE" "$CLI" "$@"

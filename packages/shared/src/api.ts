@@ -1,6 +1,6 @@
 import type { ProviderId, SessionRef } from "./session.js";
 import type { ContextConfig, ContextPayload } from "./context.js";
-import type { NodeStatus } from "./graph.js";
+import type { NodeStatus } from "./graph-summary.js";
 
 export interface SourceRef {
   provider: ProviderId;

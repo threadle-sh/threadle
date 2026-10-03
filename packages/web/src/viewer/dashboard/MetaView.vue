@@ -77,7 +77,7 @@
                   type="button"
                   class="row-icon"
                   title="Open canvas"
-                  @click="router.push(`/graph/${g.id}`)"
+                  @click="openWorkflowsPath(`/addon/workflows/graph/${g.id}`)"
                 >
                   ⌗
                 </button>
@@ -95,7 +95,7 @@
                     <button
                       type="button"
                       class="menu-item"
-                      @click="menuAction(() => router.push(`/graph/${g.id}`))"
+                      @click="menuAction(() => openWorkflowsPath(`/addon/workflows/graph/${g.id}`))"
                     >
                       <span class="menu-glyph">⌗</span> Open canvas
                     </button>
@@ -304,7 +304,7 @@
         />
       </div>
       <div class="sess-detail-actions">
-        <button type="button" class="vsc-btn" @click="router.push(`/graph/${picked.graph.id}`)">
+        <button type="button" class="vsc-btn" @click="openWorkflowsPath(`/addon/workflows/graph/${picked.graph.id}`)">
           ⌗ open canvas
         </button>
         <button type="button" class="vsc-btn" @click="copyText(picked.graph.id)">
@@ -487,7 +487,7 @@
           <DetailExpandControls hide-expand @close="detailExpanded = false" />
         </div>
         <div class="sess-detail-actions">
-          <button type="button" class="vsc-btn" @click="router.push(`/graph/${picked.graph.id}`)">
+          <button type="button" class="vsc-btn" @click="openWorkflowsPath(`/addon/workflows/graph/${picked.graph.id}`)">
             ⌗ open canvas
           </button>
           <button type="button" class="vsc-btn" @click="copyText(picked.graph.id)">
@@ -650,15 +650,16 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
+import { openWorkflowsPath } from "@ui/panels/app-links";
 import type { GraphSummary } from "@threadle/shared";
-import { bidiPath, relativeTime } from "@/lib/format";
-import { copyToClipboard } from "@/lib/pathActions";
-import { useSettingsStore } from "@/stores/settings";
-import { useFileViewersStore, isLikelyTextPath } from "@/stores/fileViewers";
-import GraphLoadingOverlay from "@/components/GraphLoadingOverlay.vue";
+import { bidiPath, relativeTime } from "@ui/lib/format";
+import { copyToClipboard } from "@ui/lib/pathActions";
+import { useSettingsStore } from "@ui/stores/settings";
+import { useFileViewersStore, isLikelyTextPath } from "@ui/stores/fileViewers";
+import GraphLoadingOverlay from "@ui/components/GraphLoadingOverlay.vue";
 import DetailExpandControls from "@/panels/DetailExpandControls.vue";
 import DetailExpandModal from "@/panels/DetailExpandModal.vue";
-import "./chrome.css";
+import "@ui/theme/chrome.css";
 
 export interface RuleArtifact {
   path: string;
@@ -1072,7 +1073,7 @@ function menuAction(fn: () => unknown): void {
 function openCtxGraph(): void {
   const c = metaCtx.value;
   if (c?.kind !== "graph") return;
-  void router.push(`/graph/${c.graph.id}`);
+  openWorkflowsPath(`/addon/workflows/graph/${c.graph.id}`);
 }
 
 function copyCtxGraphId(): void {

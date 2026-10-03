@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Idea that fits the patchbay / observability story
+about: Idea that fits the viewer / observability story
 labels: enhancement
 ---
 

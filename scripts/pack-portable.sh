@@ -85,13 +85,14 @@ mkdir -p "$OUT/app" "$OUT/bin" "$OUT/node"
 
 # --- app (JS is platform-independent) ---
 cd "$ROOT"
-if [[ ! -f packages/server/dist/cli.js ]] || [[ ! -f packages/server/web-dist/index.html ]]; then
+if [[ ! -f packages/server/dist/cli.js ]] || [[ ! -f packages/server/web-dist/index.html ]] || [[ ! -f packages/server/web-dist-workflows/index.html ]]; then
   echo "building web + server…"
   npm run build
 fi
 
 cp -R packages/server/dist "$OUT/app/dist"
 cp -R packages/server/web-dist "$OUT/app/web-dist"
+cp -R packages/server/web-dist-workflows "$OUT/app/web-dist-workflows"
 # Minimal package.json for resolving production deps
 node -e '
 const fs = require("fs");
@@ -141,7 +142,8 @@ cp "$NODE_SRC/LICENSE" "$OUT/node/LICENSE" 2>/dev/null || true
 
 # --- wrapper ---
 cp "$ROOT/scripts/threadle-wrapper.sh" "$OUT/bin/threadle"
-chmod +x "$OUT/bin/threadle" "$OUT/node/bin/node"
+cp "$ROOT/scripts/threadle-wrapper.sh" "$OUT/bin/threadle-workflows"
+chmod +x "$OUT/bin/threadle" "$OUT/bin/threadle-workflows" "$OUT/node/bin/node"
 
 # Sanity: bundled node can load the CLI — only runnable when we packed for the
 # host platform. release-artifacts.sh cross-packs all four platforms from one

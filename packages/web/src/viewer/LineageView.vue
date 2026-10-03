@@ -302,8 +302,8 @@
                 class="lin-inj mono"
                 @click="
                   r.graphId
-                    ? router.push(`/graph/${r.graphId}`)
-                    : router.push({ path: '/', query: { view: 'runs' } })
+                    ? openWorkflowsPath(`/addon/workflows/graph/${r.graphId}`)
+                    : openWorkflowsPath('/addon/workflows/runs')
                 "
               >
                 ⌗ {{ r.label ?? r.kind }}
@@ -427,8 +427,8 @@
                   class="lin-inj mono"
                   @click="
                     r.graphId
-                      ? router.push(`/graph/${r.graphId}`)
-                      : router.push({ path: '/', query: { view: 'runs' } })
+                      ? openWorkflowsPath(`/addon/workflows/graph/${r.graphId}`)
+                      : openWorkflowsPath('/addon/workflows/runs')
                   "
                 >
                   ⌗ {{ r.label ?? r.kind }}
@@ -473,29 +473,30 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { openWorkflowsPath } from "@ui/panels/app-links";
 import { VueFlow, Handle, Position, useVueFlow } from "@vue-flow/core";
 import { Background } from "@vue-flow/background";
 import { Controls } from "@vue-flow/controls";
 import { MiniMap } from "@vue-flow/minimap";
 import type { Edge, Node } from "@vue-flow/core";
-import DashNav from "@/panels/DashNav.vue";
-import StatusBar from "@/panels/StatusBar.vue";
-import SessionInfoPanel from "@/panels/SessionInfoPanel.vue";
-import { useNavItems } from "@/panels/useNavItems";
-import { useSessionsStore } from "@/stores/sessions";
-import { relativeTime, shortId } from "@/lib/format";
+import DashNav from "@ui/panels/DashNav.vue";
+import StatusBar from "@ui/panels/StatusBar.vue";
+import SessionInfoPanel from "@ui/panels/SessionInfoPanel.vue";
+import { useNavItems } from "@ui/panels/useNavItems";
+import { useSessionsStore } from "@ui/stores/sessions";
+import { relativeTime, shortId } from "@ui/lib/format";
 import {
   providerColor,
   providerColorHex,
   providerShort,
   type SessionFilter,
-} from "@/lib/providers";
+} from "@ui/lib/providers";
 import ProviderFilterChips from "@/components/ProviderFilterChips.vue";
-import GraphLoadingOverlay from "@/components/GraphLoadingOverlay.vue";
+import GraphLoadingOverlay from "@ui/components/GraphLoadingOverlay.vue";
 import DetailExpandControls from "@/panels/DetailExpandControls.vue";
 import DetailExpandModal from "@/panels/DetailExpandModal.vue";
-import { useFileViewersStore } from "@/stores/fileViewers";
-import "@/viewer/dashboard/chrome.css";
+import { useFileViewersStore } from "@ui/stores/fileViewers";
+import "@ui/theme/chrome.css";
 
 interface LineagePayload {
   hash: string;
@@ -671,7 +672,6 @@ function onNav(id: string): void {
   if (id === "lineage") return;
   if (id === "timeline") return void router.push("/timeline");
   if (id === "map") return void router.push("/map");
-  if (id === "projects") return void router.push("/projects");
   void router.push({ path: "/", query: { view: id } });
 }
 function provColor(p: string): string {
@@ -1091,13 +1091,13 @@ function onSessionCtx(
     items.push({
       glyph: "→",
       label: "Open workflow",
-      run: () => void router.push(`/graph/${graphRun.graphId}`),
+      run: () => openWorkflowsPath(`/addon/workflows/graph/${graphRun.graphId}`),
     });
   } else if (runs.length) {
     items.push({
       glyph: "→",
       label: "Runs",
-      run: () => void router.push({ path: "/", query: { view: "runs" } }),
+      run: () => openWorkflowsPath("/addon/workflows/runs"),
     });
   }
   items.push(

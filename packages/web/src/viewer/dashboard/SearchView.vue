@@ -246,24 +246,25 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
+import { openWorkflowsPath } from "@ui/panels/app-links";
 import type { SessionRef } from "@threadle/shared";
-import { relativeTime, shortId } from "@/lib/format";
-import { displayMessageRole } from "@/lib/messageRole";
+import { relativeTime, shortId } from "@ui/lib/format";
+import { displayMessageRole } from "@ui/lib/messageRole";
 import {
   type SearchFilter,
   providerColor,
-} from "@/lib/providers";
-import { sessionsToWorkflow } from "@/lib/convert";
-import { useSessionsStore } from "@/stores/sessions";
-import { useFileViewersStore } from "@/stores/fileViewers";
-import { useFavoritesStore } from "@/stores/favorites";
+} from "@ui/lib/providers";
+import { sessionsToWorkflow } from "@ui/lib/convert";
+import { useSessionsStore } from "@ui/stores/sessions";
+import { useFileViewersStore } from "@ui/stores/fileViewers";
+import { useFavoritesStore } from "@ui/stores/favorites";
 import ProviderFilterChips from "@/components/ProviderFilterChips.vue";
-import GraphLoadingOverlay from "@/components/GraphLoadingOverlay.vue";
-import SessionInfoPanel from "@/panels/SessionInfoPanel.vue";
-import TranscriptView from "@/panels/TranscriptView.vue";
-import FolderMark from "@/panels/FolderMark.vue";
+import GraphLoadingOverlay from "@ui/components/GraphLoadingOverlay.vue";
+import SessionInfoPanel from "@ui/panels/SessionInfoPanel.vue";
+import TranscriptView from "@ui/panels/TranscriptView.vue";
+import FolderMark from "@ui/panels/FolderMark.vue";
 import GrowthMark from "@/panels/GrowthMark.vue";
-import "./chrome.css";
+import "@ui/theme/chrome.css";
 
 interface SearchHit {
   docType: "message" | "payload";
@@ -466,7 +467,7 @@ async function sessionToWorkflow(s: SessionRef): Promise<void> {
       `${s.title ?? shortId(s.id)} (from session)`,
       [s],
     );
-    await router.push(`/graph/${id}`);
+    openWorkflowsPath(`/addon/workflows/graph/${id}`);
   } catch (err) {
     alert(`Convert failed: ${err instanceof Error ? err.message : String(err)}`);
   }

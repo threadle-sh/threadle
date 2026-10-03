@@ -123,9 +123,11 @@ rm -rf "$INSTALL_DIR/node" "$INSTALL_DIR/app" "$INSTALL_DIR/bin"
 mv "$INNER/node" "$INNER/app" "$INNER/bin" "$INSTALL_DIR/"
 rm -rf "$STAGE"
 chmod +x "$INSTALL_DIR/bin/threadle" "$INSTALL_DIR/node/bin/node"
+[[ -f "$INSTALL_DIR/bin/threadle-workflows" ]] && chmod +x "$INSTALL_DIR/bin/threadle-workflows"
 
 mkdir -p "$BIN_DIR"
 ln -sfn "$INSTALL_DIR/bin/threadle" "$BIN_DIR/threadle"
+[[ -f "$INSTALL_DIR/bin/threadle-workflows" ]] && ln -sfn "$INSTALL_DIR/bin/threadle-workflows" "$BIN_DIR/threadle-workflows"
 
 if ! "$BIN_DIR/threadle" --help >/dev/null 2>&1; then
   die "installed binary failed --help"

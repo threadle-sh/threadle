@@ -284,24 +284,24 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
-import DashNav from "@/panels/DashNav.vue";
-import StatusBar from "@/panels/StatusBar.vue";
-import SessionInfoPanel from "@/panels/SessionInfoPanel.vue";
-import { useNavItems } from "@/panels/useNavItems";
-import { useSessionsStore } from "@/stores/sessions";
-import { useFileViewersStore } from "@/stores/fileViewers";
-import { useFavoritesStore } from "@/stores/favorites";
+import DashNav from "@ui/panels/DashNav.vue";
+import StatusBar from "@ui/panels/StatusBar.vue";
+import SessionInfoPanel from "@ui/panels/SessionInfoPanel.vue";
+import { useNavItems } from "@ui/panels/useNavItems";
+import { useSessionsStore } from "@ui/stores/sessions";
+import { useFileViewersStore } from "@ui/stores/fileViewers";
+import { useFavoritesStore } from "@ui/stores/favorites";
 import { isSessionLive } from "@threadle/shared";
 import {
   type SessionFilter,
   providerColorHex,
-} from "@/lib/providers";
+} from "@ui/lib/providers";
 import ProviderFilterChips from "@/components/ProviderFilterChips.vue";
 import ProjectFilterSelect from "@/components/ProjectFilterSelect.vue";
-import GraphLoadingOverlay from "@/components/GraphLoadingOverlay.vue";
+import GraphLoadingOverlay from "@ui/components/GraphLoadingOverlay.vue";
 import DetailExpandControls from "@/panels/DetailExpandControls.vue";
 import DetailExpandModal from "@/panels/DetailExpandModal.vue";
-import "@/viewer/dashboard/chrome.css";
+import "@ui/theme/chrome.css";
 
 const RANGES = [
   { id: "24h", label: "24h", ms: 24 * 3_600_000 },
@@ -575,7 +575,6 @@ function goDash(view: string): void {
       query: dir ? { dir } : undefined,
     });
   }
-  if (view === "projects") return void router.push("/projects");
   void router.push({ path: "/", query: { view } });
 }
 

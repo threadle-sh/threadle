@@ -22,7 +22,7 @@ CLI ids (`content-tripwire`, `ply-fan-knot`, …) keep stable historical slugs; 
 
 | File / `threadle run` id | Name | Teaches | Agent |
 |---|---|---|---|
-| [`hello-wire.json`](hello-wire.json) | Hello wire | Prompt → output | — |
+| [`hello.json`](hello.json) | Hello | Prompt → output | — |
 | [`splice-gate.json`](splice-gate.json) | Approval gate | Approval + splice | — |
 | [`one-shot-agent.json`](one-shot-agent.json) | One-shot agent | Prompt → agent → output | agent |
 | [`param-prompt.json`](param-prompt.json) | Workflow params | `{{param:topic}}` | — |
@@ -30,7 +30,7 @@ CLI ids (`content-tripwire`, `ply-fan-knot`, …) keep stable historical slugs; 
 | [`prompt-convert.json`](prompt-convert.json) | Text → Prompt | Converter template | — |
 
 ```bash
-threadle run hello-wire
+threadle run hello
 threadle run examples/workflows/mcp-brief.json   # then expose via threadle mcp — see docs/mcp.md
 ```
 
@@ -186,7 +186,7 @@ In the app, **use** on `complex-delay-pipeline` seeds **linked** editable subgra
 
 ## Notes
 
-- Source of truth for the graphs is `packages/server/src/templates/workflows.ts`; these JSON files are the portable exports for reading, sharing, and `threadle run ./file.json`.
+- Source of truth for the graphs is `packages/workflows-server/src/templates/workflows.ts`; these JSON files are the portable exports for reading, sharing, and `threadle run ./file.json`.
 - Import in the UI: **Workflows → examples** (clone) or drop a `.json` onto the canvas / use import.
 - Job recipes: [`../recipes/`](../recipes/) — **Workflows → recipes**, `threadle recipes`.
 - Cron / path-watch triggers: [`../triggers/`](../triggers/) — `triggers.json` + `threadle daemon`.

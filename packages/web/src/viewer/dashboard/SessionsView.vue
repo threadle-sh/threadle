@@ -544,28 +544,29 @@
 
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { openWorkflowsPath } from "@ui/panels/app-links";
 import type { SessionRef } from "@threadle/shared";
 import { isPilotSession, isSessionLive } from "@threadle/shared";
-import { api } from "@/api/client";
-import { relativeTime, shortId, fmtTokens } from "@/lib/format";
+import { api } from "@ui/api/client";
+import { relativeTime, shortId, fmtTokens } from "@ui/lib/format";
 import {
   type SessionFilter,
   providerColor,
-} from "@/lib/providers";
-import { useSessionsStore } from "@/stores/sessions";
-import { useSettingsStore } from "@/stores/settings";
-import { useFileViewersStore } from "@/stores/fileViewers";
-import { useFavoritesStore } from "@/stores/favorites";
-import { downloadUrl, sessionsToWorkflow } from "@/lib/convert";
+} from "@ui/lib/providers";
+import { useSessionsStore } from "@ui/stores/sessions";
+import { useSettingsStore } from "@ui/stores/settings";
+import { useFileViewersStore } from "@ui/stores/fileViewers";
+import { useFavoritesStore } from "@ui/stores/favorites";
+import { downloadUrl, sessionsToWorkflow } from "@ui/lib/convert";
 import ProviderFilterChips from "@/components/ProviderFilterChips.vue";
-import GraphLoadingOverlay from "@/components/GraphLoadingOverlay.vue";
-import SessionInfoPanel from "@/panels/SessionInfoPanel.vue";
-import SessionLivePill from "@/panels/SessionLivePill.vue";
+import GraphLoadingOverlay from "@ui/components/GraphLoadingOverlay.vue";
+import SessionInfoPanel from "@ui/panels/SessionInfoPanel.vue";
+import SessionLivePill from "@ui/panels/SessionLivePill.vue";
 import GrowthMark from "@/panels/GrowthMark.vue";
 import DetailExpandControls from "@/panels/DetailExpandControls.vue";
 import DetailExpandModal from "@/panels/DetailExpandModal.vue";
-import { useJobPhases } from "@/lib/useJobPhases";
-import "./chrome.css";
+import { useJobPhases } from "@ui/lib/useJobPhases";
+import "@ui/theme/chrome.css";
 
 export type SessionOpenRequest = {
   session: SessionRef;
@@ -1248,7 +1249,7 @@ async function sessionToWorkflow(s: SessionRef): Promise<void> {
       `${s.title ?? shortId(s.id)} (from session)`,
       [s],
     );
-    await router.push(`/graph/${id}`);
+    openWorkflowsPath(`/addon/workflows/graph/${id}`);
   } catch (err) {
     alert(`Convert failed: ${err instanceof Error ? err.message : String(err)}`);
   }
@@ -1258,7 +1259,7 @@ async function projectToWorkflow(group: { dir: string; sessions: SessionRef[] })
   try {
     const name = group.dir.split("/").filter(Boolean).pop() ?? "project";
     const id = await sessionsToWorkflow(`${name} (project)`, group.sessions);
-    await router.push(`/graph/${id}`);
+    openWorkflowsPath(`/addon/workflows/graph/${id}`);
   } catch (err) {
     alert(`Convert failed: ${err instanceof Error ? err.message : String(err)}`);
   }

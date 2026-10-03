@@ -117,37 +117,6 @@
   </div>
 
   <div class="settings-card">
-    <div class="micro-label">examples</div>
-    <div class="settings-row">
-      <span class="settings-opt-label">show workflow examples</span>
-      <div class="settings-seg" role="group" aria-label="show workflow examples">
-        <button
-          type="button"
-          class="settings-seg-btn"
-          :class="{ active: !settings.showExamples }"
-          :disabled="settings.saving"
-          @click="setShowExamples(false)"
-        >
-          off
-        </button>
-        <button
-          type="button"
-          class="settings-seg-btn"
-          :class="{ active: settings.showExamples }"
-          :disabled="settings.saving"
-          @click="setShowExamples(true)"
-        >
-          on
-        </button>
-      </div>
-    </div>
-    <p class="stat-note">
-      When on, an Examples tab appears beside Subgraphs in Workflows
-      (recipes + beginner → expert canned graphs).
-    </p>
-  </div>
-
-  <div class="settings-card">
     <div class="micro-label">notifications</div>
     <div class="settings-row">
       <span class="settings-opt-label">all desktop notify</span>
@@ -272,9 +241,66 @@
     </p>
   </div>
 
-  <div class="micro-label stat-section">extensions</div>
+  <div class="micro-label stat-section">addons</div>
 
-  <SettingsCustomNodes />
+  <div class="settings-card">
+    <div class="micro-label">
+      Workflows
+      <span class="settings-badge mono">addon</span>
+    </div>
+    <p class="stat-note">
+      Optional canvas editor + runner — separate app
+      <span class="mono">threadle-workflows</span> (:4571), paths under
+      <span class="mono">/addon/workflows</span>. Soft-frozen: fix breakage only.
+    </p>
+    <div class="settings-row">
+      <span class="settings-opt-label">API</span>
+      <span class="mono" :class="features.workflows ? 'settings-on' : 'settings-off'">
+        {{ features.workflows ? "mounted" : "off (--no-workflows)" }}
+      </span>
+      <button
+        v-if="features.workflows"
+        type="button"
+        class="threadle-btn"
+        @click="openWorkflowsPath('/addon/workflows')"
+      >
+        Open addon ↗
+      </button>
+    </div>
+    <div v-if="features.workflows" class="settings-row">
+      <span class="settings-opt-label">show examples</span>
+      <div class="settings-seg" role="group" aria-label="show workflow examples">
+        <button
+          type="button"
+          class="settings-seg-btn"
+          :class="{ active: !settings.showExamples }"
+          :disabled="settings.saving"
+          @click="setShowExamples(false)"
+        >
+          off
+        </button>
+        <button
+          type="button"
+          class="settings-seg-btn"
+          :class="{ active: settings.showExamples }"
+          :disabled="settings.saving"
+          @click="setShowExamples(true)"
+        >
+          on
+        </button>
+      </div>
+    </div>
+    <p v-if="features.workflows" class="stat-note">
+      Examples tab in the addon (recipes + beginner → expert canned graphs).
+      Custom nodes:
+      <a class="cnode-link" href="#" @click.prevent="openWorkflowsPath('/addon/workflows/nodes')">open ↗</a>
+    </p>
+    <p v-else class="stat-note">
+      Start the viewer without <span class="mono">--no-workflows</span>, then run
+      <span class="mono">threadle-workflows</span> for the editor UI.
+    </p>
+  </div>
+
   <SettingsMcp />
 
   <div class="micro-label stat-section">machine</div>
@@ -373,14 +399,15 @@
 
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from "vue";
-import { bidiPath } from "@/lib/format";
-import { PROVIDER_IDS, providerColor, providerLabel } from "@/lib/providers";
-import { vColResize } from "@/lib/colResize";
-import { useSettingsStore } from "@/stores/settings";
-import SettingsCustomNodes from "./settings/SettingsCustomNodes.vue";
+import { bidiPath } from "@ui/lib/format";
+import { PROVIDER_IDS, providerColor, providerLabel } from "@ui/lib/providers";
+import { vColResize } from "@ui/lib/colResize";
+import { useSettingsStore } from "@ui/stores/settings";
+import { features } from "@ui/panels/features";
+import { openWorkflowsPath } from "@ui/panels/app-links";
 import SettingsMcp from "./settings/SettingsMcp.vue";
 import SettingsPilot from "./settings/SettingsPilot.vue";
-import "./chrome.css";
+import "@ui/theme/chrome.css";
 
 interface InternalItem {
   id: string;
@@ -713,6 +740,19 @@ onUnmounted(() => {
   font-size: var(--fs-md);
   color: var(--text);
   margin-right: auto;
+}
+.settings-badge {
+  margin-left: 8px;
+  font-size: var(--fs-2xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.settings-on {
+  color: var(--text-dim);
+}
+.settings-off {
+  color: var(--text-faint);
 }
 .settings-row-nested {
   padding-left: 12px;

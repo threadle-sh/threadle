@@ -127,18 +127,19 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
+import { openWorkflowsPath } from "@ui/panels/app-links";
 import {
   FAVORITE_KIND_LABEL,
   type FavoriteKind,
 } from "@threadle/shared";
-import { relativeTime } from "@/lib/format";
-import { type SessionFilter } from "@/lib/providers";
-import { useFavoritesStore, type FavoriteAlive } from "@/stores/favorites";
-import { useFileViewersStore } from "@/stores/fileViewers";
-import { useSessionsStore } from "@/stores/sessions";
+import { relativeTime } from "@ui/lib/format";
+import { type SessionFilter } from "@ui/lib/providers";
+import { useFavoritesStore, type FavoriteAlive } from "@ui/stores/favorites";
+import { useFileViewersStore } from "@ui/stores/fileViewers";
+import { useSessionsStore } from "@ui/stores/sessions";
 import ProviderFilterChips from "@/components/ProviderFilterChips.vue";
-import GraphLoadingOverlay from "@/components/GraphLoadingOverlay.vue";
-import "./chrome.css";
+import GraphLoadingOverlay from "@ui/components/GraphLoadingOverlay.vue";
+import "@ui/theme/chrome.css";
 
 const emit = defineEmits<{
   "open-session": [payload: { provider: string; id: string }];
@@ -279,7 +280,7 @@ function openItem(item: FavoriteAlive): void {
   if (item.alive === false) return;
   switch (item.kind) {
     case "workflow":
-      void router.push(`/graph/${item.graphId}`);
+      openWorkflowsPath(`/addon/workflows/graph/${item.graphId}`);
       break;
     case "session":
       emit("open-session", { provider: item.provider, id: item.sessionId });

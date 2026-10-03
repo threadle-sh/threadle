@@ -20,10 +20,11 @@ describe("resolveOpenTarget", () => {
 
   it("opens workflow by id", () => {
     expect(resolveOpenTarget(["workflow", "a1b2c3d4"])).toEqual({
-      path: "/graph/a1b2c3d4",
+      path: "/addon/workflows/graph/a1b2c3d4",
       label: "workflow a1b2c3d4",
+      app: "workflows",
     });
-    expect(resolveOpenTarget(["a1b2c3d4"]).path).toBe("/graph/a1b2c3d4");
+    expect(resolveOpenTarget(["a1b2c3d4"]).path).toBe("/addon/workflows/graph/a1b2c3d4");
   });
 
   it("opens session blueprint", () => {
@@ -45,10 +46,16 @@ describe("resolveOpenTarget", () => {
     );
   });
 
-  it("opens run job", () => {
-    expect(resolveOpenTarget(["run", "job_1"]).path).toBe(
-      "/?view=runs&job=job_1",
-    );
+  it("opens workflows-app targets in the workflows app", () => {
+    expect(resolveOpenTarget(["run", "job_1"])).toEqual({
+      path: "/addon/workflows/runs?job=job_1",
+      label: "run job_1",
+      app: "workflows",
+    });
+    expect(resolveOpenTarget(["workflows"]).path).toBe("/addon/workflows");
+    expect(resolveOpenTarget(["logs"]).app).toBe("workflows");
+    expect(resolveOpenTarget(["nodes"]).path).toBe("/addon/workflows/nodes");
+    expect(resolveOpenTarget(["sessions"]).app).toBeUndefined();
   });
 
   it("opens standalone routes", () => {

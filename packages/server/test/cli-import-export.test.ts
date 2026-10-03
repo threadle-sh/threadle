@@ -41,7 +41,7 @@ async function threadle(args: string[]): Promise<{ stdout: string; stderr: strin
 describe("threadle import / export (portable graph)", () => {
   it("exports a template as threadle/graph@1 and imports it back", async () => {
     const out = path.join(dir, "hello.json");
-    const exp = await threadle(["export", "hello-wire", out]);
+    const exp = await threadle(["export", "hello", out]);
     expect(exp.code, exp.stderr || exp.stdout).toBe(0);
     expect(exp.stdout).toMatch(/exported portable graph/);
     expect(fs.existsSync(out)).toBe(true);
@@ -70,5 +70,29 @@ describe("threadle import / export (portable graph)", () => {
     const imp = await threadle(["import", out]);
     expect(imp.code, imp.stderr || imp.stdout).toBe(0);
     expect(imp.stdout).toMatch(/restored backup/);
+  });
+});
+
+describe("threadle run (foreground) records a job", () => {
+  it("appends the run to runs/jobs.jsonl with logs", async () => {
+    const graph = path.join(repoRoot, "examples/workflows/iterator-lines.json");
+    const res = await threadle(["run", graph, "--accept-imported", "--ephemeral"]);
+    expect(res.code, res.stderr || res.stdout).toBe(0);
+
+    const rows = fs
+      .readFileSync(path.join(dir, "runs", "jobs.jsonl"), "utf8")
+      .split("\n")
+      .filter(Boolean)
+      .map((l) => JSON.parse(l) as { id: string; kind: string; status: string; label?: string });
+    const last = rows[rows.length - 1]!;
+    expect(last.kind).toBe("workflow");
+    expect(last.status).toBe("done");
+    expect(last.label).toMatch(/^cli: /);
+    // started checkpoint + finished row for the same job
+    expect(rows.filter((r) => r.id === last.id).map((r) => r.status)).toEqual(["running", "done"]);
+
+    const logs = fs.readFileSync(path.join(dir, "runs", "logs", `${last.id}.jsonl`), "utf8");
+    expect(logs).toMatch(/workflow run started from the CLI/);
+    expect(logs).toMatch(/workflow run finished/);
   });
 });

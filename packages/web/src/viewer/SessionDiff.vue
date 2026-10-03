@@ -110,11 +110,11 @@
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import type { SessionRef } from "@threadle/shared";
-import DashNav from "@/panels/DashNav.vue";
-import StatusBar from "@/panels/StatusBar.vue";
-import GraphLoadingOverlay from "@/components/GraphLoadingOverlay.vue";
-import { useNavItems } from "@/panels/useNavItems";
-import { fmtTokens, isTokenEstimate, shortId } from "@/lib/format";
+import DashNav from "@ui/panels/DashNav.vue";
+import StatusBar from "@ui/panels/StatusBar.vue";
+import GraphLoadingOverlay from "@ui/components/GraphLoadingOverlay.vue";
+import { useNavItems } from "@ui/panels/useNavItems";
+import { fmtTokens, isTokenEstimate, shortId } from "@ui/lib/format";
 
 interface SideData {
   provider: string;
@@ -146,7 +146,6 @@ function goDash(view: string): void {
   if (view === "lineage") return void router.push("/lineage");
   if (view === "timeline") return void router.push("/timeline");
   if (view === "map") return void router.push("/map");
-  if (view === "projects") return void router.push("/projects");
   void router.push({ path: "/", query: { view } });
 }
 

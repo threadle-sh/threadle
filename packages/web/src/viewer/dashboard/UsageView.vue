@@ -822,14 +822,14 @@
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import type { SessionRef } from "@threadle/shared";
 import { isSessionLive } from "@threadle/shared";
-import { shortId, fmtTokens, isTokenEstimate } from "@/lib/format";
-import { providerColor, type SessionFilter } from "@/lib/providers";
-import { useSessionsStore } from "@/stores/sessions";
-import { useSettingsStore } from "@/stores/settings";
-import { vColResize } from "@/lib/colResize";
+import { shortId, fmtTokens, isTokenEstimate } from "@ui/lib/format";
+import { providerColor, type SessionFilter } from "@ui/lib/providers";
+import { useSessionsStore } from "@ui/stores/sessions";
+import { useSettingsStore } from "@ui/stores/settings";
+import { vColResize } from "@ui/lib/colResize";
 import StatsCharts from "@/panels/StatsCharts.vue";
 import ProviderFilterChips from "@/components/ProviderFilterChips.vue";
-import "./chrome.css";
+import "@ui/theme/chrome.css";
 
 const sessions = useSessionsStore();
 const settings = useSettingsStore();

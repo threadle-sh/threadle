@@ -9,10 +9,10 @@ import { execa } from "execa";
 import { fileURLToPath } from "node:url";
 import { serve } from "@hono/node-server";
 
-vi.mock("../src/watch.js", () => ({
+vi.mock("@threadle/core/watch.js", () => ({
   startWatchers: () => undefined,
 }));
-vi.mock("../src/providers/registry.js", () => ({
+vi.mock("@threadle/core/providers/registry.js", () => ({
   registry: {
     providers: new Map(),
     get: () => ({

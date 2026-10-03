@@ -143,12 +143,12 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { escapeHtml, renderMd } from "@/lib/safeHtml";
-import { interceptContentLinkClick } from "@/lib/contentLinks";
-import { useSettingsStore } from "@/stores/settings";
-import { useFileViewersStore, isLikelyTextPath } from "@/stores/fileViewers";
-import { useFavoritesStore } from "@/stores/favorites";
-import ConfirmModal, { type ConfirmModel } from "@/panels/ConfirmModal.vue";
+import { escapeHtml, renderMd } from "@ui/lib/safeHtml";
+import { interceptContentLinkClick } from "@ui/lib/contentLinks";
+import { useSettingsStore } from "@ui/stores/settings";
+import { useFileViewersStore, isLikelyTextPath } from "@ui/stores/fileViewers";
+import { useFavoritesStore } from "@ui/stores/favorites";
+import ConfirmModal, { type ConfirmModel } from "@ui/panels/ConfirmModal.vue";
 import DetailExpandControls from "@/panels/DetailExpandControls.vue";
 import DetailExpandModal from "@/panels/DetailExpandModal.vue";
 

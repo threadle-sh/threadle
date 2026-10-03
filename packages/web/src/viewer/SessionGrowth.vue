@@ -582,18 +582,18 @@
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import type { SessionRef } from "@threadle/shared";
-import DashNav from "@/panels/DashNav.vue";
-import StatusBar from "@/panels/StatusBar.vue";
-import GraphLoadingOverlay from "@/components/GraphLoadingOverlay.vue";
+import DashNav from "@ui/panels/DashNav.vue";
+import StatusBar from "@ui/panels/StatusBar.vue";
+import GraphLoadingOverlay from "@ui/components/GraphLoadingOverlay.vue";
 import DetailExpandControls from "@/panels/DetailExpandControls.vue";
 import DetailExpandModal from "@/panels/DetailExpandModal.vue";
-import { useNavItems } from "@/panels/useNavItems";
-import { shortId, fmtTokens, isTokenEstimate } from "@/lib/format";
-import { estimateContextWindow } from "@/lib/contextWindow";
-import { providerColor, providerColorHex } from "@/lib/providers";
-import { useFileViewersStore } from "@/stores/fileViewers";
-import { useSettingsStore } from "@/stores/settings";
-import "@/viewer/dashboard/chrome.css";
+import { useNavItems } from "@ui/panels/useNavItems";
+import { shortId, fmtTokens, isTokenEstimate } from "@ui/lib/format";
+import { estimateContextWindow } from "@ui/lib/contextWindow";
+import { providerColor, providerColorHex } from "@ui/lib/providers";
+import { useFileViewersStore } from "@ui/stores/fileViewers";
+import { useSettingsStore } from "@ui/stores/settings";
+import "@ui/theme/chrome.css";
 
 function fmtDuration(ms?: number): string {
   if (ms == null || !Number.isFinite(ms) || ms < 0) return "—";
@@ -1527,7 +1527,6 @@ function goDash(view: string): void {
       query: projectDir ? { dir: projectDir } : undefined,
     });
   }
-  if (view === "projects") return void router.push("/projects");
   void router.push({ path: "/", query: { view } });
 }
 

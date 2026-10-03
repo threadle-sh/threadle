@@ -90,11 +90,11 @@
 import { computed, onMounted, ref } from "vue";
 import type { ProviderInfo } from "@threadle/shared";
 import { isSessionLive } from "@threadle/shared";
-import { api } from "@/api/client";
-import { bidiPath, relativeTime, tildePath } from "@/lib/format";
-import { providerColor, providerServiceName } from "@/lib/providers";
-import { useSessionsStore } from "@/stores/sessions";
-import "./chrome.css";
+import { api } from "@ui/api/client";
+import { bidiPath, relativeTime, tildePath } from "@ui/lib/format";
+import { providerColor, providerServiceName } from "@ui/lib/providers";
+import { useSessionsStore } from "@ui/stores/sessions";
+import "@ui/theme/chrome.css";
 
 const props = defineProps<{
   providers: ProviderInfo[];

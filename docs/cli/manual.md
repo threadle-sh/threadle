@@ -64,6 +64,8 @@ threadle                    # UI + API on :4570, opens browser
 threadle --no-open          # same, no browser
 threadle daemon             # same as --no-open; loads ~/.config/threadle/triggers.json
 threadle serve --port 4570  # explicit serve
+threadle-workflows          # the workflows editor + runner app on :4571 (fires triggers.json)
+threadle --no-workflows     # viewer without the workflows API
 ```
 
 ### Options
@@ -72,14 +74,18 @@ threadle serve --port 4570  # explicit serve
 |---|---|---|
 | `--port <n>` | `4570` | TCP port (host is always `127.0.0.1`) |
 | `--no-open` | off | Do not open a browser tab |
+| `--no-workflows` | off | Viewer without the workflows API |
+| `--editor` | off | Serve the workflows editor app (default port 4571) — what `threadle-workflows` passes |
+| `--triggers` | off | Also fire `triggers.json` from the viewer process (default: editor app / daemon only) |
 | `--dir <path>` | `cwd` | Project directory highlighted for agents / discovery |
 | `-h`, `--help` | | Show help |
 
 ### Behavior
 
 - Serves the built web UI from `web-dist` (production) or works with Vite in monorepo `npm run dev`.
+  `threadle` serves the viewer (`web-dist`, :4570); `threadle-workflows` serves the editor (`web-dist-workflows`, :4571).
 - Starts filesystem watchers for Claude / opencode / Cursor / Antigravity / Codex / Copilot / Grok session stores (**read-only**).
-- Loads `~/.config/threadle/triggers.json` (cron + path watch → detached executor).
+- `threadle-workflows` and `threadle daemon` load `~/.config/threadle/triggers.json` (cron + path watch → detached executor); the viewer does not, unless `--triggers`.
 - DNS-rebinding and CSRF guards apply to the HTTP API (loopback Host/Origin only).
 - `SIGINT` / `SIGTERM` shut down managed helper processes (e.g. opencode) and exit.
 
@@ -96,7 +102,7 @@ Schema: `threadle/backup@1` (JSON pack of config files — not the session obser
 ### Portable graph export / import
 
 ```bash
-threadle export hello-wire ./hello.json          # template / recipe / graph id / name
+threadle export hello ./hello.json          # template / recipe / graph id / name
 threadle export <graphId>                        # → ./threadle-<slug>.json
 threadle import ./hello.json                     # saves under ~/.config/threadle/graphs/
 ```
@@ -240,7 +246,7 @@ threadle --no-open
 
 # terminal B — fire several in parallel
 threadle run knot-concat --detach
-threadle run hello-wire --detach
+threadle run hello --detach
 threadle run detached-delay --detach   # ~60s agent-free — watch jobs/logs
 threadle status
 threadle jobs
@@ -318,7 +324,7 @@ Tab-separated: `id`, `level`, `name`, `description`. Portable JSON for every id 
 
 | id | Level | Notes |
 |---|---|---|
-| `hello-wire` | beginner | Prompt → output, no agent |
+| `hello` | beginner | Prompt → output, no agent |
 | `splice-gate` | beginner | Approval + splice |
 | `one-shot-agent` | beginner | Prompt → agent → output |
 | `param-prompt` | beginner | `{{param:topic}}` |
@@ -424,7 +430,7 @@ threadle open session <provider> <id>      # /blueprint/…
 threadle open session cursor:abc123
 threadle open skill review-diff            # Skills tab + focus
 threadle open rules CLAUDE.md              # Rules tab + focus
-threadle open run <jobId>                  # Runs tab
+threadle open run <jobId>                  # workflows app → Runs (also: open logs | nodes | workflows)
 threadle open map | timeline | lineage
 threadle open --print skills               # print URL only
 ```

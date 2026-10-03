@@ -104,15 +104,14 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
-import type { AgentDefNodeData, SessionRef } from "@threadle/shared";
+import type { SessionRef } from "@threadle/shared";
 import { isSessionLive } from "@threadle/shared";
-import { relativeTime, shortId } from "@/lib/format";
-import { vColResize } from "@/lib/colResize";
-import { api } from "@/api/client";
-import { useSessionsStore } from "@/stores/sessions";
-import ConfirmModal, { type ConfirmModel } from "@/panels/ConfirmModal.vue";
-import GraphLoadingOverlay from "@/components/GraphLoadingOverlay.vue";
-import "./chrome.css";
+import { relativeTime, shortId } from "@ui/lib/format";
+import { vColResize } from "@ui/lib/colResize";
+import { useSessionsStore } from "@ui/stores/sessions";
+import ConfirmModal, { type ConfirmModel } from "@ui/panels/ConfirmModal.vue";
+import GraphLoadingOverlay from "@ui/components/GraphLoadingOverlay.vue";
+import "@ui/theme/chrome.css";
 
 const SECURITY_DOCS_URL =
   "https://github.com/threadle-sh/threadle/blob/main/docs/security.md";
@@ -165,53 +164,14 @@ function shortDir(dir: string): string {
   return parts.length > 2 ? `…/${parts.slice(-2).join("/")}` : dir;
 }
 
-function agentElevatedSetting(d: AgentDefNodeData): { setting: string; elevated: boolean } | null {
-  if (d.permissionMode && d.permissionMode !== "default") {
-    return {
-      setting: `perm ${d.permissionMode}`,
-      elevated: d.permissionMode === "bypassPermissions",
-    };
-  }
-  if (d.sandbox && d.sandbox !== "workspace-write") {
-    return {
-      setting: `sandbox ${d.sandbox}`,
-      elevated: d.sandbox === "danger-full-access",
-    };
-  }
-  if (d.askForApproval && d.askForApproval !== "never") {
-    return { setting: `ask ${d.askForApproval}`, elevated: false };
-  }
-  return null;
-}
-
+/** Elevated agent nodes in saved workflows (computed by the workflows server). */
 async function scanAgentDefs(): Promise<void> {
   agentsLoading.value = true;
   try {
-    const summaries = await api.graphs();
-    const rows: typeof elevatedAgents.value = [];
-    await Promise.all(
-      summaries.slice(0, 80).map(async (s) => {
-        try {
-          const g = await api.graph(s.id);
-          for (const n of g.nodes) {
-            if (n.data.type !== "agent-def") continue;
-            const hit = agentElevatedSetting(n.data);
-            if (!hit) continue;
-            rows.push({
-              name: n.data.label || n.data.ref.name,
-              provider: n.data.ref.provider,
-              setting: hit.setting,
-              graphName: g.name,
-              elevated: hit.elevated,
-            });
-          }
-        } catch {
-          // skip unloadable graphs
-        }
-      }),
-    );
-    rows.sort((a, b) => a.graphName.localeCompare(b.graphName) || a.name.localeCompare(b.name));
-    elevatedAgents.value = rows;
+    const res = await fetch("/api/graphs/elevated-agents");
+    elevatedAgents.value = res.ok ? ((await res.json()) as typeof elevatedAgents.value) : [];
+  } catch {
+    elevatedAgents.value = [];
   } finally {
     agentsLoading.value = false;
   }

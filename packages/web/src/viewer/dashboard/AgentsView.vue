@@ -720,33 +720,34 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import { useRouter } from "vue-router";
+import { openWorkflowsPath } from "@ui/panels/app-links";
 import type { AgentDef, SessionRef } from "@threadle/shared";
 import { isAbsolutePath, isSessionLive } from "@threadle/shared";
-import { relativeTime, shortId, fmtTokens, isTokenEstimate } from "@/lib/format";
+import { relativeTime, shortId, fmtTokens, isTokenEstimate } from "@ui/lib/format";
 import {
   PROVIDER_IDS,
   providerColor,
   providerLabel,
   type SessionFilter,
-} from "@/lib/providers";
-import { useSessionsStore } from "@/stores/sessions";
-import { useSettingsStore } from "@/stores/settings";
-import { useFileViewersStore } from "@/stores/fileViewers";
-import { useFavoritesStore } from "@/stores/favorites";
-import { agentToWorkflow } from "@/lib/convert";
-import { vColResize } from "@/lib/colResize";
-import { api } from "@/api/client";
+} from "@ui/lib/providers";
+import { useSessionsStore } from "@ui/stores/sessions";
+import { useSettingsStore } from "@ui/stores/settings";
+import { useFileViewersStore } from "@ui/stores/fileViewers";
+import { useFavoritesStore } from "@ui/stores/favorites";
+import { agentToWorkflow } from "@ui/lib/convert";
+import { vColResize } from "@ui/lib/colResize";
+import { api } from "@ui/api/client";
 import ProviderFilterChips from "@/components/ProviderFilterChips.vue";
-import SessionInfoPanel from "@/panels/SessionInfoPanel.vue";
-import SessionLivePill from "@/panels/SessionLivePill.vue";
+import SessionInfoPanel from "@ui/panels/SessionInfoPanel.vue";
+import SessionLivePill from "@ui/panels/SessionLivePill.vue";
 import GrowthMark from "@/panels/GrowthMark.vue";
 import MemoryBrowser from "@/panels/MemoryBrowser.vue";
 import PluginsBrowser from "@/panels/PluginsBrowser.vue";
 import AgentsGraph, { type GraphPick } from "@/panels/AgentsGraph.vue";
 import DetailExpandControls from "@/panels/DetailExpandControls.vue";
 import DetailExpandModal from "@/panels/DetailExpandModal.vue";
-import { useJobPhases } from "@/lib/useJobPhases";
-import "./chrome.css";
+import { useJobPhases } from "@ui/lib/useJobPhases";
+import "@ui/theme/chrome.css";
 
 const props = defineProps<{
   /** Deep-link: agent name (+ optional provider) from `?agent=` / `?provider=`. */
@@ -1161,7 +1162,7 @@ async function useAgentInWorkflow(): Promise<void> {
 
 async function useAgentInWorkflowFor(a: AgentDef): Promise<void> {
   const id = await agentToWorkflow(a);
-  void router.push(`/graph/${id}`);
+  openWorkflowsPath(`/addon/workflows/graph/${id}`);
 }
 
 function placeCtxMenu(e: MouseEvent): { x: number; y: number } {

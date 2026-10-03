@@ -7,7 +7,7 @@ npx threadle                              # UI on http://127.0.0.1:4570
 threadle daemon                          # long-lived serve (no browser) + triggers.json
 threadle check                           # PATH + providers + config
 threadle check --providers               # + inject flag probes (see docs/provider-freshness.md)
-threadle export hello-wire ./out.json   # portable threadle/graph@1
+threadle export hello ./out.json   # portable threadle/graph@1
 threadle import ./out.json              # save graph (or restore backup@1)
 threadle export --backup [file]         # threadle/backup@1 archive
 threadle skills                         # list skill libraries (needs server)
