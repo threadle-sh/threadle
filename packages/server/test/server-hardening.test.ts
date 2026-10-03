@@ -101,6 +101,29 @@ describe("server hardening", () => {
     expect(none.status).toBe(200);
   });
 
+  it("allows cross-site top-level navigations (docs/GitHub → SPA, localhost ↔ 127.0.0.1)", async () => {
+    const res = await app.request("/", {
+      headers: {
+        ...HOST,
+        "Sec-Fetch-Site": "cross-site",
+        "Sec-Fetch-Mode": "navigate",
+      },
+    });
+    expect(res.status).toBe(200);
+  });
+
+  it("still rejects cross-site API fetches (non-navigate)", async () => {
+    const res = await app.request("/api/health", {
+      headers: {
+        ...HOST,
+        "Sec-Fetch-Site": "cross-site",
+        "Sec-Fetch-Mode": "cors",
+      },
+    });
+    expect(res.status).toBe(403);
+    expect(await res.text()).toMatch(/cross-site/i);
+  });
+
   it("refuses an unknown project dir on MCP discovery routes", async () => {
     const res = await app.request(
       "/api/mcp/servers/x/tools?dir=" + encodeURIComponent("/private/var/empty"),

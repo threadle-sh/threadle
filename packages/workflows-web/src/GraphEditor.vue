@@ -2670,6 +2670,8 @@ watch(
   () => store.graph?.name,
   (name) => {
     if (store.graph && name) wfTabs.setName(store.graph.id, name);
+    const label = typeof name === "string" ? name.trim() : "";
+    document.title = label ? `workflow: ${label}` : "threadle · workflows";
   },
 );
 

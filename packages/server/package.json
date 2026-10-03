@@ -1,6 +1,6 @@
 {
   "name": "threadle",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Local-first multi-provider viewer for Claude Code, opencode, Cursor Agent, Antigravity, Codex, Copilot, Grok Build and Muse sessions — with an optional Workflows addon.",
   "type": "module",
   "license": "MIT",

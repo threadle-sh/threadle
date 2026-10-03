@@ -102,8 +102,15 @@ export function createApp(opts: AppOptions) {
     // sends "same-origin", address-bar visits send "none", and curl/CLI send
     // no header at all (allowed — loopback trust). Residual gap: pre-2023
     // Safari omits the header on GET, same as curl.
+    //
+    // Top-level navigations stay allowed: opening the SPA from GitHub/docs,
+    // or jumping localhost ↔ 127.0.0.1 / :4570 ↔ :4571, also sends
+    // Sec-Fetch-Site: cross-site. Those loads are HTML/assets only; the SPA's
+    // later /api calls are same-origin. Block non-navigate cross-site only.
     const site = (c.req.header("sec-fetch-site") ?? "").toLowerCase();
-    if (site === "cross-site") {
+    const mode = (c.req.header("sec-fetch-mode") ?? "").toLowerCase();
+    const isNavigate = mode === "navigate" || mode === "nested-navigate";
+    if (site === "cross-site" && !isNavigate) {
       appLog("server", "cross-site request rejected");
       return c.text("cross-site request rejected", 403);
     }
