@@ -246,7 +246,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
-import { openWorkflowsPath } from "@ui/panels/app-links";
+import { openWorkflowsPath, reserveWorkflowsTab } from "@ui/panels/app-links";
 import type { SessionRef } from "@threadle/shared";
 import { relativeTime, shortId } from "@ui/lib/format";
 import { displayMessageRole } from "@ui/lib/messageRole";
@@ -462,13 +462,19 @@ function renderSnippet(snip: string): string {
 }
 
 async function sessionToWorkflow(s: SessionRef): Promise<void> {
+  const tab = reserveWorkflowsTab();
   try {
     const id = await sessionsToWorkflow(
       `${s.title ?? shortId(s.id)} (from session)`,
       [s],
     );
-    openWorkflowsPath(`/addon/workflows/graph/${id}`);
+    openWorkflowsPath(`/addon/workflows/graph/${id}`, undefined, tab);
   } catch (err) {
+    try {
+      tab?.close();
+    } catch {
+      /* ignore */
+    }
     alert(`Convert failed: ${err instanceof Error ? err.message : String(err)}`);
   }
 }

@@ -720,7 +720,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import { useRouter } from "vue-router";
-import { openWorkflowsPath } from "@ui/panels/app-links";
+import { openWorkflowsPath, reserveWorkflowsTab } from "@ui/panels/app-links";
 import type { AgentDef, SessionRef } from "@threadle/shared";
 import { isAbsolutePath, isSessionLive } from "@threadle/shared";
 import { relativeTime, shortId, fmtTokens, isTokenEstimate } from "@ui/lib/format";
@@ -1161,8 +1161,18 @@ async function useAgentInWorkflow(): Promise<void> {
 }
 
 async function useAgentInWorkflowFor(a: AgentDef): Promise<void> {
-  const id = await agentToWorkflow(a);
-  openWorkflowsPath(`/addon/workflows/graph/${id}`);
+  const tab = reserveWorkflowsTab();
+  try {
+    const id = await agentToWorkflow(a);
+    openWorkflowsPath(`/addon/workflows/graph/${id}`, undefined, tab);
+  } catch (err) {
+    try {
+      tab?.close();
+    } catch {
+      /* ignore */
+    }
+    throw err;
+  }
 }
 
 function placeCtxMenu(e: MouseEvent): { x: number; y: number } {

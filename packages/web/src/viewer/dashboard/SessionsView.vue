@@ -544,7 +544,7 @@
 
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { openWorkflowsPath } from "@ui/panels/app-links";
+import { openWorkflowsPath, reserveWorkflowsTab } from "@ui/panels/app-links";
 import type { SessionRef } from "@threadle/shared";
 import { isPilotSession, isSessionLive } from "@threadle/shared";
 import { api } from "@ui/api/client";
@@ -1244,23 +1244,35 @@ async function downloadProjectBundle(dir: string): Promise<void> {
 }
 
 async function sessionToWorkflow(s: SessionRef): Promise<void> {
+  const tab = reserveWorkflowsTab();
   try {
     const id = await sessionsToWorkflow(
       `${s.title ?? shortId(s.id)} (from session)`,
       [s],
     );
-    openWorkflowsPath(`/addon/workflows/graph/${id}`);
+    openWorkflowsPath(`/addon/workflows/graph/${id}`, undefined, tab);
   } catch (err) {
+    try {
+      tab?.close();
+    } catch {
+      /* ignore */
+    }
     alert(`Convert failed: ${err instanceof Error ? err.message : String(err)}`);
   }
 }
 
 async function projectToWorkflow(group: { dir: string; sessions: SessionRef[] }): Promise<void> {
+  const tab = reserveWorkflowsTab();
   try {
     const name = group.dir.split("/").filter(Boolean).pop() ?? "project";
     const id = await sessionsToWorkflow(`${name} (project)`, group.sessions);
-    openWorkflowsPath(`/addon/workflows/graph/${id}`);
+    openWorkflowsPath(`/addon/workflows/graph/${id}`, undefined, tab);
   } catch (err) {
+    try {
+      tab?.close();
+    } catch {
+      /* ignore */
+    }
     alert(`Convert failed: ${err instanceof Error ? err.message : String(err)}`);
   }
 }

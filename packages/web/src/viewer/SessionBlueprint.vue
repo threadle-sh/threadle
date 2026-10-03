@@ -805,7 +805,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { openWorkflowsPath } from "@ui/panels/app-links";
+import { openWorkflowsPath, reserveWorkflowsTab } from "@ui/panels/app-links";
 import {
   VueFlow,
   Handle,
@@ -1774,10 +1774,16 @@ async function referenceToWorkflow(ref: { provider: string; id: string }): Promi
   if (ctxRefBusy.value) return;
   ctxRefBusy.value = true;
   ctxRefNote.value = undefined;
+  const tab = reserveWorkflowsTab();
   try {
     const { graphId } = await referenceContextToWorkflow(ref.provider, ref.id);
-    openWorkflowsPath(`/addon/workflows/graph/${graphId}`);
+    openWorkflowsPath(`/addon/workflows/graph/${graphId}`, undefined, tab);
   } catch (err) {
+    try {
+      tab?.close();
+    } catch {
+      /* ignore */
+    }
     ctxRefNote.value = err instanceof Error ? err.message : String(err);
   } finally {
     ctxRefBusy.value = false;
@@ -1924,13 +1930,19 @@ async function convertToWorkflow(): Promise<void> {
   const d = data.value;
   if (!d?.ref || converting.value) return;
   converting.value = true;
+  const tab = reserveWorkflowsTab();
   try {
     const id = await sessionsToWorkflow(
       `${d.ref.title?.slice(0, 40) ?? shortId(d.ref.id)} (from blueprint)`,
       [d.ref],
     );
-    openWorkflowsPath(`/addon/workflows/graph/${id}`);
+    openWorkflowsPath(`/addon/workflows/graph/${id}`, undefined, tab);
   } catch (err) {
+    try {
+      tab?.close();
+    } catch {
+      /* ignore */
+    }
     error.value = err instanceof Error ? err.message : String(err);
   } finally {
     converting.value = false;

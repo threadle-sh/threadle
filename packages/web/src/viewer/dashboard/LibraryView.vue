@@ -413,7 +413,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
-import { openWorkflowsPath } from "@ui/panels/app-links";
+import { openWorkflowsPath, reserveWorkflowsTab } from "@ui/panels/app-links";
 import type { SessionRef } from "@threadle/shared";
 import { relativeTime, shortId } from "@ui/lib/format";
 import { providerColor, providerShort, type SessionFilter } from "@ui/lib/providers";
@@ -595,8 +595,18 @@ function openLibLineageFor(p: LibPayload): void {
 }
 
 async function useLibInWorkflowFrom(p: LibPayload): Promise<void> {
-  const id = await payloadToWorkflow(p);
-  openWorkflowsPath(`/addon/workflows/graph/${id}`);
+  const tab = reserveWorkflowsTab();
+  try {
+    const id = await payloadToWorkflow(p);
+    openWorkflowsPath(`/addon/workflows/graph/${id}`, undefined, tab);
+  } catch (err) {
+    try {
+      tab?.close();
+    } catch {
+      /* ignore */
+    }
+    throw err;
+  }
 }
 
 async function useLibInWorkflow(): Promise<void> {

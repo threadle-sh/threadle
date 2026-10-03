@@ -140,7 +140,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import { openWorkflowsPath } from "@ui/panels/app-links";
+import { openWorkflowsPath, reserveWorkflowsTab } from "@ui/panels/app-links";
 import { useFileViewersStore, type FileViewerWindow } from "@ui/stores/fileViewers";
 import { useSettingsStore } from "@ui/stores/settings";
 import { referenceContextToWorkflow } from "@ui/lib/convert";
@@ -296,10 +296,16 @@ async function onReferenceWorkflow(w: FileViewerWindow): Promise<void> {
   const ref = w.contextRef;
   if (!ref || refBusyId.value) return;
   refBusyId.value = w.id;
+  const tab = reserveWorkflowsTab();
   try {
     const { graphId } = await referenceContextToWorkflow(ref.provider, ref.sessionId);
-    openWorkflowsPath(`/addon/workflows/graph/${graphId}`, (p) => router.push(p));
+    openWorkflowsPath(`/addon/workflows/graph/${graphId}`, (p) => router.push(p), tab);
   } catch {
+    try {
+      tab?.close();
+    } catch {
+      /* ignore */
+    }
     /* leave window open */
   } finally {
     refBusyId.value = undefined;

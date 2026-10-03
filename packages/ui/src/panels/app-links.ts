@@ -22,17 +22,29 @@ async function appUp(which: App): Promise<boolean> {
   }
 }
 
+function appUrl(which: App, path: string): string {
+  return (which === "viewer" ? features.viewerUrl : features.workflowsUrl) + path;
+}
+
 /**
- * Open `path` in the other app's named tab. The tab is opened synchronously
- * (so it isn't popup-blocked), then navigated once we know the app runs.
+ * Open `path` in the other app's named tab. Prefer opening with the real URL
+ * under the click gesture. Pass `preopened` when the tab was reserved before an
+ * `await` (async seed/create), otherwise popup blockers steal the new tab.
  */
-function openApp(which: App, path: string): void {
-  const url = (which === "viewer" ? features.viewerUrl : features.workflowsUrl) + path;
-  const w = window.open("", TAB[which]);
+function openApp(which: App, path: string, preopened?: Window | null): void {
+  const url = appUrl(which, path);
+  // Sync open under the user gesture. Reuse a tab reserved before await when given.
+  const w =
+    preopened && !preopened.closed
+      ? preopened
+      : window.open(url, TAB[which]);
   void appUp(which).then((up) => {
     if (!up) {
       try {
-        if (w && w.location.href === "about:blank") w.close();
+        if (w && !w.closed) {
+          // Only auto-close a blank reservation we own.
+          if (w.location.href === "about:blank") w.close();
+        }
       } catch {
         // existing cross-origin app tab — leave it
       }
@@ -40,11 +52,23 @@ function openApp(which: App, path: string): void {
       return;
     }
     if (!w) {
-      window.location.assign(url);
+      // Never navigate the current viewer tab away. Ask the user to allow popups.
+      window.alert(
+        `Could not open a new tab (popup blocked).\n\nAllow popups for this origin, or open:\n${url}`,
+      );
       return;
     }
-    w.location.href = url;
-    w.focus();
+    try {
+      if (w.location.href !== url) w.location.href = url;
+    } catch {
+      // Cross-origin existing named tab: open/focus via a fresh named open.
+      window.open(url, TAB[which]);
+    }
+    try {
+      w.focus();
+    } catch {
+      /* ignore */
+    }
   });
 }
 
@@ -88,6 +112,15 @@ export function isWorkflowsApp(): boolean {
 }
 
 /**
+ * Reserve the workflows named tab during the click gesture, before any `await`.
+ * Pass the result into `openWorkflowsPath` after seeding/creating a graph.
+ */
+export function reserveWorkflowsTab(): Window | null {
+  if (isWorkflowsApp()) return null;
+  return window.open("about:blank", TAB.workflows);
+}
+
+/**
  * Open a workflows-addon path (e.g. `/addon/workflows/runs`, `/addon/workflows/graph/<id>`).
  * From the viewer this opens (or focuses) the addon tab. From inside the addon, pass
  * `push` so navigation stays in the SPA router.
@@ -95,11 +128,19 @@ export function isWorkflowsApp(): boolean {
 export function openWorkflowsPath(
   path: string,
   push?: (path: string) => void | Promise<unknown>,
+  preopened?: Window | null,
 ): void {
   const normalized = toAddonWorkflowsPath(path);
   if (isWorkflowsApp() && push) {
+    if (preopened && !preopened.closed) {
+      try {
+        preopened.close();
+      } catch {
+        /* ignore */
+      }
+    }
     void push(normalized);
     return;
   }
-  openApp("workflows", normalized);
+  openApp("workflows", normalized, preopened);
 }
