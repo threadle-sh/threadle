@@ -60,3 +60,20 @@ export const router = createRouter({
     ...foreignRoutes(["/:pathMatch(.*)*"], "/addon/workflows", openViewerPath),
   ],
 });
+
+const PAGE_TITLE: Record<string, string> = {
+  workflows: "workflows",
+  "workflow-runs": "runs",
+  "workflow-logs": "logs",
+  "workflow-nodes": "nodes",
+};
+
+router.afterEach((to) => {
+  if (to.name === "graph-editor") {
+    // GraphEditor sets `workflow: <name>` once the graph loads.
+    if (!to.params.id) document.title = "threadle · workflows";
+    return;
+  }
+  const page = typeof to.name === "string" ? PAGE_TITLE[to.name] : undefined;
+  document.title = page ? `workflow: ${page}` : "threadle · workflows";
+});

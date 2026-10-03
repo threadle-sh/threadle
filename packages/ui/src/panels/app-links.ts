@@ -3,13 +3,31 @@ import { features } from "./features";
 /**
  * Cross-app links. The viewer (`threadle`) and the workflows addon
  * (`threadle-workflows`) are separate apps on separate ports; each opens the
- * other in its own named tab, never through the local router.
+ * other in its own browser tab, never through the local router.
+ *
+ * Graph opens use a per-graph window name so each workflow can live in its own
+ * tab (re-clicking the same id focuses that tab). Non-graph addon pages share
+ * one tab. The visible tab title (`workflow: <name>`) is set by the editor via
+ * `document.title` — window names are only reuse keys, not labels.
  */
 
 type App = "viewer" | "workflows";
 
-const TAB: Record<App, string> = { viewer: "threadle-viewer", workflows: "threadle-workflows" };
+const VIEWER_TAB = "threadle-viewer";
+const WORKFLOWS_HOME_TAB = "threadle-workflows";
 const START_HINT: Record<App, string> = { viewer: "threadle", workflows: "threadle-workflows" };
+
+/** Browsing-context name for a workflows path (reuse key for window.open). */
+export function workflowsWindowName(path: string): string {
+  const m = path.match(/\/(?:addon\/)?workflows\/graph\/([^/?#]+)/);
+  const id = m?.[1]?.trim();
+  if (id) return `threadle-wf-${id}`;
+  return WORKFLOWS_HOME_TAB;
+}
+
+function windowName(which: App, path: string): string {
+  return which === "workflows" ? workflowsWindowName(path) : VIEWER_TAB;
+}
 
 async function appUp(which: App): Promise<boolean> {
   try {
@@ -27,17 +45,18 @@ function appUrl(which: App, path: string): string {
 }
 
 /**
- * Open `path` in the other app's named tab. Prefer opening with the real URL
- * under the click gesture. Pass `preopened` when the tab was reserved before an
- * `await` (async seed/create), otherwise popup blockers steal the new tab.
+ * Open `path` in the other app. Prefer opening with the real URL under the
+ * click gesture. Pass `preopened` when the tab was reserved before an `await`
+ * (async seed/create), otherwise popup blockers steal the new tab.
  */
 function openApp(which: App, path: string, preopened?: Window | null): void {
   const url = appUrl(which, path);
+  const target = windowName(which, path);
   // Sync open under the user gesture. Reuse a tab reserved before await when given.
   const w =
     preopened && !preopened.closed
       ? preopened
-      : window.open(url, TAB[which]);
+      : window.open(url, target);
   void appUp(which).then((up) => {
     if (!up) {
       try {
@@ -62,7 +81,7 @@ function openApp(which: App, path: string, preopened?: Window | null): void {
       if (w.location.href !== url) w.location.href = url;
     } catch {
       // Cross-origin existing named tab: open/focus via a fresh named open.
-      window.open(url, TAB[which]);
+      window.open(url, target);
     }
     try {
       w.focus();
@@ -112,18 +131,19 @@ export function isWorkflowsApp(): boolean {
 }
 
 /**
- * Reserve the workflows named tab during the click gesture, before any `await`.
+ * Reserve a new workflows browser tab during the click gesture, before any `await`.
  * Pass the result into `openWorkflowsPath` after seeding/creating a graph.
+ * Uses `_blank` so each async create gets its own tab (graph id is unknown yet).
  */
 export function reserveWorkflowsTab(): Window | null {
   if (isWorkflowsApp()) return null;
-  return window.open("about:blank", TAB.workflows);
+  return window.open("about:blank", "_blank");
 }
 
 /**
  * Open a workflows-addon path (e.g. `/addon/workflows/runs`, `/addon/workflows/graph/<id>`).
- * From the viewer this opens (or focuses) the addon tab. From inside the addon, pass
- * `push` so navigation stays in the SPA router.
+ * From the viewer this opens (or focuses) a browser tab — one per graph id.
+ * From inside the addon, pass `push` so navigation stays in the SPA router.
  */
 export function openWorkflowsPath(
   path: string,
