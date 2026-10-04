@@ -52,14 +52,14 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.13.7",
-    "@modelcontextprotocol/client": "^2.0.0",
-    "@modelcontextprotocol/server": "^2.0.0",
+    "@modelcontextprotocol/client": "^2.2.0",
+    "@modelcontextprotocol/server": "^2.2.0",
     "chokidar": "^5.0.0",
     "execa": "^9.5.2",
     "gray-matter": "^4.0.3",
-    "hono": "^4.13.8",
+    "hono": "^4.13.12",
     "open": "^10.1.0",
-    "smol-toml": "^1.8.0",
+    "smol-toml": "^1.9.0",
     "zod": "^4.6.5"
   },
   "devDependencies": {
@@ -67,7 +67,7 @@
     "@threadle/shared": "*",
     "@threadle/workflows-server": "*",
     "@threadle/workflows-shared": "*",
-    "@types/node": "^26.6.1",
+    "@types/node": "^26.6.3",
     "tsup": "^8.3.5",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
