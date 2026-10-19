@@ -10,11 +10,11 @@
   },
   "dependencies": {
     "@threadle/shared": "*",
-    "dompurify": "^3.4.15",
+    "dompurify": "^3.4.17",
     "highlight.js": "^11.11.1",
-    "markdown-it": "^15.0.2",
+    "markdown-it": "^15.0.3",
     "pinia": "^2.3.0",
-    "vue": "^3.5.43",
+    "vue": "^3.5.44",
     "vue-router": "^4.5.0"
   },
   "devDependencies": {
@@ -24,7 +24,7 @@
     "typescript": "^5.7.2",
     "vitest": "^4.1.11",
     "vue-tsc": "^2.2.0",
-    "@vitejs/plugin-vue": "^6.0.9",
-    "vite": "^8.3.1"
+    "@vitejs/plugin-vue": "^6.0.10",
+    "vite": "^8.3.4"
   }
 }
